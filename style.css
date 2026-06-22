@@ -1,30 +1,10 @@
 /* freesolo docs custom styles. mintlify auto-loads any .css file in the repo. */
 
-/* change 1: render "<freesolo mark> Freesolo Docs" in the navbar.
-   the logo is just the geometric mark; we append the "Freesolo Docs" wordmark
-   as text on the logo's anchor, in the accent serif so it matches the brand. */
-#navbar a:has(.nav-logo) {
-	display: inline-flex;
-	align-items: center;
-}
-
-/* bump the mark up so it matches the larger wordmark. */
+/* change 1: show the full freesolo wordmark (mark + "Freesolo") in the navbar.
+   the logo is set to the wordmark svg in docs.json; size it so it reads well
+   without dominating the bar. */
 #navbar .nav-logo {
 	height: 1.9rem;
-}
-
-#navbar a:has(.nav-logo)::after {
-	content: "Freesolo Docs";
-	margin-left: 0.55rem;
-	font-family: var(--font-arizona);
-	font-weight: 400;
-	font-size: 2.25rem;
-	line-height: 1;
-	color: #05081d;
-}
-
-.dark #navbar a:has(.nav-logo)::after {
-	color: #e5e7eb;
 }
 
 /* Accent serif. NOTE: the previous "ABC Arizona Mix … Unlicensed Trial" webfont

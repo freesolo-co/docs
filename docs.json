@@ -9,8 +9,8 @@
 		"dark": "#1b1b4b"
 	},
 	"logo": {
-		"light": "/logo/freesolo-mark-light.svg",
-		"dark": "/logo/freesolo-mark-dark.svg",
+		"light": "/logo/freesolo-wordmark-light.svg",
+		"dark": "/logo/freesolo-wordmark-dark.svg",
 		"href": "https://freesolo.co"
 	},
 	"fonts": {
