@@ -99,8 +99,9 @@ to see the classes and live pricing the allocator chooses from, run `flash gpus`
 
 ## `[wandb]`
 
-Optional [Weights & Biases](https://wandb.ai) logging labels (non-secret; your
-W&B API key is configured server-side, not in the config).
+Optional [Weights & Biases](https://wandb.ai) logging labels. These values are
+non-secret; set `WANDB_API_KEY` in your local environment when submitting a run
+to enable logging to your own W&B account.
 
 | Key | Type | Description |
 | --- | --- | --- |
