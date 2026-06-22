@@ -32,7 +32,7 @@
 			},
 			{
 				"group": "Reference",
-				"pages": ["reference/cli", "reference/configuration"]
+				"pages": ["reference/models", "reference/cli", "reference/configuration"]
 			}
 		]
 	},
