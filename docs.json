@@ -1,83 +1,94 @@
 {
-  "$schema": "https://mintlify.com/docs.json",
-  "name": "Freesolo",
-  "theme": "luma",
-  "colors": {
-    "primary": "#040c1c",
-    "dark": "#040c1c"
-  },
-  "favicon": "https://media.brand.dev/39ff8381-8055-4e59-94fb-3d5d8726d715.png",
-  "logo": {
-    "light": "https://media.brand.dev/33767829-2cee-4ed5-b23b-ea7134e5f163.svg",
-    "dark": "https://media.brand.dev/33767829-2cee-4ed5-b23b-ea7134e5f163.svg"
-  },
-  "navbar": {
-    "links": [
-      {
-        "label": "Contact",
-        "href": "https://freesolo.co/contact"
-      }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Get Started",
-      "href": "https://freesolo.co/sign-up"
-    }
-  },
-  "navigation": {
-    "tabs": [
-      {
-        "tab": "Documentation",
-        "groups": [
-          {
-            "group": "Get Started",
-            "pages": [
-              "introduction",
-              "quickstart",
-              "get-started/account-setup"
-            ]
-          },
-          {
-            "group": "Core Concepts",
-            "pages": [
-              "concepts/overview",
-              "concepts/instrument",
-              "concepts/evaluate",
-              "concepts/improve"
-            ]
-          },
-          {
-            "group": "Guides",
-            "pages": [
-              "guides/define-your-feature",
-              "guides/build-eval-suite",
-              "guides/training-pipeline",
-              "guides/production-deployment",
-              "guides/monitoring"
-            ]
-          },
-          {
-            "group": "Security & Compliance",
-            "pages": [
-              "security/overview",
-              "security/data-privacy",
-              "security/enterprise"
-            ]
-          },
-          {
-            "group": "Resources",
-            "pages": [
-              "resources/faq",
-              "resources/support"
-            ]
-          }
-        ]
-      }
-    ]
-  },
-  "footer": {
-    "socials": {
-      "x": "https://x.com/freesolo"
-    }
-  }
+	"$schema": "https://mintlify.com/docs.json",
+	"theme": "mint",
+	"name": "Freesolo",
+	"description": "Train, deploy, and chat with custom LoRA models on managed GPUs.",
+	"colors": {
+		"primary": "#5f72ff",
+		"light": "#8b98ff",
+		"dark": "#1b1b4b"
+	},
+	"logo": {
+		"light": "/logo/freesolo-mark-light.svg",
+		"dark": "/logo/freesolo-mark-dark.svg",
+		"href": "https://freesolo.co"
+	},
+	"fonts": {
+		"family": "Figtree"
+	},
+	"navigation": {
+		"groups": [
+			{
+				"group": "Get started",
+				"pages": ["index", "quickstart"]
+			},
+			{
+				"group": "Guides",
+				"pages": [
+					"guides/training",
+					"guides/environments",
+					"guides/deploy-and-chat"
+				]
+			},
+			{
+				"group": "Reference",
+				"pages": ["reference/cli", "reference/configuration"]
+			}
+		]
+	},
+	"navbar": {
+		"primary": {
+			"type": "button",
+			"label": "Create API Key",
+			"href": "https://freesolo.co/platform"
+		}
+	},
+	"footer": {
+		"socials": {
+			"linkedin": "https://www.linkedin.com/company/freesolo-co",
+			"github": "https://github.com/freesolo-co",
+			"x": "https://twitter.com/freesolo"
+		},
+		"links": [
+			{
+				"header": "Product",
+				"items": [
+					{
+						"label": "Blog",
+						"href": "https://freesolo.co/blog"
+					}
+				]
+			},
+			{
+				"header": "Company",
+				"items": [
+					{
+						"label": "Careers",
+						"href": "https://freesolo.co/contact"
+					},
+					{
+						"label": "Privacy Policy",
+						"href": "https://freesolo.co/privacy"
+					},
+					{
+						"label": "Terms",
+						"href": "https://freesolo.co/terms"
+					}
+				]
+			},
+			{
+				"header": "Contact",
+				"items": [
+					{
+						"label": "Sales",
+						"href": "https://freesolo.co/contact"
+					},
+					{
+						"label": "Support",
+						"href": "https://freesolo.co/contact"
+					}
+				]
+			}
+		]
+	}
 }

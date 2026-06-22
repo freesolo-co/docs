@@ -1,0 +1,119 @@
+---
+title: "Environments"
+description: "Define the task your model trains on and is graded by."
+---
+
+An **environment** is the task: the data your model sees and the rubric that
+scores its outputs. Flash uses
+[Prime Intellect `verifiers`](https://github.com/PrimeIntellect-ai/verifiers)
+environments. You author one locally, publish it to the Prime Hub, and reference
+it from your config by its id.
+
+```toml
+[environment]
+id = "your-name/your-env"
+```
+
+## Scaffold one
+
+```bash
+flash env init my-task
+```
+
+This creates `environments/my-task/my_task.py` with a working starter: a
+`load_environment()` that returns a `verifiers` environment built from a dataset
+and a rubric.
+
+```python environments/my-task/my_task.py
+import verifiers as vf
+from datasets import Dataset
+
+
+def load_environment(**kwargs) -> vf.Environment:
+    dataset = Dataset.from_list(
+        [
+            {"prompt": [{"role": "user", "content": "What is 2 + 2?"}], "answer": "4"},
+            {"prompt": [{"role": "user", "content": "What is 3 + 5?"}], "answer": "8"},
+        ]
+    )
+
+    def correct_answer(completion, answer, **_):
+        """Reward 1.0 when the gold answer appears in the model's final message."""
+        text = completion[-1]["content"] if isinstance(completion, list) else str(completion)
+        return 1.0 if str(answer) in text else 0.0
+
+    rubric = vf.Rubric(funcs=[correct_answer], weights=[1.0])
+    return vf.SingleTurnEnv(dataset=dataset, rubric=rubric, **kwargs)
+```
+
+Replace the dataset and rubric with your task:
+
+- **Dataset** — the prompts (and any gold answers) your model trains and is
+  evaluated on.
+- **Rubric** — one or more reward functions. Each returns a score; the weighted
+  sum is the reward GRPO optimizes (and SFT uses the dataset's target answers).
+
+See the [`verifiers` docs](https://github.com/PrimeIntellect-ai/verifiers) for
+the full API — multi-criteria rubrics, parsers, and more.
+
+## Publish it
+
+Training runs on managed GPUs, so the environment has to be reachable by id.
+Publish your local source to the Prime Hub:
+
+```bash
+flash env push environments/my-task/my_task.py
+```
+
+It prints the published id (`owner/name`). Put that in your config's
+`[environment] id`.
+
+<Note>
+  Publishing is fully managed: `flash env push` uploads your env to Freesolo's
+  hosted Environments Hub (published **private**) under one managed account, using
+  only your Freesolo API key. You don't need a Prime Intellect account or the
+  `prime` CLI.
+</Note>
+
+## Use an existing environment
+
+If you already have a published env id (yours or one shared with you), you don't
+need to author anything — just reference it:
+
+```toml
+[environment]
+id = "owner/name"
+```
+
+To pull it into your local project for authoring and `--dry-run`:
+
+```bash
+flash env install owner/name
+```
+
+## List what you have
+
+```bash
+flash env list
+```
+
+Shows installed Hub environments and local sources you can still publish.
+
+## Pass parameters
+
+If your `load_environment(**kwargs)` accepts arguments, set them under
+`[environment.params]`:
+
+```toml
+[environment]
+id = "your-name/your-env"
+
+[environment.params]
+difficulty = "hard"
+num_examples = 500
+```
+
+<Tip>
+  Single-turn environments (one prompt → one response, graded by a rubric) are
+  fully supported for SFT, GRPO, and eval. Start there, then grow the rubric.
+</Tip>

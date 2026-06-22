@@ -1,0 +1,120 @@
+---
+title: "Configuration reference"
+description: "Every field in a Flash training config (TOML)."
+---
+
+A run is described by a TOML config passed to `flash train`. The only required
+fields are `model`, `environment.id`, and `train.hf_repo`. `algorithm`
+defaults to `grpo`, and everything else has a sensible default. Validate any
+config locally with `flash train config.toml --dry-run`.
+
+```toml
+model = "Qwen/Qwen3.5-4B"
+algorithm = "grpo"
+
+[environment]
+id = "owner/name"
+
+[train]
+hf_repo = "your-org/your-runs"
+steps = 150
+lora_rank = 32
+seeds = [0]
+
+[gpu]
+type = "RTX 5090"
+```
+
+## Top level
+
+| Key | Type | Default | Description |
+| --- | --- | --- | --- |
+| `model` | string | — (required) | Base model to train a LoRA adapter on, e.g. `Qwen/Qwen3.5-4B`. See `flash models`. |
+| `algorithm` | string | `grpo` | `grpo` (RL) or `sft` (supervised). |
+| `thinking` | bool | `false` | Enable reasoning mode (thinking-capable models only). |
+
+## `[environment]`
+
+| Key | Type | Default | Description |
+| --- | --- | --- | --- |
+| `id` | string | — (required) | Published `verifiers` / Prime Hub env slug, `owner/name`. |
+| `eval_env_id` | string | — | Optional separate environment to evaluate against. |
+| `params` | table | `{}` | Keyword arguments passed to the env's `load_environment(**kwargs)`. |
+
+```toml
+[environment]
+id = "owner/name"
+
+[environment.params]
+difficulty = "hard"
+```
+
+## `[train]`
+
+| Key | Type | Default | Description |
+| --- | --- | --- | --- |
+| `hf_repo` | string | — (required) | HF **dataset** repo this run streams adapters/checkpoints into. |
+| `steps` | int | — | Number of training steps. |
+| `epochs` | int | — | Number of epochs (alternative to `steps`). |
+| `lora_rank` | int | `32` | LoRA rank. |
+| `lora_alpha` | int | `64` | LoRA alpha. |
+| `seeds` | list[int] | `[0]` | Seeds to run (one adapter per seed). |
+| `learning_rate` | float | recipe default | Optimizer learning rate. |
+| `batch_size` | int | recipe default | Training batch size. |
+| `max_length` | int | recipe default | Max sequence length. |
+| `save_every` | int | recipe default | Checkpoint cadence (steps). |
+| `init_from_adapter` | string | — | Warm-start from an existing adapter. |
+
+### GRPO-specific
+
+| Key | Type | Description |
+| --- | --- | --- |
+| `group_size` | int | Completions sampled per prompt. |
+| `temperature` | float | Sampling temperature for rollouts. |
+| `max_tokens` | int | Max tokens per rollout completion. |
+| `kl_penalty_coef` | float | KL penalty coefficient. |
+| `advantage_clip` | float | Centered-advantage clamp. |
+| `thinking_length_penalty_coef` | float | Penalty on reasoning length. |
+| `stop_sequences` | list[string] | Stop sequences for generation. |
+
+### Evaluation
+
+| Key | Type | Description |
+| --- | --- | --- |
+| `eval_every_steps` | int | Run an eval every N steps. |
+| `eval_examples` | int | Number of examples per eval. |
+
+## `[gpu]`
+
+| Key | Type | Default | Description |
+| --- | --- | --- | --- |
+| `type` | string | `cheapest` | GPU class to pin (e.g. `RTX 5090`); omit or set `cheapest` to auto-pick the cheapest validated fit. See `flash gpus`. |
+| `provider` | string | `auto` | `auto`, `runpod`, or `vast`. |
+| `allow_unvalidated` | bool | `false` | Allow GPU classes not yet validated for the model. |
+| `disk_gb` | int | `60` | Disk to provision. |
+| `max_wall_seconds` | int | `86400` | Hard wall-clock cap for the run. |
+| `max_retries` | int | `2` | Bounded auto-retries (resume from last checkpoint). |
+
+<Note>
+  Omit `type` (or set `"cheapest"`) to let the allocator pick the lowest-cost
+  validated class that fits across providers. `provider` pins the substrate.
+</Note>
+
+## `[wandb]`
+
+Optional [Weights & Biases](https://wandb.ai) logging labels (non-secret; your
+W&B API key is configured server-side, not in the config).
+
+| Key | Type | Description |
+| --- | --- | --- |
+| `project` | string | W&B project name. |
+| `run_name` | string | W&B run name. |
+
+## Overrides & composition
+
+Any value can be set at submit time without editing the file:
+
+```bash
+flash train config.toml -c train.steps=300 -c gpu.type="RTX 4090"
+flash train base.toml --config overlay.toml      # deep-merge extra TOML
+```

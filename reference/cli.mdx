@@ -1,0 +1,140 @@
+---
+title: "CLI reference"
+description: "Every flash command and flag."
+---
+
+The CLI is `flash` (installed from the `flash` package). Every run-lifecycle
+command is a thin, authenticated call to the hosted control plane. Run
+`flash --help` or `flash <command> --help` for inline help.
+
+## Global flags
+
+| Flag | Effect |
+| --- | --- |
+| `-V`, `--version` | Print the Flash version and exit |
+| `--debug` | Show full tracebacks on error (otherwise errors print one clean line) |
+| `-v`, `-vv` | Increase log verbosity (`-v` info, `-vv` debug) |
+
+## Auth & identity
+
+<ResponseField name="flash login" type="[--api-key KEY] [--freesolo-url URL] [--api-url URL]">
+  Log in with your Freesolo API key. The key is verified against Freesolo and
+  saved locally. Defaults: `--api-key` from `FREESOLO_API_KEY`; `--freesolo-url`
+  from `FREESOLO_BASE_URL` (else `https://api.freesolo.co`); `--api-url` from
+  `FLASH_API_URL`.
+</ResponseField>
+
+<ResponseField name="flash whoami">
+  Show the identity your stored key resolves to.
+</ResponseField>
+
+<ResponseField name="flash version">
+  Print the Flash version.
+</ResponseField>
+
+## Discovery
+
+<ResponseField name="flash models">
+  List supported base models with their algorithms, quantization, and reasoning
+  capability.
+</ResponseField>
+
+<ResponseField name="flash gpus">
+  List managed GPU classes with VRAM, live per-provider `$/hr`, and where each
+  class is validated.
+</ResponseField>
+
+## Environments
+
+<ResponseField name="flash lab setup">
+  Scaffold `environments/` and `configs/` in the current directory with a
+  starter environment and config.
+</ResponseField>
+
+<ResponseField name="flash env init NAME">
+  Scaffold a new local verifiers environment at `environments/NAME/`.
+</ResponseField>
+
+<ResponseField name="flash env push [PATH]">
+  Publish a local verifiers environment to Freesolo's managed Environments Hub
+  (private) and print its id. `PATH` defaults to the current directory. Fully
+  managed — no Prime Intellect account or `prime` CLI needed.
+</ResponseField>
+
+<ResponseField name="flash env install ENV_ID">
+  Install a published Prime Hub environment (`owner/name`) locally for authoring
+  and `--dry-run`.
+</ResponseField>
+
+<ResponseField name="flash env list">
+  List installed Hub environments and local sources you can publish.
+</ResponseField>
+
+## Training
+
+<ResponseField name="flash train CONFIG [flags]">
+  Submit a managed training run from a TOML config and follow its logs.
+
+  | Flag | Effect |
+  | --- | --- |
+  | `--dry-run` | Validate the config locally; don't submit |
+  | `--background` | Submit and return immediately instead of following logs |
+  | `-c KEY=VALUE` | Override a config value (repeatable) |
+  | `--config FILE` | Deep-merge additional TOML for config composition (repeatable) |
+</ResponseField>
+
+## Run management
+
+<ResponseField name="flash ps">
+  List your runs with state, accrued cost, GPU, and model.
+</ResponseField>
+
+<ResponseField name="flash status RUN_ID">
+  Print a run's full status JSON.
+</ResponseField>
+
+<ResponseField name="flash attach RUN_ID">
+  Re-follow a running job's logs to completion (resumable any time).
+</ResponseField>
+
+<ResponseField name="flash logs RUN_ID [-f]">
+  Print a run's logs. `-f`/`--follow` streams new lines until the run ends.
+</ResponseField>
+
+<ResponseField name="flash cost RUN_ID">
+  Show a run's accrued cost in USD.
+</ResponseField>
+
+<ResponseField name="flash cancel RUN_ID">
+  Cancel a run (best-effort).
+</ResponseField>
+
+## Serving
+
+<ResponseField name="flash deploy RUN_ID [flags]">
+  Deploy a trained adapter to a serving endpoint.
+
+  | Flag | Default | Effect |
+  | --- | --- | --- |
+  | `--mode` | `dev` | `dev` (scale-to-zero) or `always-on` (warm 24/7) |
+  | `--idle-timeout SECONDS` | `300` | `dev` mode: idle seconds before scaling to zero |
+  | `--dry-run` | — | Preview the deploy without creating it |
+</ResponseField>
+
+<ResponseField name="flash chat RUN_ID -m MESSAGE [flags]">
+  Send a message to a deployed adapter and print the reply.
+
+  | Flag | Default | Effect |
+  | --- | --- | --- |
+  | `-m`, `--message` | (required) | The user message |
+  | `--max-tokens` | `512` | Max tokens to generate |
+  | `--temperature` | `0.0` | Sampling temperature |
+</ResponseField>
+
+<ResponseField name="flash deployments">
+  List active serving deployments with mode, GPU, estimated `$/day`, and endpoint.
+</ResponseField>
+
+<ResponseField name="flash undeploy RUN_ID">
+  Tear down a run's serving endpoint and stop billing.
+</ResponseField>
