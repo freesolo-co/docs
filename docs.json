@@ -36,7 +36,7 @@
 			},
 			{
 				"group": "Reference",
-				"pages": ["reference/models", "reference/cli", "reference/configuration"]
+				"pages": ["reference/models", "reference/cli", "reference/configuration", "reference/troubleshooting"]
 			}
 		]
 	},

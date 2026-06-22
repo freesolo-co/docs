@@ -1,0 +1,242 @@
+---
+title: "Troubleshooting"
+description: "Common Flash errors, why they happen, and how to fix them."
+---
+
+Fixes for the issues you're most likely to hit, grouped by where they show up.
+Most `flash` errors print one clean line; add `--debug` to any command for the
+full traceback.
+
+## Installation & CLI
+
+<AccordionGroup>
+  <Accordion title="flash: command not found">
+    The CLI installs a single `flash` command, but its install location has to be
+    on your `PATH`.
+
+    - If you installed with `uv tool install freesolo-flash`, make sure uv's tool
+      bin directory is on your `PATH` (run `uv tool update-shell`, then restart
+      your shell).
+    - Confirm the install with `flash version`.
+
+  </Accordion>
+
+  <Accordion title="I installed `flash` but it's the wrong tool">
+    The CLI is published to PyPI as **`freesolo-flash`** — the bare `flash` name
+    belongs to an unrelated project. Reinstall the right one:
+
+    ```bash
+    uv tool install freesolo-flash
+    ```
+
+  </Accordion>
+</AccordionGroup>
+
+## Authentication
+
+<AccordionGroup>
+  <Accordion title="flash login fails or commands report 401 / invalid key">
+    Every command authenticates with a **Freesolo API key**, verified against
+    Freesolo at login.
+
+    - Create a key in your dashboard at [freesolo.co](https://freesolo.co).
+    - Log in once: `flash login --api-key <your-key>` (or set `FREESOLO_API_KEY`
+      instead of passing `--api-key`).
+    - Confirm who the stored key resolves to: `flash whoami`.
+
+  </Accordion>
+
+  <Accordion title="Pointing at a non-default Freesolo deployment">
+    By default the CLI talks to `https://api.freesolo.co`. To target a different
+    deployment, set `--freesolo-url` (or `FREESOLO_BASE_URL`) at login.
+  </Accordion>
+</AccordionGroup>
+
+## Environments
+
+<AccordionGroup>
+  <Accordion title="flash env push fails">
+    Publishing is fully managed and only needs your Freesolo API key — no Prime
+    Intellect account or `prime` CLI. Make sure the file you push defines a
+    `load_environment()` that returns a `verifiers` environment, then:
+
+    ```bash
+    flash env push environments/my-task/my_task.py
+    ```
+
+    It prints the published id (`owner/name`) to put in your config's
+    `[environment] id`.
+
+  </Accordion>
+
+  <Accordion title="ModuleNotFoundError: No module named 'verifiers' (local authoring)">
+    Training runs managed, so the env's dependencies live server-side. But
+    authoring locally — and any `--dry-run`/`--cost` that **loads** the
+    environment (for example, to count examples for an SFT estimate) — needs the
+    env's libraries installed locally:
+
+    ```bash
+    uv pip install verifiers datasets
+    ```
+
+    To pull a published env into your project for local work, use
+    `flash env install owner/name`.
+
+  </Accordion>
+
+<Accordion title="Environment won't import / name collision">
+  If your environment module shares a name with an installed Python package, it
+  can shadow or be shadowed by that package. Give the environment a distinct
+  name (`flash env init my-unique-task`) so its module doesn't collide.
+</Accordion>
+
+  <Accordion title="What id do I reference in my config?">
+    The `[environment] id` must be a **published** slug of the form `owner/name`,
+    produced by `flash env push`. A local file path is not a valid id — publish it
+    first, or `flash env install` an existing one.
+  </Accordion>
+</AccordionGroup>
+
+## Configuration
+
+<AccordionGroup>
+  <Accordion title="unsupported model '...'">
+    The model isn't in the curated catalog. List valid ids with `flash models`,
+    or opt into the open-model policy to run any Hugging Face model that fits the
+    GPU:
+
+    ```toml
+    model = "some-org/some-model"
+    model_policy = "allow"
+    ```
+
+    See [Supported models](/reference/models).
+
+  </Accordion>
+
+  <Accordion title="Unknown config key or section rejected">
+    Flash rejects unknown config sections and `[train]` keys **at parse time**, so
+    a typo fails fast instead of silently training against defaults. Check the key
+    against the [configuration reference](/reference/configuration) and validate
+    locally:
+
+    ```bash
+    flash train config.toml --dry-run
+    ```
+
+  </Accordion>
+
+<Accordion title="My [gpu] table or hf_repo is being ignored">
+  Both are fully managed and **not** user fields. The allocator picks the GPU
+  for you, and each run streams artifacts into a private Hugging Face repo
+  provisioned server-side. Remove `[gpu]` and `hf_repo` from your config — see
+  [GPU & infrastructure](/reference/configuration#gpu-infrastructure-managed).
+</Accordion>
+
+<Accordion title="thinking = true is rejected">
+  `thinking = true` only works on reasoning-capable models. Every catalog model
+  supports it; a non-thinking model (for example, one brought in via the
+  open-model policy) will reject the flag. Drop `thinking` or pick a
+  reasoning-capable model from [Supported models](/reference/models).
+</Accordion>
+
+  <Accordion title="unsupported algorithm">
+    `algorithm` must be `grpo` (the default) or `sft`. Fix the value and
+    re-validate with `--dry-run`.
+  </Accordion>
+</AccordionGroup>
+
+## GPUs & fit
+
+<AccordionGroup>
+  <Accordion title="GRPO needs a bigger GPU than SFT for the same model">
+    Expected. GRPO co-locates a rollout engine that holds a second copy of the
+    weights plus a KV cache, so it needs more VRAM than SFT. The 9B model, for
+    instance, fits a 48 GB card for SFT but needs an 80 GB-class card for GRPO.
+    Pick a smaller model or use `sft`. See [Supported models](/reference/models).
+  </Accordion>
+
+  <Accordion title="open-model: '... does not fit the requested GPU'">
+    Under `model_policy = "allow"`, Flash runs a coarse VRAM-fit check from
+    Hugging Face metadata and blocks fits that are provably impossible. Choose a
+    smaller model or a larger supported GPU class (`flash gpus`).
+  </Accordion>
+</AccordionGroup>
+
+## Training runs
+
+<AccordionGroup>
+  <Accordion title="My run was rejected before it started (balance)">
+    Submitting a run charges the **pre-flight cost estimate up front** and is
+    gated on your org's prepaid balance — if the balance can't cover the estimate,
+    the run is rejected and nothing runs. Preview the number and top up:
+
+    ```bash
+    flash train config.toml --cost
+    ```
+
+  </Accordion>
+
+<Accordion title="GRPO reward is stuck at 0">
+  The task is too hard for the model at its current ability: if no rollout ever
+  scores, there's no signal to learn from. Try a stronger/larger base model,
+  make the task easier to get started, or double-check your rubric actually
+  returns a positive reward for good answers.
+</Accordion>
+
+<Accordion title="Reward is stuck at 1 (or never moves)">
+  Usually the rubric isn't discriminative — it scores almost everything the
+  same. Make the reward function separate better answers from worse ones so GRPO
+  has a gradient to follow. See [Environments](/guides/environments).
+</Accordion>
+
+  <Accordion title="I pressed Ctrl-C — did I kill my run?">
+    No. `Ctrl-C` during `flash train` just **detaches** you; the run keeps going
+    server-side. Re-follow it any time, and cancel explicitly if you mean to:
+
+    ```bash
+    flash ps                # state and cost of your runs
+    flash attach <run-id>   # re-follow the logs
+    flash cancel <run-id>   # actually stop it (best-effort)
+    ```
+
+  </Accordion>
+
+  <Accordion title="A GPU hiccup or unavailability interrupted training">
+    Runs are supervised server-side: a stall watchdog plus bounded auto-retry that
+    **resumes from the last streamed checkpoint**, and the allocator walks to the
+    next-cheapest validated GPU class if one is unavailable. A transient failure
+    usually doesn't cost you the whole run — watch with `flash logs <run-id> -f`.
+  </Accordion>
+</AccordionGroup>
+
+## Serving
+
+<AccordionGroup>
+  <Accordion title="The first request after deploy is slow">
+    `dev` mode (the default) scales to zero when idle and cold-starts on the first
+    request. To avoid cold starts, deploy `--mode always-on`, or raise the idle
+    window with `--idle-timeout <seconds>`. See
+    [Deploy & chat](/guides/deploy-and-chat).
+  </Accordion>
+
+  <Accordion title="Am I being charged while the deployment is idle?">
+    No. Serving is **billed per token** for the requests you actually send; there
+    is no per-day or warm-GPU charge, and the `$/DAY` column in
+    `flash deployments` is always `0`. `flash undeploy <run-id>` deregisters the
+    adapter entirely.
+  </Accordion>
+
+  <Accordion title="Calling the endpoint from my own code is rejected">
+    Deployments are OpenAI-compatible. Use the endpoint from `flash deployments`
+    as the `base_url`, your **Freesolo API key** as the `api_key`, and the
+    `<run-id>` as the `model`. See
+    [Use it from your own code](/guides/deploy-and-chat#use-it-from-your-own-code).
+  </Accordion>
+</AccordionGroup>
+
+## Getting help
+
+Still stuck? Add `--debug` to surface the full traceback, then reach out through
+[freesolo.co/contact](https://freesolo.co/contact) with the run id (`flash ps`)
+and the failing command.
