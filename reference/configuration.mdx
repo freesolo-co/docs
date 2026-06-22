@@ -108,23 +108,6 @@ to enable logging to your own W&B account.
 | `project` | string | W&B project name. |
 | `run_name` | string | W&B run name. |
 
-## `[worker_env]`
-
-<Note>
-  Advanced / escape hatch. Most runs never need this.
-</Note>
-
-A table of string-valued environment-variable overrides merged into the GPU
-worker for **this run only** — handy for per-run kernel/optimizer A/B knobs.
-Values must be strings, and secret-bearing key names (anything that looks like a
-token, password, or key) are rejected, since the table is serialized into run
-artifacts.
-
-```toml
-[worker_env]
-SOME_WORKER_FLAG = "1"
-```
-
 ## Overrides & composition
 
 Any value can be set at submit time without editing the file. The override flag
