@@ -3,9 +3,10 @@ title: "CLI reference"
 description: "Every flash command and flag."
 ---
 
-The CLI is `flash` (installed from the `flash` package). Every run-lifecycle
-command is a thin, authenticated call to the hosted control plane. Run
-`flash --help` or `flash <command> --help` for inline help.
+The CLI is `flash` (installed from the **`freesolo-flash`** package — see the
+[Quickstart](/quickstart#1-install-the-cli)). Every run-lifecycle command is a
+thin, authenticated call to the hosted control plane. Run `flash --help` or
+`flash <command> --help` for inline help.
 
 ## Global flags
 
@@ -74,12 +75,15 @@ command is a thin, authenticated call to the hosted control plane. Run
 
 <ResponseField name="flash train CONFIG [flags]">
   Submit a managed training run from a TOML config and follow its logs.
+  Submitting charges the pre-flight cost estimate to your org and is gated on
+  balance (see [Cost & billing](/guides/training#cost-and-billing)).
 
   | Flag | Effect |
   | --- | --- |
-  | `--dry-run` | Validate the config locally; don't submit |
+  | `--dry-run` | Validate the config locally and print the resolved job spec; don't submit |
+  | `--cost` | Print the pre-flight USD cost estimate for the config and exit (no submit) |
   | `--background` | Submit and return immediately instead of following logs |
-  | `-c KEY=VALUE` | Override a config value (repeatable) |
+  | `--set KEY=VALUE` | Override a config value (dotted key, repeatable) |
   | `--config FILE` | Deep-merge additional TOML for config composition (repeatable) |
 </ResponseField>
 
@@ -112,11 +116,12 @@ command is a thin, authenticated call to the hosted control plane. Run
 ## Serving
 
 <ResponseField name="flash deploy RUN_ID [flags]">
-  Deploy a trained adapter to a serving endpoint.
+  Register a trained adapter with the managed multi-LoRA serving service.
+  Serving scales to zero when idle and is [billed per token](/guides/deploy-and-chat#billing).
 
   | Flag | Default | Effect |
   | --- | --- | --- |
-  | `--mode` | `dev` | `dev` (scale-to-zero) or `always-on` (warm 24/7) |
+  | `--mode` | `dev` | `dev` (scale-to-zero) or `always-on` (kept warm to avoid cold starts) |
   | `--idle-timeout SECONDS` | `300` | `dev` mode: idle seconds before scaling to zero |
   | `--dry-run` | — | Preview the deploy without creating it |
 </ResponseField>
@@ -132,9 +137,23 @@ command is a thin, authenticated call to the hosted control plane. Run
 </ResponseField>
 
 <ResponseField name="flash deployments">
-  List active serving deployments with mode, GPU, estimated `$/day`, and endpoint.
+  List active serving deployments with mode, GPU, `$/day` (always `0` — serving
+  scales to zero), and endpoint.
 </ResponseField>
 
 <ResponseField name="flash undeploy RUN_ID">
-  Tear down a run's serving endpoint and stop billing.
+  Deregister a run's adapter from serving so it no longer accepts requests.
 </ResponseField>
+
+## MCP server (for coding agents)
+
+Flash also ships a stdio [MCP](https://modelcontextprotocol.io) bridge so coding
+agents can drive the platform. It isn't a `flash` subcommand — launch it with:
+
+```bash
+python -m flash.mcp.server
+```
+
+It authenticates with the same stored credentials as the CLI (`flash login`) and
+exposes tools to list models, submit and monitor training runs, and deploy
+adapters.

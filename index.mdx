@@ -45,12 +45,14 @@ flash chat <run-id> -m "hi"  # talk to it
   </Step>
   <Step title="Train on a managed GPU">
     `flash train` submits the run to the control plane, which allocates the
-    cheapest GPU that fits, supervises the job (stall watchdog, bounded
-    auto-retry from the last checkpoint), and streams logs back to you.
+    cheapest GPU that fits across providers (RunPod and Vast.ai), supervises the
+    job (stall watchdog, bounded auto-retry from the last checkpoint), and streams
+    logs back to you.
   </Step>
   <Step title="Deploy and use it">
     `flash deploy` serves the adapter. `flash chat` (or any OpenAI-compatible
-    client) talks to it. Scale-to-zero costs nothing while idle.
+    client) talks to it. Serving scales to zero (no charge while idle) and is
+    billed per token.
   </Step>
 </Steps>
 
