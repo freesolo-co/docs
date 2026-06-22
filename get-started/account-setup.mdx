@@ -1,0 +1,137 @@
+---
+title: "Freesolo Account Setup: Sign Up, Sign In, and Manage Teams"
+sidebarTitle: "Account Setup"
+description: "Create your Freesolo account using Google SSO, GitHub SSO, or email, then set up your organization, invite teammates, and configure security settings."
+---
+
+Getting your team onto Freesolo starts with creating an account and configuring a workspace that reflects how your organization works. This page covers everything from initial sign-up through organization setup, team invitations, and the security practices you should have in place from day one.
+
+## Creating an account
+
+Visit [freesolo.co/sign-up](https://freesolo.co/sign-up) to create your account. Freesolo supports three sign-up methods — choose the one that fits your organization's identity management setup.
+
+<Tabs>
+  <Tab title="Google SSO">
+    Click **Continue with Google** on the sign-up page. You'll be redirected to Google's authentication flow. Select the Google account you want to associate with Freesolo and grant the requested permissions. Once authentication completes, you'll be returned to Freesolo to finish setting up your workspace.
+
+    <Note>
+      Google SSO uses OAuth 2.0. Freesolo never sees or stores your Google password. Access can be revoked at any time from your Google account's connected apps settings.
+    </Note>
+  </Tab>
+  <Tab title="GitHub SSO">
+    Click **Continue with GitHub** on the sign-up page. You'll be redirected to GitHub to authorize the Freesolo application. Review the requested permissions and click **Authorize**. Once the handshake completes, you'll be returned to Freesolo to finish your workspace setup.
+
+    <Note>
+      GitHub SSO uses OAuth 2.0. Freesolo requests read access to your public profile and email address only. No repository access is requested or granted.
+    </Note>
+  </Tab>
+  <Tab title="Email & Password">
+    Enter your work email address and create a password. Passwords must be **at least 8 characters** long. After submitting the form, check your inbox for a verification email from Freesolo and click the confirmation link to activate your account.
+
+    <Warning>
+      Your verification link expires after 24 hours. If it expires before you click it, return to the sign-up page and request a new verification email.
+    </Warning>
+  </Tab>
+</Tabs>
+
+## Signing in
+
+Return to [freesolo.co/sign-in](https://freesolo.co/sign-in) at any time to access your account. Sign in using the same method you used when you created your account.
+
+- **Google SSO** — Click **Continue with Google** and select your account.
+- **GitHub SSO** — Click **Continue with GitHub** and authorize if prompted.
+- **Email & Password** — Enter your registered email address and password, then click **Sign In**.
+
+<Info>
+  If your organization uses a managed identity provider, contact the Freesolo team at [founders@freesolo.co](mailto:founders@freesolo.co) to discuss enterprise SSO integration options.
+</Info>
+
+## Resetting your password
+
+If you signed up with email and password and can't remember your credentials, you can reset your password from the sign-in page.
+
+<Steps>
+  <Step title="Go to the sign-in page">
+    Navigate to [freesolo.co/sign-in](https://freesolo.co/sign-in) and click **Forgot password?** below the sign-in form.
+  </Step>
+  <Step title="Enter your email address">
+    Type the email address associated with your Freesolo account and click **Send Reset Link**. You'll receive an email with a password reset link within a few minutes.
+  </Step>
+  <Step title="Set a new password">
+    Click the link in the email. You'll be taken to a page where you can enter and confirm a new password. Passwords must be at least 8 characters. Click **Reset Password** to save your new credentials.
+  </Step>
+  <Step title="Sign in with your new password">
+    Return to the sign-in page and sign in using your email address and new password.
+  </Step>
+</Steps>
+
+<Note>
+  Password reset links expire after 1 hour. If your link has expired, repeat the process to request a new one.
+</Note>
+
+## Setting up your workspace
+
+After signing in for the first time, Freesolo walks you through creating your workspace. Your workspace is organized around an **organization**, which contains your projects, team members, settings, and billing.
+
+### Creating an organization
+
+When prompted, enter a name for your organization. This is typically your company name or team name. Your organization name appears in the Freesolo UI and in any exported reports or audit logs.
+
+You can update your organization name later from **Settings → Organization**.
+
+### Inviting team members
+
+Bring your colleagues into Freesolo from **Settings → Team**.
+
+<Steps>
+  <Step title="Open Team Settings">
+    Click your organization name in the top navigation, then select **Settings → Team**.
+  </Step>
+  <Step title="Enter email addresses">
+    Click **Invite Members** and enter the email addresses of the people you want to add. You can invite multiple people at once by entering each address on a new line.
+  </Step>
+  <Step title="Assign roles">
+    Select a role for each invitee before sending the invitation. Roles control what each member can see and do inside your organization.
+  </Step>
+  <Step title="Send invitations">
+    Click **Send Invites**. Each person receives an email with a link to join your organization. If they don't have a Freesolo account yet, they'll be prompted to create one first.
+  </Step>
+</Steps>
+
+### Permissions and roles
+
+Freesolo uses a role-based permissions model. The three available roles are:
+
+| Role | Capabilities |
+|---|---|
+| **Admin** | Full access to all projects, settings, billing, team management, and API keys. |
+| **Member** | Can create and edit features, run evaluations, manage datasets, and view results within projects they have access to. Cannot manage billing or organization-level settings. |
+| **Viewer** | Read-only access to projects, eval results, and dashboards they've been granted access to. Cannot create or modify resources. |
+
+<Tip>
+  We recommend granting the **Admin** role only to the people responsible for billing and organization-level configuration. Most team members work effectively with the **Member** role.
+</Tip>
+
+You can change a member's role at any time from **Settings → Team** by clicking the role dropdown next to their name.
+
+## Security best practices
+
+Freesolo is ISO 27001 certified and SOC 2 Type I and Type II compliant. Even so, protecting your account starts with the practices your team puts in place.
+
+<Warning>
+  If you believe your Freesolo credentials or API keys have been compromised, notify the Freesolo team **immediately** at [founders@freesolo.co](mailto:founders@freesolo.co). The team will help you revoke access, rotate keys, and audit any affected activity.
+</Warning>
+
+A few practices to keep your workspace secure:
+
+- Use SSO (Google or GitHub) where possible, as it ties access to your organization's existing identity management and revocation policies.
+- If using email and password, choose a unique password not shared with other services.
+- Remove team members from **Settings → Team** promptly when they leave your organization.
+- Rotate API keys regularly and avoid committing them to version control. API keys can be managed from **Settings → API Keys**.
+- Review the audit log periodically to spot unexpected activity.
+
+## Legal and privacy
+
+By creating a Freesolo account you agree to the Freesolo [Terms of Service](https://freesolo.co/terms). Your use of the platform is also governed by the Freesolo [Privacy Policy](https://freesolo.co/privacy), which describes how your data is collected, stored, and used.
+
+If you have questions about data handling, retention, or compliance requirements specific to your organization, reach out to [founders@freesolo.co](mailto:founders@freesolo.co).

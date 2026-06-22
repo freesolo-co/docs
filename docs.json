@@ -1,0 +1,83 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "name": "Freesolo",
+  "theme": "luma",
+  "colors": {
+    "primary": "#040c1c",
+    "dark": "#040c1c"
+  },
+  "favicon": "https://media.brand.dev/39ff8381-8055-4e59-94fb-3d5d8726d715.png",
+  "logo": {
+    "light": "https://media.brand.dev/33767829-2cee-4ed5-b23b-ea7134e5f163.svg",
+    "dark": "https://media.brand.dev/33767829-2cee-4ed5-b23b-ea7134e5f163.svg"
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "Contact",
+        "href": "https://freesolo.co/contact"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Get Started",
+      "href": "https://freesolo.co/sign-up"
+    }
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "get-started/account-setup"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/overview",
+              "concepts/instrument",
+              "concepts/evaluate",
+              "concepts/improve"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/define-your-feature",
+              "guides/build-eval-suite",
+              "guides/training-pipeline",
+              "guides/production-deployment",
+              "guides/monitoring"
+            ]
+          },
+          {
+            "group": "Security & Compliance",
+            "pages": [
+              "security/overview",
+              "security/data-privacy",
+              "security/enterprise"
+            ]
+          },
+          {
+            "group": "Resources",
+            "pages": [
+              "resources/faq",
+              "resources/support"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "footer": {
+    "socials": {
+      "x": "https://x.com/freesolo"
+    }
+  }
+}

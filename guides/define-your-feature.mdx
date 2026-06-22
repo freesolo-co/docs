@@ -1,0 +1,112 @@
+---
+title: "Define Your AI Feature's Scope and Success Criteria"
+sidebarTitle: "Define Feature"
+description: "Learn how to precisely scope an AI feature, set measurable success criteria, and identify failure modes so Freesolo can build and improve it faster."
+---
+
+Before Freesolo can instrument, evaluate, or train anything, you need a clear picture of what the feature is supposed to do, where it lives in your product, and what "working correctly" actually means. The sharper your definition, the faster the entire Instrument → Evaluate → Improve cycle moves.
+
+<Note>
+  The more precisely you define the feature upfront, the faster Freesolo can build, evaluate, and improve it. Vague scope leads to vague evals — and vague evals lead to models that are hard to improve systematically.
+</Note>
+
+<Steps>
+  <Step title="Name and describe the feature">
+    Give your feature a short, unambiguous name that reflects the product action it powers — for example, **"Search Query Generation"** or **"Support Ticket Triage"**. Then write two to three sentences describing what it does in plain language.
+
+    A good description answers three questions:
+
+    - What does the model receive as input?
+    - What does it produce as output?
+    - What downstream action does that output enable?
+
+    <Tip>
+      Write the description as if you were explaining it to a new engineer on your team, not to an AI researcher. Concrete product language ("it turns a user's natural-language question into a structured Elasticsearch query") is more useful than abstract capability language ("it performs query reformulation").
+    </Tip>
+
+    **Example:**
+
+    > **Feature name:** Search Query Generation
+    >
+    > **Description:** Given a user's natural-language search input, this feature produces a structured JSON query that can be executed directly against our product catalog index. It runs on every search event and its output feeds the results page.
+  </Step>
+
+  <Step title="Identify the workflow context">
+    Map the feature to a specific moment in your user journey. Understanding context helps Freesolo instrument the right data and design evals that reflect real usage rather than artificial benchmarks.
+
+    Document the following:
+
+    - **Where in the journey does it run?** (e.g., triggered on search keypress, invoked during checkout, called when a support ticket is submitted)
+    - **What system calls does it make?** (e.g., queries a database, calls a third-party API, reads from a vector store)
+    - **What does it receive as inputs?** List every field: user query text, session context, user role, prior conversation turns, retrieved documents, etc.
+    - **What does it hand off to next?** Describe the downstream consumer of the output.
+
+    <Info>
+      Freesolo's instrumentation layer captures real workflow data at runtime — but only if you've told it where in the workflow to look. Precise context mapping ensures the right signals get logged from day one.
+    </Info>
+  </Step>
+
+  <Step title="Define constraints">
+    Every production AI feature operates under real-world constraints. Define yours explicitly so they can be enforced during evaluation and training.
+
+    | Constraint | What to specify |
+    |---|---|
+    | **Latency budget** | Maximum acceptable end-to-end response time (e.g., p95 ≤ 800 ms) |
+    | **Cost per call** | Maximum acceptable model inference cost per invocation (e.g., ≤ $0.002) |
+    | **Output format** | Required schema, type, or structure (e.g., valid JSON matching a specific schema) |
+    | **Token limits** | Maximum input and output token counts |
+    | **Fallback behavior** | What should happen if the model fails or times out? |
+
+    Hard constraints become **hard checks** in your eval suite — a response that violates them is always a failure, regardless of how good the content is.
+  </Step>
+
+  <Step title="Set success criteria">
+    Success criteria define what a correct, high-quality output looks like. You need to be able to answer two questions clearly:
+
+    **What does "good" look like?**
+
+    Describe the properties of an ideal output. Think about correctness, completeness, relevance, tone, and any domain-specific requirements. Where possible, write example inputs paired with example ideal outputs — these become your golden dataset.
+
+    **What does "broken" look like?**
+
+    Describe outputs that would be unacceptable, even if they don't crash the system. Examples: a query that returns zero results when results clearly exist, a response that includes hallucinated product names, a summary that omits required legal disclaimers.
+
+    <Tip>
+      Frame success criteria in terms of user outcomes, not model behavior. "The user gets a non-empty, relevant result set" is a better criterion than "the model generates a valid query" — the latter can pass even when the user experience fails.
+    </Tip>
+  </Step>
+
+  <Step title="Identify failure modes">
+    Systematically enumerate the edge cases and conditions that could break the user experience. Failure modes that you identify now become regression tests in your eval suite and inform the reward signals used during RL training.
+
+    Think across these categories:
+
+    - **Input edge cases** — empty inputs, very long inputs, inputs in unexpected languages, inputs with special characters or malformed structure
+    - **Domain edge cases** — queries about products that don't exist, ambiguous terminology with multiple valid interpretations, requests that are out of scope
+    - **Systemic failures** — the model outputs invalid JSON, the output exceeds token limits, the call times out, a downstream API is unavailable
+    - **Regression risks** — known past failures that were fixed and must not reappear
+
+    <Warning>
+      Don't skip this step. Failure modes that aren't documented before training are likely to resurface after deployment. Capturing them now means they get baked into evals and reward signals from the start.
+    </Warning>
+
+    For each failure mode, note:
+    1. What triggers it
+    2. What the incorrect output looks like
+    3. What the correct output should be
+    4. How severe the impact is on the user experience
+  </Step>
+</Steps>
+
+---
+
+Once you've completed all five steps, share your feature definition with the Freesolo team. They'll review it, ask clarifying questions, and use it to configure instrumentation and kick off your first eval suite build.
+
+<CardGroup cols={2}>
+  <Card title="Build Your Eval Suite" icon="flask" href="/guides/build-eval-suite">
+    Turn your feature definition into a set of inputs, checks, and scoring functions.
+  </Card>
+  <Card title="Talk to the Team" icon="calendar" href="https://cal.com/freesolo/chat">
+    Book a session with Freesolo's engineers to review your feature scope.
+  </Card>
+</CardGroup>

@@ -1,0 +1,82 @@
+{
+  "projectType": "saas",
+  "projectName": "Freesolo",
+  "projectDescription": "Freesolo helps enterprise teams build, evaluate, train, and deploy product-native AI models and features that perform reliably in production.",
+  "theme": "luma",
+  "primaryColor": "#040c1c",
+  "lightColor": null,
+  "darkColor": "#040c1c",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "get-started/account-setup"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/overview",
+              "concepts/instrument",
+              "concepts/evaluate",
+              "concepts/improve"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/define-your-feature",
+              "guides/build-eval-suite",
+              "guides/training-pipeline",
+              "guides/production-deployment",
+              "guides/monitoring"
+            ]
+          },
+          {
+            "group": "Security & Compliance",
+            "pages": [
+              "security/overview",
+              "security/data-privacy",
+              "security/enterprise"
+            ]
+          },
+          {
+            "group": "Resources",
+            "pages": [
+              "resources/faq",
+              "resources/support"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Product-native AI model building for enterprise workflows",
+    "Instrumentation: capture real feature behavior and user context",
+    "Evaluation framework: measure quality against latency, cost, reliability, and output quality",
+    "Reinforcement learning and supervised fine-tuning pipelines",
+    "Automated prompt optimization (DSPy-style APO)",
+    "Continuous production improvement with live feedback loops",
+    "ISO 27001, SOC 2 Type I, and SOC 2 Type II compliance",
+    "US-based infrastructure with high availability SLAs",
+    "24/7 direct engineering support",
+    "Google and GitHub SSO with email/password authentication"
+  ],
+  "publicApiSurface": [
+    "Account authentication (Google SSO, GitHub SSO, email/password)",
+    "Project configuration (model settings, eval definitions, deployment settings)",
+    "Dataset curation and upload",
+    "Eval suite design and execution",
+    "Model training (SFT, RL, fine-tuning)",
+    "Model deployment and monitoring",
+    "API key management",
+    "Workspace and team permissions"
+  ]
+}

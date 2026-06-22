@@ -1,0 +1,165 @@
+---
+title: "Build an Evaluation Suite to Measure AI Feature Quality"
+sidebarTitle: "Build Evals"
+description: "Construct a rigorous eval suite with real data, hard checks, and LLM-as-judge scoring to measure and track your AI feature's quality over time."
+---
+
+An eval suite is the foundation of everything Freesolo does to improve your AI feature. Without a reliable way to measure quality, you can't know whether a new model version is better or worse than the last — and you certainly can't use that signal to drive training. Building a good eval suite is worth investing in early.
+
+<Tip>
+  Start with 20–50 golden examples drawn from real usage before expanding to hundreds. A small, high-quality eval set is far more useful than a large one full of ambiguous or synthetic cases.
+</Tip>
+
+## What an eval suite is
+
+An eval suite is a structured collection of three things:
+
+1. **Inputs** — real or representative prompts, queries, or tasks your feature receives in production
+2. **Expected behaviors** — what a correct, acceptable output looks like for each input (not necessarily a single right answer, but a defined set of properties it must satisfy)
+3. **Scoring functions** — automated checks and judges that measure how well a given output meets the expected behaviors
+
+Together, these let Freesolo score any model version against a consistent standard, track improvement over training iterations, and catch regressions before they reach production.
+
+---
+
+## Collecting real data
+
+The single most important rule for eval data: **use actual user queries, not synthetic ones.**
+
+Synthetic data tends to be cleaner, more well-formed, and more "reasonable" than what real users send. Models trained or evaluated on synthetic data often fail in surprising ways when they encounter the messy, ambiguous, or edge-case inputs that real users produce.
+
+How to collect real data:
+
+- Export query logs from your existing system (search terms, support messages, form inputs — whatever your feature receives)
+- Identify a time window that's representative of typical usage, not a promotional spike or an outage period
+- Strip any PII in accordance with your data handling policies before sharing with Freesolo
+- Label a subset with correct outputs or outcome signals (did the user click a result? did the ticket get resolved?)
+
+<Note>
+  Freesolo's team can help you curate and label your dataset. If you're not sure which queries to include or how to define correct outputs, reach out at [founders@freesolo.co](mailto:founders@freesolo.co) or [book a session](https://cal.com/freesolo/chat).
+</Note>
+
+---
+
+## Clustering queries to find representative samples
+
+Once you have a raw pool of queries, you don't want to evaluate against all of them — you want a set that covers the distribution of real usage without being redundant.
+
+Freesolo uses semantic embedding and centroid selection to cluster your query pool and surface the most representative examples:
+
+1. Each query is embedded using a dense retrieval model
+2. Queries are grouped into semantic clusters (e.g., product lookup queries, comparison queries, navigational queries)
+3. The centroid of each cluster — the query most representative of that group — is selected for the eval set
+4. Outliers and rare-but-important edge cases are added separately
+
+This process gives you broad coverage without requiring you to manually review thousands of queries.
+
+---
+
+## Defining hard checks
+
+Hard checks are pass/fail tests that enforce your feature's constraints. A response that fails a hard check is always a failure, regardless of content quality.
+
+<Tabs>
+  <Tab title="Execution checks">
+    Does the output actually work when used downstream?
+
+    - Does the generated query execute without errors?
+    - Does the API call succeed?
+    - Does the output parse correctly?
+
+    These checks run your feature's output through the downstream system and verify it doesn't error out.
+  </Tab>
+  <Tab title="Schema checks">
+    Does the output conform to the required format?
+
+    - Is the output valid JSON?
+    - Does it match the required schema (correct fields, correct types)?
+    - Are required fields present and non-null?
+
+    Schema checks catch format failures that would break downstream consumers silently.
+  </Tab>
+  <Tab title="Result-set checks">
+    For features that retrieve or filter data, does the output produce a reasonable result?
+
+    - Does the query return at least one result when results clearly exist?
+    - Does the result set stay within a sensible size range (not zero, not thousands)?
+    - Are the results topically relevant to the input?
+
+    Result-set checks catch cases where the output is technically valid but practically useless.
+  </Tab>
+</Tabs>
+
+---
+
+## Defining quality checks
+
+Beyond hard checks, you need scoring functions that measure the quality of outputs that technically pass — because "doesn't crash" and "actually good" are very different bars.
+
+**LLM-as-judge scoring**
+
+Freesolo uses a judge model to score outputs on dimensions you define. You provide the rubric; the judge scores each output against it. Common rubric dimensions include:
+
+- Relevance — does the output address what the user actually asked?
+- Completeness — does it include everything it should?
+- Accuracy — is the factual content correct?
+- Conciseness — is it appropriately brief, without dropping important information?
+- Format adherence — does it match the expected structure and tone?
+
+Each dimension is scored on a defined scale (e.g., 1–5), and the judge provides a brief rationale alongside each score. This lets you audit the scoring and catch cases where the judge is miscalibrated.
+
+**Human annotation for ambiguous cases**
+
+For inputs where the "right" answer is genuinely ambiguous, human annotation beats automated scoring. Flag these cases during dataset curation and route them for manual review. Annotator decisions become ground truth labels that override or supplement LLM-judge scores.
+
+<Info>
+  Freesolo's team can coordinate human annotation for ambiguous cases. This is particularly useful when your feature involves domain-specific judgment that general-purpose judge models aren't well-calibrated for.
+</Info>
+
+---
+
+## Keeping failed prompts as regression tests
+
+Every time your feature produces a bad output in production — a user complaint, a caught bug, a monitoring alert — that input should be added to your eval suite as a regression test.
+
+Regression tests serve two purposes:
+
+1. They verify that a fix actually resolves the problem
+2. They ensure the problem doesn't reappear in a future model version
+
+Label each regression test with:
+- The date it was added
+- What the incorrect output was
+- What the correct output looks like
+- What caused the failure (if known)
+
+Over time, your regression suite becomes a detailed record of every failure mode your feature has ever exhibited — and a strong safety net for future releases.
+
+---
+
+## Tracking progression across training stages
+
+Your eval suite isn't just for validating a single model version — it's for tracking improvement across the full training pipeline. Freesolo measures your feature against the same eval suite at each stage:
+
+<Steps>
+  <Step title="SFT baseline">
+    After supervised fine-tuning, the eval suite establishes a baseline score. This is the starting point from which RL and APO improvements are measured.
+  </Step>
+  <Step title="RL improvement">
+    After reinforcement learning, scores on hard checks and quality dimensions should improve. The eval suite quantifies exactly how much and flags any regressions.
+  </Step>
+  <Step title="APO refinement">
+    After prompt optimization, the eval suite scores the final system prompt configuration. You see a before/after comparison across every metric before the model goes to production.
+  </Step>
+</Steps>
+
+---
+
+<CardGroup cols={2}>
+  <Card title="Run the Training Pipeline" icon="microchip" href="/guides/training-pipeline">
+    Submit your eval suite and golden dataset to kick off SFT, RL, and APO training.
+  </Card>
+  <Card title="Define Your Feature" icon="pencil" href="/guides/define-your-feature">
+    Go back to sharpen your feature scope and success criteria.
+  </Card>
+</CardGroup>

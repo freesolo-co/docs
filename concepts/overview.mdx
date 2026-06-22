@@ -1,0 +1,58 @@
+---
+title: "The Freesolo Engine: How Production AI Gets Built Fast"
+sidebarTitle: "Overview"
+description: "The Freesolo Engine is a three-phase flywheel — Instrument, Evaluate, Improve — that turns real product behavior into continuously better AI features."
+---
+
+Most enterprise AI projects stall not because the underlying models are weak, but because generic model capability was never designed to meet the specific, measurable success criteria of your product. A frontier model that scores well on public benchmarks can still fail your users when it encounters your data schema, your edge cases, and your definition of a useful result. The Freesolo Engine exists to close that gap — systematically, repeatably, and without starting from scratch every time you ship a new AI feature.
+
+The Engine runs as a flywheel. You begin by **instrumenting** your feature to capture exactly how the model behaves in context — real inputs, real outputs, real failures. That behavioral data feeds **evaluation**, where Freesolo scores your model against the product's actual success criteria: latency, cost, reliability, output quality, and user usefulness. Evaluation results then drive **improvement**, where Freesolo applies Supervised Fine-Tuning, Reinforcement Learning, and Automatic Prompt Optimization to push the model measurably forward. Better models go back into production, generate new behavioral data, and the cycle accelerates.
+
+The key insight is compounding. Each phase produces artifacts — labeled traces, evaluation sets, fine-tuned adapters, optimized prompts — that make every subsequent improvement cycle faster and cheaper. What starts as deployment work for one feature becomes a reusable system that raises the floor for every AI feature you build after it.
+
+## The Three Phases
+
+<CardGroup cols={3}>
+  <Card
+    title="Instrument"
+    icon="radar"
+    href="/concepts/instrument"
+  >
+    Capture real feature behavior in context — prompts, outputs, latency traces, and failure modes — so every downstream decision is grounded in production reality.
+  </Card>
+  <Card
+    title="Evaluate"
+    icon="chart-bar"
+    href="/concepts/evaluate"
+  >
+    Measure model quality against your product's actual success criteria across five dimensions, using hard checks and LLM-as-judge scoring that scales with your data.
+  </Card>
+  <Card
+    title="Improve"
+    icon="arrow-trend-up"
+    href="/concepts/improve"
+  >
+    Drive continuous gains through SFT cold-starts, RL reward optimization, and Automatic Prompt Optimization — compounding improvements across every deployment.
+  </Card>
+</CardGroup>
+
+## Why Generic Capability Isn't Enough
+
+<Info>
+Public benchmark scores measure what a model can do in the abstract. Your users experience what a model does with your inputs, your context window, your downstream systems, and your tolerance for latency and cost. Those are different things.
+</Info>
+
+When you deploy a frontier model directly into a product feature, you inherit its training distribution — which was never optimized for your use case. You also inherit its cost and latency profile, which are priced for general-purpose inference, not for features that need to run thousands of times per hour at a margin-preserving cost.
+
+The Freesolo Engine reframes the problem. Instead of asking "which model scores best on the leaderboard?", it asks "what does success look like for this specific feature, and how do we measure and improve against that definition?" That shift — from abstract capability to product-specific performance — is what makes deployment work translate into durable, compounding gains.
+
+## From One-Time Deployment to Reusable System
+
+Each time you run the Freesolo Engine on a feature, you produce:
+
+- **Instrumentation traces** that document exactly how the model behaves in your environment
+- **Evaluation sets** built from real, clustered customer queries — representative, not cherry-picked
+- **Fine-tuned adapters** (LoRA) that encode your product's requirements efficiently without full retraining
+- **Optimized prompts** scored against the same evaluation signals used during training
+
+These artifacts don't expire when the feature ships. They become the foundation for the next feature you build, the next model you evaluate, and the next improvement cycle you run. Over time, your team accumulates a proprietary layer of product-specific AI intelligence that no off-the-shelf model can replicate — and that gets measurably better with every iteration.

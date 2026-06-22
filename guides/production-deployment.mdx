@@ -1,0 +1,171 @@
+---
+title: "Deploy Your Trained AI Feature to Production Traffic"
+sidebarTitle: "Deployment"
+description: "Review eval results, configure your endpoint, integrate with your product, and roll out your trained AI feature to production traffic with confidence."
+---
+
+After you've reviewed and approved your training results, the next step is getting your feature in front of real users. Freesolo's deployment process is designed to give you control at every stage — you configure the endpoint, you set the rollout pace, and you decide when to go to full production traffic.
+
+<Note>
+  Freesolo provides US-based infrastructure with high availability SLAs and high rate limits. You don't need to provision or manage any serving infrastructure — the platform handles model hosting, load balancing, and scaling automatically.
+</Note>
+
+<Steps>
+  <Step title="Review pre-deployment evaluation results">
+    Before touching any deployment settings, go through the training results report one more time with deployment intent. You're looking for three things:
+
+    **Quality score vs. your success criteria**
+    Does the post-training quality score meet the threshold you defined when scoping your feature? If you set a minimum LLM-judge score of 4.0/5.0, confirm the trained model hits it. Don't deploy to production against a standard you'd reject in an eval review.
+
+    **Latency vs. your latency budget**
+    Compare the p50, p95, and p99 latency numbers from the training report against the latency budget you defined. Latency in production may differ slightly from training eval latency, but the training report is your best pre-deployment signal.
+
+    **Cost per call vs. your cost constraint**
+    Confirm the average cost per call is within budget. If it's close to the limit, note it — a traffic spike could push you over, and you'll want an alert configured in the next step.
+
+    <Warning>
+      If any metric doesn't meet your defined success criteria, don't proceed. Flag the result to Freesolo's team and request a diagnosis before deployment. Shipping a model that fails your own criteria creates a worse user experience than staying on the existing version.
+    </Warning>
+  </Step>
+
+  <Step title="Configure deployment settings in the platform">
+    Navigate to **Deployments → New Deployment** in the platform UI and configure the following:
+
+    **Model endpoint**
+    Select the trained model version you want to deploy. The platform displays the training run ID, training date, and eval scores for each available version so you can confirm you're deploying the right one.
+
+    **Rate limits**
+    Set per-second and per-minute request limits appropriate for your expected traffic. Freesolo's infrastructure supports high request rates — configure limits conservatively at first and adjust upward once you've validated behavior in production.
+
+    **Fallback behavior**
+    Define what happens if the model endpoint is unavailable or returns an error:
+    - Fall back to a previous model version
+    - Fall back to a deterministic rule-based response
+    - Return an explicit error to the caller
+
+    <Tip>
+      Always configure a fallback. Even on highly available infrastructure, network issues and transient errors happen. A graceful fallback prevents a model hiccup from becoming a user-visible failure.
+    </Tip>
+
+    **Output caching** *(optional)*
+    For features with high query repetition (e.g., a search feature where many users send the same popular query), enabling output caching can significantly reduce latency and cost. Configure a TTL appropriate for how frequently your data changes.
+  </Step>
+
+  <Step title="Set up your integration">
+    Once your endpoint is configured, you're ready to connect it to your product. Freesolo exposes a REST API — you call it the same way you'd call any model inference endpoint.
+
+    <Note>
+      The code examples below use illustrative endpoint paths and SDK class names. Freesolo provides your exact endpoint URL, API key, and SDK package details after deployment setup is complete. Reach out at [founders@freesolo.co](mailto:founders@freesolo.co) if you have questions before then.
+    </Note>
+
+    <Tabs>
+      <Tab title="REST API">
+        ```bash
+        curl -X POST https://api.freesolo.co/v1/features/{feature_id}/infer \
+          -H "Authorization: Bearer YOUR_API_KEY" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "input": "running shoes under $100",
+            "session_id": "usr_abc123",
+            "context": {}
+          }'
+        ```
+
+        The response includes the model output, a trace ID for logging, and metadata (latency, token count, cost):
+
+        ```json
+        {
+          "output": { "query": { "bool": { "must": [...] } } },
+          "trace_id": "trc_xyz789",
+          "metadata": {
+            "latency_ms": 312,
+            "input_tokens": 24,
+            "output_tokens": 87,
+            "cost_usd": 0.00018
+          }
+        }
+        ```
+      </Tab>
+      <Tab title="Python SDK">
+        ```python
+        from freesolo import FreeSoloClient
+
+        client = FreeSoloClient(api_key="YOUR_API_KEY")
+
+        result = client.features.infer(
+            feature_id="feat_search_query_gen",
+            input="running shoes under $100",
+            session_id="usr_abc123",
+        )
+
+        print(result.output)
+        print(result.metadata.latency_ms)
+        ```
+      </Tab>
+      <Tab title="Node.js SDK">
+        ```typescript
+        import { FreeSoloClient } from "@freesolo/sdk";
+
+        const client = new FreeSoloClient({ apiKey: "YOUR_API_KEY" });
+
+        const result = await client.features.infer({
+          featureId: "feat_search_query_gen",
+          input: "running shoes under $100",
+          sessionId: "usr_abc123",
+        });
+
+        console.log(result.output);
+        console.log(result.metadata.latencyMs);
+        ```
+      </Tab>
+    </Tabs>
+
+    Pass the `trace_id` from each response through to your application logs. When you investigate a production issue, the trace ID lets Freesolo's team pull the exact input, output, and model state for that specific call.
+  </Step>
+
+  <Step title="Stage rollout">
+    Don't send 100% of traffic to a new model version on day one. A staged rollout lets you validate production behavior on real traffic before committing fully.
+
+    Freesolo's platform supports traffic splitting at the deployment level. A recommended progression:
+
+    1. **5% traffic** — route a small slice to the new model for 24–48 hours; monitor all key metrics closely
+    2. **25% traffic** — if metrics look healthy, expand; watch for latency or quality patterns that didn't appear at 5%
+    3. **50% traffic** — run for 48–72 hours; compare quality and cost metrics against the current baseline at scale
+    4. **100% traffic** — full production cutover once you're confident
+
+    At each stage, check:
+    - Execution success rate hasn't dropped
+    - Latency p95/p99 is within budget
+    - Cost per call is tracking as expected
+    - No new error patterns are appearing in trace logs
+
+    <Info>
+      If you detect a regression at any stage, the platform lets you immediately revert to the previous model version with a single click. Your prior deployment stays warm until you explicitly retire it.
+    </Info>
+  </Step>
+
+  <Step title="Go live">
+    Once your staged rollout reaches 100% and metrics have been stable for at least 48–72 hours, your feature is fully live in production.
+
+    At this point:
+
+    - Set up your monitoring dashboards and alert thresholds (see [Monitor Your AI Feature](/guides/monitoring))
+    - Retire the previous model version if you're confident you won't need to roll back
+    - Share any early qualitative feedback from users with Freesolo's team — real usage signals that emerge in the first days of a new model version are valuable input for the next training cycle
+
+    <Tip>
+      Book a deployment review with Freesolo's engineering team before your first production rollout — especially if this is your first feature deployment. A 30-minute call to walk through your configuration can catch issues that would otherwise surface in production. [Schedule here.](https://cal.com/freesolo/chat)
+    </Tip>
+  </Step>
+</Steps>
+
+---
+
+<CardGroup cols={2}>
+  <Card title="Monitor in Production" icon="chart-line" href="/guides/monitoring">
+    Set up dashboards, alerts, and trace log analysis to track your feature after launch.
+  </Card>
+  <Card title="Run the Training Pipeline" icon="microchip" href="/guides/training-pipeline">
+    Review how training works before your next improvement cycle.
+  </Card>
+</CardGroup>
