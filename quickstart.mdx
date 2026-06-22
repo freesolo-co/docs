@@ -14,20 +14,21 @@ of your time plus the training run itself.
 
 ## 1. Install the CLI
 
-The CLI is published to PyPI as `flash` and installs a single command, `flash`.
+The CLI is published to PyPI as **`freesolo-flash`** (the bare `flash` name is
+taken by another project). It installs a single command, `flash`.
 
 <CodeGroup>
 
 ```bash uv
-uv tool install flash
+uv tool install freesolo-flash
 ```
 
 ```bash pipx
-pipx install flash
+pipx install freesolo-flash
 ```
 
 ```bash pip
-pip install flash
+pip install freesolo-flash
 ```
 
 </CodeGroup>
@@ -96,8 +97,8 @@ This prints an environment id of the form `owner/name`.
 
 ## 5. Configure your run
 
-Open `configs/verifiers_grpo.toml` and set two things — the environment id from
-the previous step, and an HF dataset repo to stream adapters/checkpoints into:
+Open `configs/verifiers_grpo.toml` and set the one thing that's yours — the
+environment id from the previous step:
 
 ```toml configs/verifiers_grpo.toml
 model = "Qwen/Qwen3.5-4B"
@@ -107,14 +108,17 @@ algorithm = "grpo"
 id = "your-name/starter-env"        # from `flash env push`
 
 [train]
-hf_repo = "your-org/your-runs"      # HF dataset repo for adapters/checkpoints
 steps = 150
 lora_rank = 32
 seeds = [0]
-
-[gpu]
-type = "RTX 5090"                   # or omit to auto-pick the cheapest fit
 ```
+
+<Note>
+  The only fields you must set are `model` and `[environment] id`. **The GPU and
+  the run's artifact storage are fully managed** — the allocator picks the
+  cheapest GPU class that fits across providers, and each run gets its own private
+  HF repo automatically. You don't pick a GPU or supply a Hugging Face repo.
+</Note>
 
 Validate it locally first — `--dry-run` parses and checks the config with no
 credentials, server, or GPU:
@@ -123,14 +127,23 @@ credentials, server, or GPU:
 flash train configs/verifiers_grpo.toml --dry-run
 ```
 
+See what the run will cost before committing — `--cost` prints the pre-flight
+USD estimate and exits without submitting:
+
+```bash
+flash train configs/verifiers_grpo.toml --cost
+```
+
 ## 6. Train
 
 ```bash
 flash train configs/verifiers_grpo.toml
 ```
 
-Flash submits the run and follows the logs live. Press `Ctrl-C` to detach — the
-run keeps going on the server, and you can re-attach any time:
+Submitting charges the pre-flight estimate (the `--cost` number) to your org's
+balance up front — if the balance can't cover it, the run is rejected and never
+starts. Flash then follows the logs live. Press `Ctrl-C` to detach — the run
+keeps going on the server, and you can re-attach any time:
 
 ```bash
 flash ps                  # list your runs and their state/cost
@@ -142,8 +155,9 @@ The run reaches `done` when training finishes.
 
 ## 7. Deploy
 
-Serve the trained adapter. The default mode is **scale-to-zero** — it costs
-nothing while idle and cold-starts on the first request:
+Serve the trained adapter on Freesolo's managed serving service. It
+**scales to zero when idle** (no charge for idle time) and cold-starts on the
+first request; you're billed per token for the requests it serves:
 
 ```bash
 flash deploy <run-id>

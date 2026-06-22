@@ -4,9 +4,9 @@ description: "Every field in a Flash training config (TOML)."
 ---
 
 A run is described by a TOML config passed to `flash train`. The only required
-fields are `model`, `environment.id`, and `train.hf_repo`. `algorithm`
-defaults to `grpo`, and everything else has a sensible default. Validate any
-config locally with `flash train config.toml --dry-run`.
+fields are `model` and `environment.id`. `algorithm` defaults to `grpo`, and
+everything else has a sensible default. Validate any config locally with
+`flash train config.toml --dry-run`.
 
 ```toml
 model = "Qwen/Qwen3.5-4B"
@@ -16,14 +16,19 @@ algorithm = "grpo"
 id = "owner/name"
 
 [train]
-hf_repo = "your-org/your-runs"
 steps = 150
 lora_rank = 32
 seeds = [0]
-
-[gpu]
-type = "RTX 5090"
 ```
+
+<Note>
+  **The GPU and the run's artifact storage are fully managed** — there is no
+  `[gpu]` pin to set and no `hf_repo` to supply. The allocator picks the cheapest
+  validated GPU class that fits across providers, and each run gets its own
+  private Hugging Face repo provisioned server-side. Unknown config sections or
+  `[train]` keys are rejected at parse time, so a typo fails fast rather than
+  silently training against defaults.
+</Note>
 
 ## Top level
 
@@ -38,7 +43,6 @@ type = "RTX 5090"
 | Key | Type | Default | Description |
 | --- | --- | --- | --- |
 | `id` | string | — (required) | Published `verifiers` / Prime Hub env slug, `owner/name`. |
-| `eval_env_id` | string | — | Optional separate environment to evaluate against. |
 | `params` | table | `{}` | Keyword arguments passed to the env's `load_environment(**kwargs)`. |
 
 ```toml
@@ -53,9 +57,8 @@ difficulty = "hard"
 
 | Key | Type | Default | Description |
 | --- | --- | --- | --- |
-| `hf_repo` | string | — (required) | HF **dataset** repo this run streams adapters/checkpoints into. |
-| `steps` | int | — | Number of training steps. |
-| `epochs` | int | — | Number of epochs (alternative to `steps`). |
+| `steps` | int | — | Number of training steps (GRPO). |
+| `epochs` | int | — | Number of epochs (SFT; alternative to `steps`). |
 | `lora_rank` | int | `32` | LoRA rank. |
 | `lora_alpha` | int | `64` | LoRA alpha. |
 | `seeds` | list[int] | `[0]` | Seeds to run (one adapter per seed). |
@@ -63,7 +66,15 @@ difficulty = "hard"
 | `batch_size` | int | recipe default | Training batch size. |
 | `max_length` | int | recipe default | Max sequence length. |
 | `save_every` | int | recipe default | Checkpoint cadence (steps). |
+| `max_steps` | int | — | SFT: cap on optimizer steps (`0` = no cap). |
+| `max_examples` | int | — | SFT: truncate the training dataset to N examples (`0` = no cap). |
 | `init_from_adapter` | string | — | Warm-start from an existing adapter. |
+
+<Note>
+  `hf_repo` is **not** a user field. Each run's adapters and checkpoints stream
+  into a private Hugging Face repo that the control plane provisions automatically
+  — any `hf_repo` you set is ignored.
+</Note>
 
 ### GRPO-specific
 
@@ -77,28 +88,14 @@ difficulty = "hard"
 | `thinking_length_penalty_coef` | float | Penalty on reasoning length. |
 | `stop_sequences` | list[string] | Stop sequences for generation. |
 
-### Evaluation
+## GPU & infrastructure (managed)
 
-| Key | Type | Description |
-| --- | --- | --- |
-| `eval_every_steps` | int | Run an eval every N steps. |
-| `eval_examples` | int | Number of examples per eval. |
-
-## `[gpu]`
-
-| Key | Type | Default | Description |
-| --- | --- | --- | --- |
-| `type` | string | `cheapest` | GPU class to pin (e.g. `RTX 5090`); omit or set `cheapest` to auto-pick the cheapest validated fit. See `flash gpus`. |
-| `provider` | string | `auto` | `auto`, `runpod`, or `vast`. |
-| `allow_unvalidated` | bool | `false` | Allow GPU classes not yet validated for the model. |
-| `disk_gb` | int | `60` | Disk to provision. |
-| `max_wall_seconds` | int | `86400` | Hard wall-clock cap for the run. |
-| `max_retries` | int | `2` | Bounded auto-retries (resume from last checkpoint). |
-
-<Note>
-  Omit `type` (or set `"cheapest"`) to let the allocator pick the lowest-cost
-  validated class that fits across providers. `provider` pins the substrate.
-</Note>
+GPU selection is **fully automatic** — there is no GPU pin. At submit time the
+allocator always picks the cheapest live-validated GPU class that fits your run
+across providers, and a retry walks to the next-cheapest class if one is
+unavailable. Disk, the wall-clock cap, and the auto-retry budget are platform
+defaults, also chosen for you. A `[gpu]` table in your config is **not honored**;
+to see the classes and live pricing the allocator chooses from, run `flash gpus`.
 
 ## `[wandb]`
 
@@ -110,11 +107,29 @@ W&B API key is configured server-side, not in the config).
 | `project` | string | W&B project name. |
 | `run_name` | string | W&B run name. |
 
+## `[worker_env]`
+
+<Note>
+  Advanced / escape hatch. Most runs never need this.
+</Note>
+
+A table of string-valued environment-variable overrides merged into the GPU
+worker for **this run only** — handy for per-run kernel/optimizer A/B knobs.
+Values must be strings, and secret-bearing key names (anything that looks like a
+token, password, or key) are rejected, since the table is serialized into run
+artifacts.
+
+```toml
+[worker_env]
+SOME_WORKER_FLAG = "1"
+```
+
 ## Overrides & composition
 
-Any value can be set at submit time without editing the file:
+Any value can be set at submit time without editing the file. The override flag
+is `--set` (repeatable, dotted keys):
 
 ```bash
-flash train config.toml -c train.steps=300 -c gpu.type="RTX 4090"
+flash train config.toml --set train.steps=300 --set train.lora_rank=16
 flash train base.toml --config overlay.toml      # deep-merge extra TOML
 ```

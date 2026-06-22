@@ -58,7 +58,6 @@ algorithm = "grpo"
 id = "your-name/your-env"            # a published verifiers / Prime Hub env slug
 
 [train]
-hf_repo = "your-org/your-runs"       # HF dataset repo for adapters + checkpoints
 steps = 150
 lora_rank = 32
 lora_alpha = 64
@@ -66,47 +65,30 @@ seeds = [0]
 # learning_rate = 1e-4
 # batch_size = 8
 # group_size = 8                     # GRPO: completions sampled per prompt
-# eval_every_steps = 50              # periodic eval during training
-
-[gpu]
-type = "RTX 5090"                    # omit to auto-pick the cheapest fit
 
 [wandb]
 # project = "my-project"             # optional Weights & Biases logging
 ```
 
-<Tip>
-  `hf_repo` is where this run streams its LoRA adapters and checkpoints — a
-  per-run Hugging Face **dataset** repo you control. The control plane needs
-  write access to it.
-</Tip>
+<Note>
+  You don't configure a GPU or an artifact repo. **Both are fully managed:** the
+  allocator picks the cheapest validated GPU class that fits across providers, and
+  each run streams its LoRA adapters and checkpoints into its own private Hugging
+  Face repo provisioned for you server-side. The only fields you must set are
+  `model` and `[environment] id`; see the
+  [configuration reference](/reference/configuration) for every option.
+</Note>
 
-## Pick a GPU (or let Flash pick)
+## GPU selection is automatic
 
-See live GPU classes, VRAM, and per-provider hourly pricing:
+You don't pin a GPU. At submit time the allocator always picks the cheapest
+live-validated GPU class that fits your run across providers (and a retry walks
+to the next-cheapest class if one is unavailable). To see the live GPU classes,
+VRAM, and per-provider hourly pricing the allocator chooses from:
 
 ```bash
 flash gpus
 ```
-
-In the config, either pin a class or let the allocator choose the cheapest
-**validated** class that fits your run across providers:
-
-<CodeGroup>
-
-```toml Auto (cheapest fit)
-[gpu]
-# omit `type`, or:
-type = "cheapest"
-```
-
-```toml Pinned
-[gpu]
-type = "RTX 5090"
-provider = "auto"      # or "runpod" / "vast"
-```
-
-</CodeGroup>
 
 ## Validate before you submit
 
@@ -129,13 +111,42 @@ By default `flash train` follows the logs until the run finishes. Useful flags:
 | --- | --- |
 | `--background` | Submit and return immediately instead of following logs |
 | `--dry-run` | Validate locally without submitting |
-| `-c key=value` | Override a config value (repeatable) |
+| `--cost` | Print the pre-flight USD cost estimate and exit (no submit) |
+| `--set key=value` | Override a config value (repeatable) |
 | `--config other.toml` | Deep-merge additional TOML for config composition (repeatable) |
 
 ```bash
 # override values at submit time
-flash train config.toml -c train.steps=300 -c gpu.type="RTX 4090"
+flash train config.toml --set train.steps=300 --set train.lora_rank=16
 ```
+
+## Cost and billing
+
+Every run is **charged the pre-flight estimate up front, at submit time** —
+`flash train` computes the same number that `flash train --cost` prints (GPU
+$/hr × estimated wall-clock) and debits it from your org's prepaid balance before
+the run is accepted. The charge **gates the run**: if the balance can't cover the
+estimate, the submit is rejected and nothing runs. Preview it any time:
+
+```bash
+flash train config.toml --cost
+```
+
+```text
+Run        : Qwen/Qwen3.5-4B  [GRPO, 150 steps]
+GPU        : RTX 5090 on runpod (32 GB; run needs >= 32 GB) @ $0.69/hr
+Setup      : 7.0 min (cold start: boot + deps + download + vLLM init)
+Per step   : 9.50 s
+Train      : 23.8 min
+Wall clock : 0.51 h
+TOTAL      : $0.35
+```
+
+<Note>
+  The estimate is catalog-deterministic and runs locally; for an uncapped SFT run
+  it loads the environment to count its training examples. Once a run starts,
+  `flash cost <run-id>` shows the cost accrued so far.
+</Note>
 
 ## Monitor a run
 
@@ -158,5 +169,6 @@ flash cancel <run-id>     # cancel (best-effort)
 
 ## After training
 
-When a run reaches `done`, its adapter lives in your `hf_repo`. Serve it with
-[`flash deploy`](/guides/deploy-and-chat) and talk to it with `flash chat`.
+When a run reaches `done`, its adapter lives in the run's managed artifact repo.
+Serve it with [`flash deploy`](/guides/deploy-and-chat) and talk to it with
+`flash chat`.
