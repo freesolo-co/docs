@@ -1,0 +1,101 @@
+---
+title: "Supported models"
+description: "The base models Flash can fine-tune, with sizes, reasoning, and GPU needs."
+---
+
+Flash trains a **LoRA adapter** on top of a curated catalog of base models. You
+set the base model with one line in your config, and list the live catalog from
+the CLI:
+
+```bash
+flash models
+```
+
+```toml
+model = "Qwen/Qwen3.5-4B"   # the default if you omit it
+```
+
+`flash models` is always the source of truth. The table below mirrors the
+current catalog.
+
+## Catalog
+
+Every catalog model supports **both SFT and GRPO**, and all are
+reasoning ("thinking") capable.
+
+| Model (`model =`)     | Params | Reasoning | Recommended GPU | Min VRAM               |
+| --------------------- | ------ | --------- | --------------- | ---------------------- |
+| `Qwen/Qwen3.5-0.8B`   | 0.9B   | Hybrid    | RTX 4090        | 12 GB                  |
+| `openbmb/MiniCPM5-1B` | 1.2B   | Hybrid    | RTX 4090        | 12 GB                  |
+| `Qwen/Qwen3.5-2B`     | 2.3B   | Hybrid    | RTX 4090        | 16 GB                  |
+| `Qwen/Qwen3.5-4B`     | 4.7B   | Hybrid    | RTX 5090        | 32 GB                  |
+| `Qwen/Qwen3.5-9B`     | 9.7B   | Hybrid    | A100 PCIe       | 48 GB SFT / 80 GB GRPO |
+
+<Note>
+  **You don't pick the GPU.** "Recommended GPU" and "Min VRAM" describe what the
+  run needs; the allocator picks the cheapest live-validated class that fits
+  across providers. See [`flash gpus`](/reference/cli#discovery) for live
+  classes and pricing, and [GPU
+  selection](/guides/training#gpu-selection-is-automatic).
+</Note>
+
+### Notes per model
+
+- **`Qwen/Qwen3.5-0.8B`**: the smallest Qwen3.5. Cheapest for smoke tests and
+  dev loops on the modern stack.
+- **`openbmb/MiniCPM5-1B`**: an on-device-class small model (131k context) on a
+  standard Llama architecture.
+- **`Qwen/Qwen3.5-2B`**: a small, capable step up when 0.8B underfits.
+- **`Qwen/Qwen3.5-4B`**: the **default**. A current-gen dense 4B and the safe
+  out-of-the-box choice for most tasks.
+- **`Qwen/Qwen3.5-9B`**: the largest catalog model. Trained as a bf16 LoRA; SFT
+  fits a 48 GB card, while GRPO co-locates a rollout engine and needs an
+  80 GB-class GPU.
+
+<Note>
+  The Qwen3.5 entries are **text-only** fine-tunes: the checkpoints are natively
+  multimodal, but Flash trains and serves the language model only.
+</Note>
+
+## Reasoning ("thinking") models
+
+Every catalog model is **hybrid-reasoning**: its chat template honors an
+`enable_thinking` switch, so it can run with or without an explicit reasoning
+step. Turn reasoning on for a run with one line in your config:
+
+```toml
+thinking = true
+```
+
+See the [`thinking` field](/reference/configuration#top-level) in the
+configuration reference.
+
+## Choosing a model
+
+A simple rule of thumb:
+
+<CardGroup cols={2}>
+  <Card title="Start small" icon="feather">
+    Use `Qwen/Qwen3.5-0.8B` or `2B` to validate your environment and rubric
+    cheaply. Get the loop working before you scale.
+  </Card>
+  <Card title="Scale up for quality" icon="arrow-up-right-dots">
+    Move to `Qwen/Qwen3.5-4B` (the default) or `9B` once the task is wired up
+    and you want stronger results. Larger models cost more per run.
+  </Card>
+</CardGroup>
+
+## Models not in the catalog
+
+The catalog is the full set of base models available for managed runs: `model`
+must be one of the ids above (or left unset for the default). If your task needs
+a model that isn't listed, [let us know](https://freesolo.co/contact) so we can
+look at adding it.
+
+<Card
+  title="Pick a model, then train"
+  icon="dumbbell"
+  href="/guides/training#pick-a-base-model"
+>
+  Set `model` in your config and submit a run.
+</Card>

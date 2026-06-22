@@ -48,13 +48,13 @@ def load_environment(**kwargs) -> vf.Environment:
 
 Replace the dataset and rubric with your task:
 
-- **Dataset** — the prompts (and any gold answers) your model trains and is
+- **Dataset**: the prompts (and any gold answers) your model trains and is
   evaluated on.
-- **Rubric** — one or more reward functions. Each returns a score; the weighted
+- **Rubric**: one or more reward functions. Each returns a score; the weighted
   sum is the reward GRPO optimizes (and SFT uses the dataset's target answers).
 
 See the [`verifiers` docs](https://github.com/PrimeIntellect-ai/verifiers) for
-the full API — multi-criteria rubrics, parsers, and more.
+the full API: multi-criteria rubrics, parsers, and more.
 
 ## Publish it
 
@@ -78,7 +78,7 @@ It prints the published id (`owner/name`). Put that in your config's
 ## Use an existing environment
 
 If you already have a published env id (yours or one shared with you), you don't
-need to author anything — just reference it:
+need to author anything, just reference it:
 
 ```toml
 [environment]

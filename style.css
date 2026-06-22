@@ -1,34 +1,14 @@
 /* freesolo docs custom styles. mintlify auto-loads any .css file in the repo. */
 
-/* change 1: render "<freesolo mark> Freesolo Docs" in the navbar.
-   the logo is just the geometric mark; we append the "Freesolo Docs" wordmark
-   as text on the logo's anchor, in the accent serif so it matches the brand. */
-#navbar a:has(.nav-logo) {
-	display: inline-flex;
-	align-items: center;
-}
-
-/* bump the mark up so it matches the larger wordmark. */
+/* change 1: show the full freesolo wordmark (mark + "Freesolo") in the navbar.
+   the logo is set to the wordmark svg in docs.json; size it so it reads well
+   without dominating the bar. */
 #navbar .nav-logo {
 	height: 1.9rem;
 }
 
-#navbar a:has(.nav-logo)::after {
-	content: "Freesolo Docs";
-	margin-left: 0.55rem;
-	font-family: var(--font-arizona);
-	font-weight: 400;
-	font-size: 2.25rem;
-	line-height: 1;
-	color: #05081d;
-}
-
-.dark #navbar a:has(.nav-logo)::after {
-	color: #e5e7eb;
-}
-
 /* Accent serif. NOTE: the previous "ABC Arizona Mix … Unlicensed Trial" webfont
-   (loaded from a third-party onlinewebfonts CDN) was removed — it's an unlicensed
+   (loaded from a third-party onlinewebfonts CDN) was removed; it's an unlicensed
    trial (licensing/compliance risk) and an external availability/privacy dependency
    on every page load. Using a licensed/self-hosted Arizona woff2 in-repo is the
    follow-up; until then fall back to a safe local serif stack. */
@@ -36,8 +16,9 @@
 	--font-arizona: Georgia, "Times New Roman", serif;
 }
 
-/* change 2: use the accent serif for page titles and all content headings,
-   like the rest of the website (anthropic-style serif headers). */
+/* change 2: use the accent serif at default (non-bold) weight for page titles
+   and all content headings, like the rest of the website (anthropic-style
+   serif headers). */
 #page-title,
 .mdx-content h1,
 .mdx-content h2,
@@ -46,6 +27,7 @@
 .mdx-content h5,
 .mdx-content h6 {
 	font-family: var(--font-arizona);
+	font-weight: 400;
 	letter-spacing: -0.01em;
 }
 
@@ -115,7 +97,7 @@
 	color: #6b7280;
 }
 
-/* Copyright line under the footer logo — rendered on ALL viewports (mobile + desktop),
+/* Copyright line under the footer logo, rendered on ALL viewports (mobile + desktop),
    matching the marketing site footer. (Was previously inside the min-width:768px block, so
    it was missing on phones.) */
 #footer div:has(> a > .nav-logo)::after {

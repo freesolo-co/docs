@@ -8,7 +8,7 @@ of your time plus the training run itself.
 
 <Note>
   You need a **Freesolo API key**. Create one in your dashboard at
-  [freesolo.co](https://freesolo.co) — it's how every `flash` command
+  [freesolo.co](https://freesolo.co). It's how every `flash` command
   authenticates. No GPU or provider credentials required.
 </Note>
 
@@ -89,7 +89,7 @@ flash env push environments/starter_env.py
 This prints an environment id of the form `owner/name`.
 
 <Note>
-  Publishing is fully managed — `flash env push` packages your env and uploads it
+  Publishing is fully managed. `flash env push` packages your env and uploads it
   to Freesolo's hosted Environments Hub (published **private**) using just your
   Freesolo API key. **No Prime Intellect account or `prime` CLI needed.** Already
   have a published env id? Skip straight to step 5.
@@ -97,7 +97,7 @@ This prints an environment id of the form `owner/name`.
 
 ## 5. Configure your run
 
-Open `configs/verifiers_grpo.toml` and set the one thing that's yours — the
+Open `configs/verifiers_grpo.toml` and set the one thing that's yours, the
 environment id from the previous step:
 
 ```toml configs/verifiers_grpo.toml
@@ -115,19 +115,19 @@ seeds = [0]
 
 <Note>
   The only fields you must set are `model` and `[environment] id`. **The GPU and
-  the run's artifact storage are fully managed** — the allocator picks the
+  the run's artifact storage are fully managed**: the allocator picks the
   cheapest GPU class that fits across providers, and each run gets its own private
   HF repo automatically. You don't pick a GPU or supply a Hugging Face repo.
 </Note>
 
-Validate it locally first — `--dry-run` parses and checks the config with no
+Validate it locally first. `--dry-run` parses and checks the config with no
 credentials, server, or GPU:
 
 ```bash
 flash train configs/verifiers_grpo.toml --dry-run
 ```
 
-See what the run will cost before committing — `--cost` prints the pre-flight
+See what the run will cost before committing. `--cost` prints the pre-flight
 USD estimate and exits without submitting:
 
 ```bash
@@ -141,8 +141,8 @@ flash train configs/verifiers_grpo.toml
 ```
 
 Submitting charges the pre-flight estimate (the `--cost` number) to your org's
-balance up front — if the balance can't cover it, the run is rejected and never
-starts. Flash then follows the logs live. Press `Ctrl-C` to detach — the run
+balance up front; if the balance can't cover it, the run is rejected and never
+starts. Flash then follows the logs live. Press `Ctrl-C` to detach. The run
 keeps going on the server, and you can re-attach any time:
 
 ```bash

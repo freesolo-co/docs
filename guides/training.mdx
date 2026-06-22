@@ -39,10 +39,10 @@ algorithm = "sft"
 
 </CodeGroup>
 
-- **`grpo`** — reinforcement learning. The model generates completions, your
+- **`grpo`**: reinforcement learning. The model generates completions, your
   environment's rubric scores them, and the policy is updated toward
   higher-reward behavior.
-- **`sft`** — supervised fine-tuning on the prompts/answers in your environment's
+- **`sft`**: supervised fine-tuning on the prompts/answers in your environment's
   dataset.
 
 Both are driven by the same [environment](/guides/environments).
@@ -92,8 +92,8 @@ flash gpus
 
 ## Validate before you submit
 
-`--dry-run` parses and validates the config fully locally — no credentials, no
-server, no GPU — and prints the resolved job spec:
+`--dry-run` parses and validates the config fully locally (no credentials, no
+server, no GPU) and prints the resolved job spec:
 
 ```bash
 flash train config.toml --dry-run
@@ -122,7 +122,7 @@ flash train config.toml --set train.steps=300 --set train.lora_rank=16
 
 ## Cost and billing
 
-Every run is **charged the pre-flight estimate up front, at submit time** —
+Every run is **charged the pre-flight estimate up front, at submit time**.
 `flash train` computes the same number that `flash train --cost` prints (GPU
 $/hr × estimated wall-clock) and debits it from your org's prepaid balance before
 the run is accepted. The charge **gates the run**: if the balance can't cover the
@@ -150,7 +150,7 @@ TOTAL      : $0.35
 
 ## Monitor a run
 
-`Ctrl-C` during `flash train` just detaches you — the run keeps going server-side.
+`Ctrl-C` during `flash train` just detaches you. The run keeps going server-side.
 
 ```bash
 flash ps                  # all your runs: state, cost, GPU, model
