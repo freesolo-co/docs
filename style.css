@@ -16,8 +16,9 @@
 	--font-arizona: Georgia, "Times New Roman", serif;
 }
 
-/* change 2: use the accent serif for page titles and all content headings,
-   like the rest of the website (anthropic-style serif headers). */
+/* change 2: use the accent serif at default (non-bold) weight for page titles
+   and all content headings, like the rest of the website (anthropic-style
+   serif headers). */
 #page-title,
 .mdx-content h1,
 .mdx-content h2,
@@ -26,6 +27,7 @@
 .mdx-content h5,
 .mdx-content h6 {
 	font-family: var(--font-arizona);
+	font-weight: 400;
 	letter-spacing: -0.01em;
 }
 
