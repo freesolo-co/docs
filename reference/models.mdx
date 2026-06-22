@@ -85,20 +85,12 @@ A simple rule of thumb:
   </Card>
 </CardGroup>
 
-## Beyond the catalog (open-model policy)
+## Models not in the catalog
 
-The curated catalog is what's validated and recommended. If you need a model
-that isn't listed, opt into the **open-model policy** to run any Hugging Face
-model that fits the GPU:
-
-```toml
-model = "some-org/some-model"
-model_policy = "allow"
-```
-
-Flash runs a coarse VRAM-fit check (from Hugging Face metadata, no download): it
-blocks provably-impossible fits and warns on tight ones. Open models are **not
-curated or validated** — prefer the catalog when you can.
+The catalog is the full set of base models available for managed runs: `model`
+must be one of the ids above (or left unset for the default). If your task needs
+a model that isn't listed, [let us know](https://freesolo.co/contact) so we can
+look at adding it.
 
 <Card
   title="Pick a model, then train"

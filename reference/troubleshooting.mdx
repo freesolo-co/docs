@@ -101,16 +101,15 @@ full traceback.
 
 <AccordionGroup>
   <Accordion title="unsupported model '...'">
-    The model isn't in the curated catalog. List valid ids with `flash models`,
-    or opt into the open-model policy to run any Hugging Face model that fits the
-    GPU:
+    `model` must be one of the ids in the curated catalog. List the valid ids:
 
-    ```toml
-    model = "some-org/some-model"
-    model_policy = "allow"
+    ```bash
+    flash models
     ```
 
-    See [Supported models](/reference/models).
+    Managed runs train catalog models only. Need one that isn't listed?
+    [Let us know](https://freesolo.co/contact). See
+    [Supported models](/reference/models).
 
   </Accordion>
 
@@ -133,13 +132,6 @@ full traceback.
   [GPU & infrastructure](/reference/configuration#gpu-infrastructure-managed).
 </Accordion>
 
-<Accordion title="thinking = true is rejected">
-  `thinking = true` only works on reasoning-capable models. Every catalog model
-  supports it; a non-thinking model (for example, one brought in via the
-  open-model policy) will reject the flag. Drop `thinking` or pick a
-  reasoning-capable model from [Supported models](/reference/models).
-</Accordion>
-
   <Accordion title="unsupported algorithm">
     `algorithm` must be `grpo` (the default) or `sft`. Fix the value and
     re-validate with `--dry-run`.
@@ -154,12 +146,6 @@ full traceback.
     weights plus a KV cache, so it needs more VRAM than SFT. The 9B model, for
     instance, fits a 48 GB card for SFT but needs an 80 GB-class card for GRPO.
     Pick a smaller model or use `sft`. See [Supported models](/reference/models).
-  </Accordion>
-
-  <Accordion title="open-model: '... does not fit the requested GPU'">
-    Under `model_policy = "allow"`, Flash runs a coarse VRAM-fit check from
-    Hugging Face metadata and blocks fits that are provably impossible. Choose a
-    smaller model or a larger supported GPU class (`flash gpus`).
   </Accordion>
 </AccordionGroup>
 
