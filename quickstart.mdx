@@ -1,106 +1,179 @@
 ---
-title: "Quickstart: Ship Your First AI Feature with Freesolo"
-sidebarTitle: "Quickstart"
-description: "Go from zero to your first evaluated AI feature — create an account, set up your workspace, define a feature, run an eval, and connect with the team."
+title: "Quickstart"
+description: "Install the CLI, log in, and train, deploy, and chat with your first model."
 ---
 
-This guide walks you through everything you need to get your first AI feature off the ground on Freesolo. You'll create an account, set up your workspace, define a feature, and run an evaluation — all through Freesolo's UI. No code required to get started.
+This walks you from zero to a deployed, chatting model. It takes a few minutes
+of your time plus the training run itself.
 
-<Steps>
-  <Step title="Create your account">
-    Navigate to [freesolo.co/sign-up](https://freesolo.co/sign-up) to create your Freesolo account. You have three sign-up options:
+<Note>
+  You need a **Freesolo API key**. Create one in your dashboard at
+  [freesolo.co](https://freesolo.co) — it's how every `flash` command
+  authenticates. No GPU or provider credentials required.
+</Note>
 
-    <Tabs>
-      <Tab title="Google SSO">
-        Click **Continue with Google** and authenticate with your Google account. You'll be redirected back to Freesolo automatically once authentication is complete.
-      </Tab>
-      <Tab title="GitHub SSO">
-        Click **Continue with GitHub** and authorize the Freesolo application in GitHub. You'll be redirected back to Freesolo once the handshake is complete.
-      </Tab>
-      <Tab title="Email & Password">
-        Enter your work email address and create a password of at least 8 characters. You'll receive a verification email — click the link inside to activate your account before signing in.
-      </Tab>
-    </Tabs>
+## 1. Install the CLI
 
-    <Note>
-      Use your work email address when signing up. This makes it easier to associate your account with your organization and streamlines team invites later.
-    </Note>
-  </Step>
+The CLI is published to PyPI as `flash` and installs a single command, `flash`.
 
-  <Step title="Set up your workspace">
-    After signing in for the first time, Freesolo prompts you to set up your workspace.
+<CodeGroup>
 
-    1. **Create an organization** — Enter your company or team name. This becomes the top-level container for all your projects and members.
-    2. **Name your first project** — Projects are how Freesolo organizes AI features, datasets, and evals. Give this project a clear, descriptive name that reflects the product area or use case you're starting with.
-    3. **Invite team members** — Enter the email addresses of your colleagues. Each invitee receives an email with a link to join your organization. You can assign roles (Admin, Member, or Viewer) at invite time and update them later from the team settings panel.
+```bash uv
+uv tool install flash
+```
 
-    <Tip>
-      You can create additional projects at any time from the project switcher in the top navigation bar. One organization can contain multiple projects, so you don't need to create a new account for each use case.
-    </Tip>
-  </Step>
+```bash pipx
+pipx install flash
+```
 
-  <Step title="Define your first AI feature">
-    With your workspace ready, navigate to **Features** in the left sidebar and click **New Feature**.
+```bash pip
+pip install flash
+```
 
-    Fill in the following fields:
+</CodeGroup>
 
-    - **Feature name** — A short, descriptive label for the capability you're building (e.g., "Contract Summarizer" or "Support Ticket Classifier").
-    - **Description** — Explain what the feature does and what a good output looks like. This context is used by Freesolo during instrumentation and eval design.
-    - **Constraints** — Specify any hard requirements such as maximum response length, restricted topics, tone, or output format. Constraints are enforced during evaluation.
-    - **Workflow context** — Describe the product surface and user workflow this feature lives in. The more context you provide here, the more accurately Freesolo can instrument the feature with representative data.
+Verify it:
 
-    Click **Save Feature** when you're done. Your feature is now ready to be instrumented.
+```bash
+flash version
+```
 
-    <Info>
-      You can return to edit your feature definition at any time. Updates to constraints and workflow context take effect on the next evaluation run.
-    </Info>
-  </Step>
+## 2. Log in
 
-  <Step title="Run your first evaluation">
-    Open your newly created feature and click **Run Evaluation**.
+```bash
+flash login --api-key <your-freesolo-key>
+```
 
-    1. **Select eval definitions** — Choose from the eval templates available in your project, or create a custom eval definition that reflects your feature's quality criteria. Evals measure output quality, latency, reliability, and cost.
-    2. **Choose a model** — Select the model you want to evaluate from the model settings panel. You can compare multiple models in a single run.
-    3. **Review the configuration** — Check your eval parameters, dataset selection, and concurrency settings, then click **Start Evaluation**.
+Flash verifies the key against Freesolo and stores it locally, so you only do
+this once. You can also set `FREESOLO_API_KEY` instead of passing `--api-key`.
 
-    Freesolo runs the evaluation and displays results in the **Eval Results** dashboard. Each run shows a breakdown by dimension — quality scores, p50/p95 latency, error rates, and estimated cost per call — so you can make informed decisions about model selection and iteration priorities.
+```bash
+flash whoami    # confirm who your stored key resolves to
+```
 
-    <Warning>
-      Evaluation runs consume credits based on the number of model calls and the models selected. Check your usage limits in the **Usage & Billing** section before running large-scale evals.
-    </Warning>
-  </Step>
+## 3. Scaffold a project
 
-  <Step title="Book a call with the engineering team">
-    Freesolo customers get direct access to the engineering team throughout their journey. Whether you're planning a training run, interpreting eval results, or preparing for a production deployment, the team is here to help.
+```bash
+flash lab setup
+```
 
-    Book a 30-minute call at [cal.com/freesolo/chat](https://cal.com/freesolo/chat) to:
+This drops a ready-to-edit starter in the current directory:
 
-    - Walk through your eval results and identify the highest-impact improvements
-    - Design a dataset curation or fine-tuning strategy tailored to your use case
-    - Plan your deployment configuration and monitoring setup
-    - Get answers to any technical questions about the Freesolo platform
+```
+environments/
+  starter_env.py          # a verifiers environment (the task + rubric)
+configs/
+  verifiers_grpo.toml     # a training config to start from
+  endpoints.toml          # somewhere to stash deploy endpoints
+```
 
-    <Tip>
-      We recommend booking an onboarding call within your first week. Teams that connect with the engineering team early ship production-ready features significantly faster.
-    </Tip>
-  </Step>
-</Steps>
+<Note>
+  `flash lab setup` writes a single starter module, `environments/starter_env.py`.
+  To scaffold an additional, named environment later, use
+  [`flash env init NAME`](/guides/environments), which creates a per-task
+  directory with a snake_cased module file instead (e.g. `flash env init my-task`
+  → `environments/my-task/my_task.py`). Both forms are valid env sources you can
+  `flash env push`.
+</Note>
 
-## What's next?
+## 4. Publish your environment
 
-Now that you've completed your first evaluation, you're ready to move deeper into the Freesolo engine.
+An [environment](/guides/environments) defines what your model trains on and
+how it's graded. Publish the scaffolded one to the Prime Hub to get an id:
+
+```bash
+flash env push environments/starter_env.py
+```
+
+This prints an environment id of the form `owner/name`.
+
+<Note>
+  Publishing is fully managed — `flash env push` packages your env and uploads it
+  to Freesolo's hosted Environments Hub (published **private**) using just your
+  Freesolo API key. **No Prime Intellect account or `prime` CLI needed.** Already
+  have a published env id? Skip straight to step 5.
+</Note>
+
+## 5. Configure your run
+
+Open `configs/verifiers_grpo.toml` and set two things — the environment id from
+the previous step, and an HF dataset repo to stream adapters/checkpoints into:
+
+```toml configs/verifiers_grpo.toml
+model = "Qwen/Qwen3.5-4B"
+algorithm = "grpo"
+
+[environment]
+id = "your-name/starter-env"        # from `flash env push`
+
+[train]
+hf_repo = "your-org/your-runs"      # HF dataset repo for adapters/checkpoints
+steps = 150
+lora_rank = 32
+seeds = [0]
+
+[gpu]
+type = "RTX 5090"                   # or omit to auto-pick the cheapest fit
+```
+
+Validate it locally first — `--dry-run` parses and checks the config with no
+credentials, server, or GPU:
+
+```bash
+flash train configs/verifiers_grpo.toml --dry-run
+```
+
+## 6. Train
+
+```bash
+flash train configs/verifiers_grpo.toml
+```
+
+Flash submits the run and follows the logs live. Press `Ctrl-C` to detach — the
+run keeps going on the server, and you can re-attach any time:
+
+```bash
+flash ps                  # list your runs and their state/cost
+flash attach <run-id>     # re-follow the logs
+flash logs <run-id> -f    # stream just the logs
+```
+
+The run reaches `done` when training finishes.
+
+## 7. Deploy
+
+Serve the trained adapter. The default mode is **scale-to-zero** — it costs
+nothing while idle and cold-starts on the first request:
+
+```bash
+flash deploy <run-id>
+```
+
+## 8. Chat
+
+```bash
+flash chat <run-id> -m "Hello! What can you do?"
+```
+
+That's a full loop. When you're done, tear the endpoint down:
+
+```bash
+flash undeploy <run-id>
+```
+
+## Next steps
 
 <CardGroup cols={2}>
-  <Card title="Concepts Overview" icon="layer-group" href="/concepts/overview">
-    Understand how projects, features, evals, datasets, and deployments fit together in Freesolo.
+  <Card title="Training in depth" icon="dumbbell" href="/guides/training">
+    SFT vs GRPO, config options, monitoring, and cost.
   </Card>
-  <Card title="Define Your Feature" icon="wand-magic-sparkles" href="/guides/define-your-feature">
-    Learn how to write feature definitions and constraints that produce accurate, useful evaluations.
+  <Card title="Build an environment" icon="flask" href="/guides/environments">
+    Replace the starter task with your own data and rubric.
   </Card>
-  <Card title="Build Eval Suite" icon="flask" href="/guides/build-eval-suite">
-    Build custom eval definitions that reflect your real quality bar — beyond generic benchmarks.
+  <Card title="Deploy & chat" icon="comments" href="/guides/deploy-and-chat">
+    Scale-to-zero vs always-on, and the OpenAI-compatible API.
   </Card>
-  <Card title="Training Pipeline" icon="brain" href="/guides/training-pipeline">
-    Run supervised fine-tuning and reinforcement learning on your curated datasets.
+  <Card title="CLI reference" icon="terminal" href="/reference/cli">
+    Every `flash` command and flag.
   </Card>
 </CardGroup>

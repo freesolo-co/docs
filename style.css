@@ -1,0 +1,161 @@
+/* freesolo docs custom styles. mintlify auto-loads any .css file in the repo. */
+
+/* change 1: render "<freesolo mark> Freesolo Docs" in the navbar.
+   the logo is just the geometric mark; we append the "Freesolo Docs" wordmark
+   as text on the logo's anchor, in the accent serif so it matches the brand. */
+#navbar a:has(.nav-logo) {
+	display: inline-flex;
+	align-items: center;
+}
+
+/* bump the mark up so it matches the larger wordmark. */
+#navbar .nav-logo {
+	height: 1.9rem;
+}
+
+#navbar a:has(.nav-logo)::after {
+	content: "Freesolo Docs";
+	margin-left: 0.55rem;
+	font-family: var(--font-arizona);
+	font-weight: 400;
+	font-size: 2.25rem;
+	line-height: 1;
+	color: #05081d;
+}
+
+.dark #navbar a:has(.nav-logo)::after {
+	color: #e5e7eb;
+}
+
+/* Accent serif. NOTE: the previous "ABC Arizona Mix … Unlicensed Trial" webfont
+   (loaded from a third-party onlinewebfonts CDN) was removed — it's an unlicensed
+   trial (licensing/compliance risk) and an external availability/privacy dependency
+   on every page load. Using a licensed/self-hosted Arizona woff2 in-repo is the
+   follow-up; until then fall back to a safe local serif stack. */
+:root {
+	--font-arizona: Georgia, "Times New Roman", serif;
+}
+
+/* change 2: use the accent serif for page titles and all content headings,
+   like the rest of the website (anthropic-style serif headers). */
+#page-title,
+.mdx-content h1,
+.mdx-content h2,
+.mdx-content h3,
+.mdx-content h4,
+.mdx-content h5,
+.mdx-content h6 {
+	font-family: var(--font-arizona);
+	letter-spacing: -0.01em;
+}
+
+/* change 5: uppercase the small eyebrow label shown above each page title
+   (e.g. "Guides", "Get started", "Reference"). */
+.eyebrow {
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+}
+
+/* change 6: use the accent serif for the "On this page" table-of-contents
+   title in the right sidebar. */
+#table-of-contents h2 {
+	font-family: var(--font-arizona);
+	letter-spacing: -0.01em;
+}
+
+/* ---------------------------------------------------------------------------
+   footer: restyle mintlify's footer to match the freesolo website footer
+   (full lockup logo, social chips under it, uppercase headers, copyright, and
+   the giant freesolo lockup across the bottom).
+   --------------------------------------------------------------------------- */
+
+/* swap the small footer mark for the full freesolo lockup. */
+#footer a:has(> .nav-logo) {
+	display: inline-block;
+	width: 156px;
+	height: 26px;
+	background: url("/logo/freesolo-wordmark-light.svg") left center / contain
+		no-repeat;
+}
+.dark #footer a:has(> .nav-logo) {
+	background-image: url("/logo/freesolo-wordmark-dark.svg");
+}
+#footer a:has(> .nav-logo) .nav-logo {
+	display: none;
+}
+
+/* render the social icons as rounded button chips. */
+#footer a:has(> svg[style*="mask-image"]) {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 2.25rem;
+	height: 2.25rem;
+	border-radius: 0.625rem;
+	background: #f3f4f6;
+}
+#footer a:has(> svg[style*="mask-image"]) svg {
+	width: 1.05rem;
+	height: 1.05rem;
+	background-color: #1b1b4b !important;
+}
+.dark #footer a:has(> svg[style*="mask-image"]) {
+	background: rgba(255, 255, 255, 0.08);
+}
+.dark #footer a:has(> svg[style*="mask-image"]) svg {
+	background-color: #e5e7eb !important;
+}
+
+/* uppercase, muted column headers like the site. */
+#footer p.font-semibold {
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	font-size: 0.75rem;
+	font-weight: 600;
+	color: #6b7280;
+}
+
+/* Copyright line under the footer logo — rendered on ALL viewports (mobile + desktop),
+   matching the marketing site footer. (Was previously inside the min-width:768px block, so
+   it was missing on phones.) */
+#footer div:has(> a > .nav-logo)::after {
+	content: "Copyright 2026 Linkd Inc. All rights reserved.";
+	font-size: 0.75rem;
+	line-height: 1.4;
+	color: #9ca3af;
+}
+
+/* desktop: stack logo, socials and copyright on the left like the site. */
+@media (min-width: 768px) {
+	#footer div:has(> a > .nav-logo) {
+		gap: 1.25rem !important;
+		justify-content: flex-start !important;
+	}
+	#footer div.md\:hidden:has(> a > svg[style*="mask-image"]) {
+		display: flex !important;
+	}
+	#footer div.md\:flex:has(> a > svg[style*="mask-image"]) {
+		display: none !important;
+	}
+	/* desktop has room for the copyright on one line; mobile may wrap. */
+	#footer div:has(> a > .nav-logo)::after {
+		white-space: nowrap;
+	}
+}
+
+/* the giant freesolo lockup across the bottom: the site's signature mark. */
+#footer::after {
+	content: "";
+	display: block;
+	width: 100%;
+	max-width: 984px;
+	margin: 0 auto;
+	padding: 2.5rem 2rem 0;
+	box-sizing: border-box;
+	aspect-ratio: 465 / 80;
+	background: url("/logo/freesolo-wordmark-light.svg") center bottom / contain
+		no-repeat;
+}
+.dark #footer::after {
+	background-image: url("/logo/freesolo-wordmark-dark.svg");
+}

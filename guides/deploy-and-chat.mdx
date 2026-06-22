@@ -1,0 +1,100 @@
+---
+title: "Deploy & chat"
+description: "Serve a trained adapter and talk to it over an OpenAI-compatible API."
+---
+
+Once a run reaches `done`, deploy its adapter to a serving endpoint and chat
+with it — from the CLI or any OpenAI-compatible client.
+
+## Deploy
+
+```bash
+flash deploy <run-id>
+```
+
+Pick a serving mode with `--mode`:
+
+<CodeGroup>
+
+```bash Scale-to-zero (default)
+flash deploy <run-id> --mode dev
+```
+
+```bash Always-on
+flash deploy <run-id> --mode always-on
+```
+
+</CodeGroup>
+
+<CardGroup cols={2}>
+  <Card title="dev — scale-to-zero" icon="moon">
+    The default. Costs **$0 while idle** and cold-starts on the first request.
+    Best for development and low-traffic use. Tune the idle window with
+    `--idle-timeout <seconds>` (default 300).
+  </Card>
+  <Card title="always-on" icon="bolt">
+    Keeps a GPU warm 24/7 — no cold starts, but billed continuously. `flash deploy`
+    prints the estimated `$/day` so there are no surprises.
+  </Card>
+</CardGroup>
+
+Preview what a deploy would do without creating it:
+
+```bash
+flash deploy <run-id> --dry-run
+```
+
+## Chat from the CLI
+
+```bash
+flash chat <run-id> -m "Summarize the plot of Hamlet in two sentences."
+```
+
+Options:
+
+| Flag | Default | Effect |
+| --- | --- | --- |
+| `-m`, `--message` | (required) | The user message to send |
+| `--max-tokens` | 512 | Maximum tokens to generate |
+| `--temperature` | 0.0 | Sampling temperature |
+
+```bash
+flash chat <run-id> -m "Write a haiku about GPUs" --temperature 0.8 --max-tokens 128
+```
+
+## Manage deployments
+
+```bash
+flash deployments        # list active deployments: mode, GPU, $/day, endpoint
+flash undeploy <run-id>  # tear down the endpoint and stop billing
+```
+
+<Warning>
+  An **always-on** deployment bills continuously until you `flash undeploy` it.
+  Use `flash deployments` to see what's live and its estimated daily cost.
+</Warning>
+
+## Use it from your own code
+
+Deployments are OpenAI-compatible, so you can point any OpenAI SDK at the
+endpoint and use your Freesolo API key:
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://<your-endpoint>/v1",   # from `flash deployments`
+    api_key="<your-freesolo-key>",
+)
+
+resp = client.chat.completions.create(
+    model="<run-id>",
+    messages=[{"role": "user", "content": "Hello!"}],
+)
+print(resp.choices[0].message.content)
+```
+
+<Tip>
+  `flash lab setup` creates a `configs/endpoints.toml` where you can keep the
+  endpoints returned by `flash deploy` for easy reuse.
+</Tip>

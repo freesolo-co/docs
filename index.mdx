@@ -1,56 +1,82 @@
 ---
-title: "Freesolo — Build AI Features That Perform in Production"
-description: "Instrument, evaluate, and improve product-native AI features using real workflow data — so your AI performs reliably where it matters most."
+title: "Flash"
+description: "Train, deploy, and chat with custom LoRA models on managed GPUs — from one CLI."
 ---
 
-Freesolo is the AI platform built for enterprise teams who need more than a prototype. From capturing how your feature behaves in real workflows, to measuring quality against latency, cost, and reliability, to continuously improving with live product feedback — Freesolo gives you a structured engine to ship AI that performs in production.
+Flash is Freesolo's managed post-training service. You write a short config,
+run one command, and Flash fine-tunes a model on a managed GPU — then serves the
+result behind an OpenAI-compatible endpoint. There's nothing to host: every
+command is a thin call to the hosted control plane, authenticated with your
+Freesolo API key.
+
+```bash
+flash train config.toml      # fine-tune on a managed GPU
+flash deploy <run-id>        # serve the trained adapter
+flash chat <run-id> -m "hi"  # talk to it
+```
 
 <CardGroup cols={2}>
-  <Card
-    title="Introduction"
-    icon="book-open"
-    href="/introduction"
-  >
-    Learn what Freesolo is, who it's built for, and how the Instrument → Evaluate → Improve engine works.
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Install the CLI, log in, and ship your first run in a few minutes.
   </Card>
-  <Card
-    title="Quickstart"
-    icon="rocket"
-    href="/quickstart"
-  >
-    Create your account, set up your workspace, and run your first AI feature evaluation in minutes.
+  <Card title="Training" icon="dumbbell" href="/guides/training">
+    Write a config, submit a run, and follow it to completion.
   </Card>
-  <Card
-    title="Concepts Overview"
-    icon="layer-group"
-    href="/concepts/overview"
-  >
-    Understand the core building blocks: projects, features, evals, datasets, and deployments.
+  <Card title="Environments" icon="flask" href="/guides/environments">
+    Define the task your model trains and is graded on.
   </Card>
-  <Card
-    title="Define Your First Feature"
-    icon="wand-magic-sparkles"
-    href="/guides/define-your-feature"
-  >
-    Step-by-step guide to naming, scoping, and configuring your first product-native AI feature.
+  <Card title="Deploy & chat" icon="comments" href="/guides/deploy-and-chat">
+    Serve an adapter scale-to-zero or always-on, then chat with it.
   </Card>
 </CardGroup>
 
-## Get up and running
-
-Follow these steps to go from sign-up to your first evaluated AI feature.
+## How it works
 
 <Steps>
-  <Step title="Create your account">
-    Sign up at [freesolo.co/sign-up](https://freesolo.co/sign-up) using Google SSO, GitHub SSO, or an email and password. Your account is the entry point to all your projects and team settings.
+  <Step title="Pick a base model">
+    Choose from the supported catalog (`flash models`). Flash trains a LoRA
+    adapter on top — small, cheap, and fast to serve.
   </Step>
-  <Step title="Set up your workspace">
-    Create an organization, name your first project, and invite your teammates. Permissions and roles can be configured from the team settings panel.
+  <Step title="Point at an environment">
+    An [environment](/guides/environments) is the task: the data your model
+    sees and the rubric it's graded on. Flash uses
+    [Prime Intellect `verifiers`](https://github.com/PrimeIntellect-ai/verifiers)
+    environments, referenced by a published Hub slug.
   </Step>
-  <Step title="Define your AI feature">
-    Give your feature a name, describe its constraints, and attach the workflow context it will operate in. Freesolo uses this to instrument the feature accurately from day one.
+  <Step title="Train on a managed GPU">
+    `flash train` submits the run to the control plane, which allocates the
+    cheapest GPU that fits, supervises the job (stall watchdog, bounded
+    auto-retry from the last checkpoint), and streams logs back to you.
   </Step>
-  <Step title="Run your first evaluation">
-    Choose your eval definitions, select a model, and kick off your first evaluation run. Freesolo measures output quality, latency, reliability, and cost side by side.
+  <Step title="Deploy and use it">
+    `flash deploy` serves the adapter. `flash chat` (or any OpenAI-compatible
+    client) talks to it. Scale-to-zero costs nothing while idle.
   </Step>
 </Steps>
+
+## What you get
+
+<CardGroup cols={2}>
+  <Card title="SFT and GRPO" icon="brain">
+    Supervised fine-tuning or reinforcement learning (GRPO), selected with one
+    line in your config.
+  </Card>
+  <Card title="One GPU per run" icon="microchip">
+    Each run gets a dedicated managed GPU, supervised server-side with bounded
+    auto-retry that resumes from the last streamed checkpoint.
+  </Card>
+  <Card title="Cheapest GPU that fits" icon="dollar-sign">
+    The allocator picks the lowest-cost validated GPU class that fits your run.
+    See live pricing with `flash gpus`.
+  </Card>
+  <Card title="No infrastructure" icon="cloud">
+    No GPUs to rent, no servers to run, no provider keys. You authenticate with
+    a Freesolo API key; the platform owns the rest.
+  </Card>
+</CardGroup>
+
+<Note>
+  These docs cover **Flash** — the training and serving CLI. Create a Freesolo
+  API key in your dashboard at [freesolo.co](https://freesolo.co), then head to
+  the [Quickstart](/quickstart).
+</Note>
