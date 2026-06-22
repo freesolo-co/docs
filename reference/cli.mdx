@@ -3,7 +3,7 @@ title: "CLI reference"
 description: "Every flash command and flag."
 ---
 
-The CLI is `flash` (installed from the **`freesolo-flash`** package — see the
+The CLI is `flash` (installed from the **`freesolo-flash`** package, see the
 [Quickstart](/quickstart#1-install-the-cli)). Every run-lifecycle command is a
 thin, authenticated call to the hosted control plane. Run `flash --help` or
 `flash <command> --help` for inline help.
@@ -59,7 +59,7 @@ thin, authenticated call to the hosted control plane. Run `flash --help` or
 <ResponseField name="flash env push [PATH]">
   Publish a local verifiers environment to Freesolo's managed Environments Hub
   (private) and print its id. `PATH` defaults to the current directory. Fully
-  managed — no Prime Intellect account or `prime` CLI needed.
+  managed, no Prime Intellect account or `prime` CLI needed.
 </ResponseField>
 
 <ResponseField name="flash env install ENV_ID">
@@ -123,7 +123,7 @@ thin, authenticated call to the hosted control plane. Run `flash --help` or
   | --- | --- | --- |
   | `--mode` | `dev` | `dev` (scale-to-zero) or `always-on` (kept warm to avoid cold starts) |
   | `--idle-timeout SECONDS` | `300` | `dev` mode: idle seconds before scaling to zero |
-  | `--dry-run` | — | Preview the deploy without creating it |
+  | `--dry-run` | - | Preview the deploy without creating it |
 </ResponseField>
 
 <ResponseField name="flash chat RUN_ID -m MESSAGE [flags]">
@@ -137,7 +137,7 @@ thin, authenticated call to the hosted control plane. Run `flash --help` or
 </ResponseField>
 
 <ResponseField name="flash deployments">
-  List active serving deployments with mode, GPU, `$/day` (always `0` — serving
+  List active serving deployments with mode, GPU, `$/day` (always `0`, serving
   scales to zero), and endpoint.
 </ResponseField>
 
@@ -148,7 +148,7 @@ thin, authenticated call to the hosted control plane. Run `flash --help` or
 ## MCP server (for coding agents)
 
 Flash also ships a stdio [MCP](https://modelcontextprotocol.io) bridge so coding
-agents can drive the platform. It isn't a `flash` subcommand — launch it with:
+agents can drive the platform. It isn't a `flash` subcommand; launch it with:
 
 ```bash
 python -m flash.mcp.server

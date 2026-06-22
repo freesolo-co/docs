@@ -22,7 +22,7 @@ full traceback.
   </Accordion>
 
   <Accordion title="I installed `flash` but it's the wrong tool">
-    The CLI is published to PyPI as **`freesolo-flash`** — the bare `flash` name
+    The CLI is published to PyPI as **`freesolo-flash`**, the bare `flash` name
     belongs to an unrelated project. Reinstall the right one:
 
     ```bash
@@ -56,7 +56,7 @@ full traceback.
 
 <AccordionGroup>
   <Accordion title="flash env push fails">
-    Publishing is fully managed and only needs your Freesolo API key — no Prime
+    Publishing is fully managed and only needs your Freesolo API key, no Prime
     Intellect account or `prime` CLI. Make sure the file you push defines a
     `load_environment()` that returns a `verifiers` environment, then:
 
@@ -71,8 +71,8 @@ full traceback.
 
   <Accordion title="ModuleNotFoundError: No module named 'verifiers' (local authoring)">
     Training runs managed, so the env's dependencies live server-side. But
-    authoring locally — and any `--dry-run`/`--cost` that **loads** the
-    environment (for example, to count examples for an SFT estimate) — needs the
+    authoring locally, and any `--dry-run`/`--cost` that **loads** the
+    environment (for example, to count examples for an SFT estimate), needs the
     env's libraries installed locally:
 
     ```bash
@@ -92,7 +92,7 @@ full traceback.
 
   <Accordion title="What id do I reference in my config?">
     The `[environment] id` must be a **published** slug of the form `owner/name`,
-    produced by `flash env push`. A local file path is not a valid id — publish it
+    produced by `flash env push`. A local file path is not a valid id, so publish it
     first, or `flash env install` an existing one.
   </Accordion>
 </AccordionGroup>
@@ -128,7 +128,7 @@ full traceback.
 <Accordion title="My [gpu] table or hf_repo is being ignored">
   Both are fully managed and **not** user fields. The allocator picks the GPU
   for you, and each run streams artifacts into a private Hugging Face repo
-  provisioned server-side. Remove `[gpu]` and `hf_repo` from your config — see
+  provisioned server-side. Remove `[gpu]` and `hf_repo` from your config. See
   [GPU & infrastructure](/reference/configuration#gpu-infrastructure-managed).
 </Accordion>
 
@@ -154,7 +154,7 @@ full traceback.
 <AccordionGroup>
   <Accordion title="My run was rejected before it started (balance)">
     Submitting a run charges the **pre-flight cost estimate up front** and is
-    gated on your org's prepaid balance — if the balance can't cover the estimate,
+    gated on your org's prepaid balance; if the balance can't cover the estimate,
     the run is rejected and nothing runs. Preview the number and top up:
 
     ```bash
@@ -171,12 +171,12 @@ full traceback.
 </Accordion>
 
 <Accordion title="Reward is stuck at 1 (or never moves)">
-  Usually the rubric isn't discriminative — it scores almost everything the
+  Usually the rubric isn't discriminative: it scores almost everything the
   same. Make the reward function separate better answers from worse ones so GRPO
   has a gradient to follow. See [Environments](/guides/environments).
 </Accordion>
 
-  <Accordion title="I pressed Ctrl-C — did I kill my run?">
+  <Accordion title="Did pressing Ctrl-C kill my run?">
     No. `Ctrl-C` during `flash train` just **detaches** you; the run keeps going
     server-side. Re-follow it any time, and cancel explicitly if you mean to:
 
@@ -192,7 +192,7 @@ full traceback.
     Runs are supervised server-side: a stall watchdog plus bounded auto-retry that
     **resumes from the last streamed checkpoint**, and the allocator walks to the
     next-cheapest validated GPU class if one is unavailable. A transient failure
-    usually doesn't cost you the whole run — watch with `flash logs <run-id> -f`.
+    usually doesn't cost you the whole run. Watch with `flash logs <run-id> -f`.
   </Accordion>
 </AccordionGroup>
 

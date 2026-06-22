@@ -8,7 +8,7 @@
 }
 
 /* Accent serif. NOTE: the previous "ABC Arizona Mix … Unlicensed Trial" webfont
-   (loaded from a third-party onlinewebfonts CDN) was removed — it's an unlicensed
+   (loaded from a third-party onlinewebfonts CDN) was removed; it's an unlicensed
    trial (licensing/compliance risk) and an external availability/privacy dependency
    on every page load. Using a licensed/self-hosted Arizona woff2 in-repo is the
    follow-up; until then fall back to a safe local serif stack. */
@@ -97,7 +97,7 @@
 	color: #6b7280;
 }
 
-/* Copyright line under the footer logo — rendered on ALL viewports (mobile + desktop),
+/* Copyright line under the footer logo, rendered on ALL viewports (mobile + desktop),
    matching the marketing site footer. (Was previously inside the min-width:768px block, so
    it was missing on phones.) */
 #footer div:has(> a > .nav-logo)::after {

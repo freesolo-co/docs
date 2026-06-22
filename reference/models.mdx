@@ -41,14 +41,14 @@ reasoning ("thinking") capable.
 
 ### Notes per model
 
-- **`Qwen/Qwen3.5-0.8B`** — the smallest Qwen3.5. Cheapest for smoke tests and
+- **`Qwen/Qwen3.5-0.8B`**: the smallest Qwen3.5. Cheapest for smoke tests and
   dev loops on the modern stack.
-- **`openbmb/MiniCPM5-1B`** — an on-device-class small model (131k context) on a
+- **`openbmb/MiniCPM5-1B`**: an on-device-class small model (131k context) on a
   standard Llama architecture.
-- **`Qwen/Qwen3.5-2B`** — a small, capable step up when 0.8B underfits.
-- **`Qwen/Qwen3.5-4B`** — the **default**. A current-gen dense 4B and the safe
+- **`Qwen/Qwen3.5-2B`**: a small, capable step up when 0.8B underfits.
+- **`Qwen/Qwen3.5-4B`**: the **default**. A current-gen dense 4B and the safe
   out-of-the-box choice for most tasks.
-- **`Qwen/Qwen3.5-9B`** — the largest catalog model. Trained as a bf16 LoRA; SFT
+- **`Qwen/Qwen3.5-9B`**: the largest catalog model. Trained as a bf16 LoRA; SFT
   fits a 48 GB card, while GRPO co-locates a rollout engine and needs an
   80 GB-class GPU.
 
