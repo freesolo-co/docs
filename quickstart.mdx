@@ -51,6 +51,10 @@ flash whoami    # confirm who your stored key resolves to
 
 ## Step 3: Scaffold a project
 
+Already have a published environment id, yours or one shared with you? Set it as
+`[environment] id` in your config and skip ahead to step 5. No need to scaffold
+or publish.
+
 ```bash
 flash env setup
 ```
@@ -133,6 +137,10 @@ flash status <run-id> -f  # stream logs until the run finishes
 
 The run reaches `done` when training finishes.
 
+Start small: finish one short run end to end before you scale up. When you do,
+raise `train.steps` and change little else, so a longer run reproduces a shape
+you have already seen.
+
 ## Step 7: Deploy
 
 Serve the trained adapter on Freesolo's
@@ -176,31 +184,6 @@ The commands you used above, plus the ones you'll reach for next. Run
 | `flash deploy`       | Serve a trained adapter                    | `flash deploy <run-id>`                |
 | `flash chat`         | Send a message to a deployment             | `flash chat <run-id> -m "hi"`          |
 | `flash undeploy`     | Tear a deployment down                     | `flash undeploy <run-id>`              |
-
-## Pro tips
-
-<AccordionGroup>
-  <Accordion title="Validate, then price, before you train" icon="circle-check">
-    Run `flash train configs/grpo.toml --dry-run` to catch a typo with no
-    credentials or GPU, then `--cost` to see the price, before you submit and
-    spend.
-  </Accordion>
-  <Accordion title="Detach freely; the run keeps going" icon="circle-pause">
-    `Ctrl-C` during `flash train` only stops following the logs. The run
-    continues server-side. Follow it again any time with
-    `flash status <run-id> -f`.
-  </Accordion>
-  <Accordion title="Already have an environment? Skip authoring" icon="forward">
-    If you have a published env id (yours or one shared with you), put it in your
-    config's `[environment] id` and jump straight to step 5. No need to scaffold
-    or publish.
-  </Accordion>
-  <Accordion title="Start small, then scale only the steps" icon="gauge-simple">
-    Finish one short run end to end before you scale up. When you do, raise
-    `train.steps` and change little else, so a longer run reproduces a shape you
-    have already seen.
-  </Accordion>
-</AccordionGroup>
 
 ## Next steps
 
