@@ -31,13 +31,6 @@ reasoning ("thinking") capable.
 | `Qwen/Qwen3.5-4B`     | 4.7B   | Hybrid    |
 | `Qwen/Qwen3.5-9B`     | 9.7B   | Hybrid    |
 
-<Note>
-  **You don't pick the GPU.** For training, the allocator picks the cheapest
-  live-validated GPU class that fits across providers. See [`flash
-  gpus`](/reference/cli#discovery) for live classes and pricing, and [GPU
-  selection](/guides/training#gpu-selection-is-automatic).
-</Note>
-
 ## Serving prices
 
 Serving is billed per token after deployment. Each request costs prompt tokens
@@ -52,13 +45,6 @@ of truth: [`flash/serve/pricing.py`](https://github.com/freesolo-co/flash/blob/d
 | `Qwen/Qwen3.5-2B` | $0.10 | $0.20 | $0.12 | $0.24 |
 | `Qwen/Qwen3.5-4B` | $0.20 | $0.40 | $0.24 | $0.48 |
 | `Qwen/Qwen3.5-9B` | $0.50 | $1.00 | $0.60 | $1.20 |
-
-<Note>
-  Training costs are separate from serving costs. Preview a training run's cost
-  before submit with `flash train CONFIG --cost`; the run is charged for the
-  actual GPU time it used when it finishes successfully. Serving charges only for
-  tokens served after `flash deploy`.
-</Note>
 
 ### Notes per model
 

@@ -56,11 +56,6 @@ flash deployments        # list active deployments: GPU and endpoint
 flash undeploy <run-id>  # deregister the adapter from serving
 ```
 
-<Note>
-  `flash undeploy` deregisters the adapter so it no longer accepts requests.
-  You're only billed per token for requests you actually send.
-</Note>
-
 ## Use it from your own code
 
 Deployments are OpenAI-compatible, so you can point any OpenAI SDK at the
