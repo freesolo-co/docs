@@ -20,7 +20,11 @@
 		"groups": [
 			{
 				"group": "Get started",
-				"pages": ["index", "concepts", "quickstart"]
+				"pages": ["index", "quickstart"]
+			},
+			{
+				"group": "Core concepts",
+				"pages": ["how-flash-works"]
 			},
 			{
 				"group": "Guides",

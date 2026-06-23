@@ -3,16 +3,31 @@ title: "Quickstart"
 description: "Install the CLI, log in, and train, deploy, and chat with your first model."
 ---
 
-This walks you from zero to a deployed, chatting model. It takes a few minutes
-of your time plus the training run itself.
+This quickstart takes you from an empty directory to a deployed model you can
+chat with. It takes a few minutes of your time plus the training run itself. By
+the end you will have trained a LoRA adapter on a managed GPU, served it, and
+called it from the CLI.
 
-<Note>
-  You need a **Freesolo API key**. Create one in your dashboard at
+## Before you begin
+
+Make sure you have:
+
+- A **Freesolo API key**. Create one in your dashboard at
   [freesolo.co](https://freesolo.co). It's how every `flash` command
   authenticates. No GPU or provider credentials required.
+- **Python with `uv`, `pipx`, or `pip`** to install the CLI.
+- A **terminal** open in an empty directory to scaffold your project into.
+
+<Note>
+  This guide uses the scaffolded starter environment so you can finish a full
+  loop fast. To write your own task and reward, see
+  [Environments](/guides/environments); for SFT vs GRPO and tuning, see
+  [Training](/guides/training); for the serving API, see [Deploy &
+  chat](/guides/deploy-and-chat). For the concepts behind each step, see [How
+  Flash works](/how-flash-works).
 </Note>
 
-## 1. Install the CLI
+## Step 1: Install the CLI
 
 The CLI is published to PyPI as **`freesolo-flash`** (the bare `flash` name is
 taken by another project). It installs a single command, `flash`.
@@ -39,7 +54,7 @@ Verify it:
 flash version
 ```
 
-## 2. Log in
+## Step 2: Log in
 
 ```bash
 flash login --api-key <your-freesolo-key>
@@ -52,7 +67,7 @@ this once. You can also set `FREESOLO_API_KEY` instead of passing `--api-key`.
 flash whoami    # confirm who your stored key resolves to
 ```
 
-## 3. Scaffold a project
+## Step 3: Scaffold a project
 
 ```bash
 flash env setup
@@ -74,10 +89,11 @@ configs/
   included.
 </Note>
 
-## 4. Publish your environment
+## Step 4: Publish your environment
 
 An [environment](/guides/environments) defines what your model trains on and
-how it's graded. Publish the scaffolded one to the managed Environments Hub to get an id:
+how it's graded. Publish the scaffolded one to the managed Environments Hub to
+get an id:
 
 ```bash
 flash env push --name starter .
@@ -88,15 +104,14 @@ This prints an environment id of the form `your-name/starter`.
 <Note>
   Publishing is fully managed. `flash env push --name ... .` packages the
   environment from the current folder and uploads it to Freesolo's hosted
-  Environments Hub
-  (published **private**) using just your Freesolo API key. Already have a
-  published env id? Skip straight to step 5.
+  Environments Hub (published **private**) using just your Freesolo API key.
+  Already have a published env id? Skip straight to step 5.
 </Note>
 
-## 5. Configure your run
+## Step 5: Configure and validate your run
 
-Open `configs/grpo.toml` and set the one thing that's yours, the
-environment id from the previous step:
+Open `configs/grpo.toml` and set the one thing that's yours, the environment id
+from the previous step:
 
 ```toml configs/grpo.toml
 model = "Qwen/Qwen3.5-4B"
@@ -114,8 +129,9 @@ seeds = [0]
 <Note>
   The only fields you must set are `model` and `[environment] id`. **The GPU and
   the run's artifact storage are fully managed**: the allocator picks the
-  cheapest GPU class that fits across providers, and each run gets its own private
-  HF repo automatically. You don't pick a GPU or supply a Hugging Face repo.
+  cheapest GPU class that fits across providers, and each run gets its own
+  private HF repo automatically. You don't pick a GPU or supply a Hugging Face
+  repo.
 </Note>
 
 Validate it locally first. `--dry-run` parses and checks the config with no
@@ -125,8 +141,8 @@ credentials, server, or GPU:
 flash train configs/grpo.toml --dry-run
 ```
 
-See what the run will cost before committing. `--cost` prints the pre-flight
-USD cost and exits without submitting:
+See what the run will cost before committing. `--cost` prints the pre-flight USD
+cost and exits without submitting:
 
 ```bash
 flash train configs/grpo.toml --cost
@@ -135,22 +151,25 @@ flash train configs/grpo.toml --cost
 <Note>
   **Training pricing is GPU-time pricing, not token pricing.** Flash calculates
   the wall-clock time for your selected model, algorithm, and training settings,
-  multiplies that by the managed GPU price, and shows the pre-flight charge
-  with `--cost`. `flash train configs/grpo.toml` charges that cost to your
-  org balance up front before any GPU starts; serving token charges are separate
-  and only begin after `flash deploy`.
+  multiplies that by the managed GPU price, and shows the pre-flight charge with
+  `--cost`. Serving token charges are separate and only begin after `flash
+  deploy`.
 </Note>
 
-## 6. Train
+## Step 6: Train
 
 ```bash
 flash train configs/grpo.toml
 ```
 
-Submitting charges the pre-flight cost (the `--cost` number) to your org's
-balance up front; if the balance can't cover it, the run is rejected and never
-starts. Flash then follows the logs live. Press `Ctrl-C` to detach. The run
-keeps going on the server, and you can follow it again any time:
+<Note>
+  This is the first step that spends money. Submitting charges the pre-flight
+  cost (the `--cost` number) to your org's balance up front; if the balance
+  can't cover it, the run is rejected and never starts.
+</Note>
+
+Flash then follows the logs live. Press `Ctrl-C` to detach. The run keeps going
+on the server, and you can follow it again any time:
 
 ```bash
 flash ps                  # list your runs and their state/cost
@@ -160,7 +179,7 @@ flash status <run-id> -f  # stream logs until the run finishes
 
 The run reaches `done` when training finishes.
 
-## 7. Deploy
+## Step 7: Deploy
 
 Serve the trained adapter on Freesolo's managed serving service. There is no
 per-day idle charge: deployment registers the adapter, and serving is billed per
@@ -170,7 +189,7 @@ prompt and completion token for requests you send:
 flash deploy <run-id>
 ```
 
-## 8. Chat
+## Step 8: Chat
 
 ```bash
 flash chat <run-id> -m "Hello! What can you do?"
@@ -182,22 +201,63 @@ That's a full loop. When you're done, tear the endpoint down:
 flash undeploy <run-id>
 ```
 
+## Essential commands
+
+The commands you used above, plus the ones you'll reach for next. Run
+`flash <command> --help` for the full set of flags, or see the
+[CLI reference](/reference/cli).
+
+| Command              | What it does                               | Example                                |
+| -------------------- | ------------------------------------------ | -------------------------------------- |
+| `flash login`        | Store your Freesolo API key locally        | `flash login --api-key <key>`          |
+| `flash env setup`    | Scaffold a starter environment and configs | `flash env setup`                      |
+| `flash env push`     | Publish an environment and print its id    | `flash env push --name starter .`      |
+| `flash train`        | Submit a run and follow its logs           | `flash train configs/grpo.toml`        |
+| `flash train --cost` | Preview the pre-flight cost, no submit     | `flash train configs/grpo.toml --cost` |
+| `flash ps`           | List your runs with state, cost, GPU       | `flash ps`                             |
+| `flash status`       | Show run status, or stream its logs        | `flash status <run-id> -f`             |
+| `flash deploy`       | Serve a trained adapter                    | `flash deploy <run-id>`                |
+| `flash chat`         | Send a message to a deployment             | `flash chat <run-id> -m "hi"`          |
+| `flash undeploy`     | Tear a deployment down                     | `flash undeploy <run-id>`              |
+
+## Pro tips
+
+<AccordionGroup>
+  <Accordion title="Validate, then price, before you train" icon="circle-check">
+    Run `flash train configs/grpo.toml --dry-run` to catch a typo with no
+    credentials or GPU, then `--cost` to see the price, before you submit and
+    spend.
+  </Accordion>
+  <Accordion title="Detach freely; the run keeps going" icon="circle-pause">
+    `Ctrl-C` during `flash train` only stops following the logs. The run
+    continues server-side. Follow it again any time with
+    `flash status <run-id> -f`.
+  </Accordion>
+  <Accordion title="Already have an environment? Skip authoring" icon="forward">
+    If you have a published env id (yours or one shared with you), put it in your
+    config's `[environment] id` and jump straight to step 5. No need to scaffold
+    or publish.
+  </Accordion>
+  <Accordion title="Start small, then scale only the steps" icon="gauge-simple">
+    Finish one short run end to end before you scale up. When you do, raise
+    `train.steps` and change little else, so a longer run reproduces a shape you
+    have already seen.
+  </Accordion>
+</AccordionGroup>
+
 ## Next steps
 
 <CardGroup cols={2}>
+  <Card title="How Flash works" icon="diagram-project" href="/how-flash-works">
+    The loop behind a run, and the concepts each command refers to.
+  </Card>
   <Card title="Training in depth" icon="dumbbell" href="/guides/training">
     SFT vs GRPO, config options, monitoring, and cost.
   </Card>
   <Card title="Build an environment" icon="flask" href="/guides/environments">
     Replace the starter task with your own data and reward.
   </Card>
-  <Card title="Datasets" icon="database" href="/guides/datasets">
-    Package records, files, and split parameters with an environment.
-  </Card>
   <Card title="Deploy & chat" icon="comments" href="/guides/deploy-and-chat">
     Serving billing and the OpenAI-compatible API.
-  </Card>
-  <Card title="CLI reference" icon="terminal" href="/reference/cli">
-    Every `flash` command and flag.
   </Card>
 </CardGroup>
