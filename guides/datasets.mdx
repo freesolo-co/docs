@@ -43,8 +43,6 @@ math/
   datasets/
     train.jsonl
     eval.jsonl
-  configs/
-    eval.toml
 ```
 
 Publish the folder with an explicit name. `flash env push` publishes a compact
@@ -109,9 +107,9 @@ For a local environment directory, `flash env push` includes:
 
 - `environment.py`, always at the artifact root.
 - Sibling Python helper files.
-- Sidecar directories named `assets`, `configs`, or `datasets`.
+- Sidecar directories named `datasets`.
 - Common sibling data files such as `.jsonl`, `.json`, `.csv`, `.txt`,
-  `.parquet`, `.toml`, `.tsv`, `.yaml`, and `.yml`.
+  `.parquet`, `.tsv`, `.yaml`, and `.yml`.
 
 Workspace metadata, cache directories, virtualenvs, and version-control files
 are skipped. Keep the artifact small: environment uploads are capped at 64 MB

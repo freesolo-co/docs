@@ -61,10 +61,10 @@ full traceback.
     `load_environment()` function that returns a Freesolo environment, then:
 
     ```bash
-    flash env push --name my-task environments/my_task
+    flash env push --name math math
     ```
 
-    It prints the published id (`your-name/my-task`) to put in your config's
+    It prints the published id (`your-name/math`) to put in your config's
     `[environment] id`.
 
   </Accordion>
@@ -86,8 +86,8 @@ full traceback.
 
 <Accordion title="Environment won't import / name collision">
   If your environment module shares a name with an installed Python package, it
-  can shadow or be shadowed by that package. Give the environment a distinct
-  name (`flash env init my-unique-task`) so its module doesn't collide.
+  can shadow or be shadowed by that package. Keep helper module names distinct
+  from installed packages.
 </Accordion>
 
   <Accordion title="What id do I reference in my config?">

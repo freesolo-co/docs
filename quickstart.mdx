@@ -61,8 +61,7 @@ flash env setup
 This drops a ready-to-edit starter in the current directory:
 
 ```
-environments/
-  environment.py          # a Freesolo environment (task + reward)
+environment.py            # a Freesolo environment (task + reward)
 configs/
   grpo.toml               # a GRPO training config to start from
   sft.toml                # an SFT training config to start from
@@ -70,12 +69,9 @@ configs/
 ```
 
 <Note>
-  `flash env setup` writes a starter environment folder with
-  `environments/environment.py`.
-  To scaffold an additional, named environment later, use
-  [`flash env init NAME`](/guides/environments), which creates a per-task
-  directory. Publish the folder, not just the Python file, so helper modules and
-  datasets are included.
+  `flash env setup` writes `environment.py` in the current folder. Publish a
+  folder, not just the Python file, so helper modules and datasets beside it are
+  included.
 </Note>
 
 ## 4. Publish your environment
@@ -84,14 +80,15 @@ An [environment](/guides/environments) defines what your model trains on and
 how it's graded. Publish the scaffolded one to the managed Environments Hub to get an id:
 
 ```bash
-flash env push --name starter environments
+flash env push --name starter .
 ```
 
 This prints an environment id of the form `your-name/starter`.
 
 <Note>
-  Publishing is fully managed. `flash env push --name ... environments` packages
-  the whole folder and uploads it to Freesolo's hosted Environments Hub
+  Publishing is fully managed. `flash env push --name ... .` packages the
+  environment from the current folder and uploads it to Freesolo's hosted
+  Environments Hub
   (published **private**) using just your Freesolo API key. Already have a
   published env id? Skip straight to step 5.
 </Note>

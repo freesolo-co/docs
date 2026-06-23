@@ -73,8 +73,6 @@ math/
   datasets/
     train.jsonl           # input/output records
     eval.jsonl
-  configs/
-    eval.toml             # optional packaged config data
 ```
 
 The recommended shape is a folder with `environment.py` at the top. Publish the
@@ -85,9 +83,9 @@ flash env push --name math math
 ```
 
 Folder upload is important because it carries everything the environment needs:
-helper modules, `datasets/`, `assets/`, `configs/`, and common data files.
-Single `.py` file upload is still supported for tiny smoke tests, but real
-environments should be pushed as folders.
+helper modules, `datasets/`, and common data files. Single `.py` file upload is
+still supported for tiny smoke tests, but real environments should be pushed as
+folders.
 
 Keep all imports either from installed packages or from sibling files in the
 folder you publish.
