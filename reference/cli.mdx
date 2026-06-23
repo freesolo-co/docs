@@ -19,9 +19,9 @@ inline help.
 
 <ResponseField name="flash login" type="[--api-key KEY] [--freesolo-url URL] [--api-url URL]">
   Log in with your Freesolo API key. The key is verified against Freesolo and
-  saved locally. Defaults: `--api-key` from `FREESOLO_API_KEY`; `--freesolo-url`
-  from `FREESOLO_BASE_URL` (else `https://api.freesolo.co`); `--api-url` from
-  `FLASH_API_URL`.
+  saved locally, and the resolved identity is printed on success. Defaults:
+  `--api-key` from `FREESOLO_API_KEY`; `--freesolo-url` from `FREESOLO_BASE_URL`
+  (else `https://api.freesolo.co`); `--api-url` from `FLASH_API_URL`.
 </ResponseField>
 
 <ResponseField name="flash whoami">
@@ -35,12 +35,13 @@ inline help.
 ## Discovery
 
 <ResponseField name="flash models">
-  List supported base models with their algorithms, quantization, and reasoning
-  capability.
+  List the supported base model ids and their parameter sizes. See
+  [Supported models](/reference/models) for algorithms, reasoning, and pricing.
 </ResponseField>
 
 <ResponseField name="flash gpus">
-  List managed GPU classes with VRAM, `$/hr`, and where each class is validated.
+  List managed GPU classes with VRAM and live per-provider `$/hr` (runpod
+  and vast).
 </ResponseField>
 
 ## Environments
@@ -70,8 +71,8 @@ inline help.
 
 <ResponseField name="flash train CONFIG [flags]">
   Submit a managed training run from a TOML config and follow its logs.
-  Submitting charges the pre-flight cost to your org and is gated on
-  balance (see [Cost & billing](/guides/training#cost-and-billing)).
+  A run is billed only when it finishes successfully, for the GPU time it
+  used (see [Cost & billing](/guides/training#cost-and-billing)).
 
   | Flag | Effect |
   | --- | --- |
@@ -84,8 +85,8 @@ inline help.
 
 ## Run management
 
-<ResponseField name="flash ps">
-  List your runs with state, accrued cost, GPU, and model.
+<ResponseField name="flash runs">
+  List your runs with state, algorithm, accrued cost, GPU, and model.
 </ResponseField>
 
 <ResponseField name="flash status RUN_ID [--logs] [-f]">
@@ -111,7 +112,7 @@ inline help.
 </ResponseField>
 
 <ResponseField name="flash chat RUN_ID -m MESSAGE [flags]">
-  Send a message to a deployed adapter and print the reply.
+  Send a message to a deployed adapter and stream the reply as it is generated.
 
   | Flag | Default | Effect |
   | --- | --- | --- |

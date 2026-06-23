@@ -126,9 +126,10 @@ full traceback.
   </Accordion>
 
 <Accordion title="My [gpu] table or hf_repo is being ignored">
-  Both are fully managed and **not** user fields. The allocator picks the GPU
-  for you, and each run streams artifacts into a private Hugging Face repo
-  provisioned server-side. Remove `[gpu]` and `hf_repo` from your config. See
+  GPU **class** selection is fully managed and `hf_repo` is assigned for you, so
+  a pinned `gpu.type` or `hf_repo` is ignored. The allocator picks the cheapest
+  fitting GPU, and each run streams artifacts into a private Hugging Face repo
+  provisioned server-side. Remove `gpu.type` and `hf_repo` from your config. See
   [GPU & infrastructure](/reference/configuration#gpu-infrastructure-managed).
 </Accordion>
 
@@ -152,10 +153,10 @@ full traceback.
 ## Training runs
 
 <AccordionGroup>
-  <Accordion title="My run was rejected before it started (balance)">
-    Submitting a run charges the **pre-flight cost up front** and is
-    gated on your org's prepaid balance; if the balance can't cover the cost,
-    the run is rejected and nothing runs. Preview the number and top up:
+  <Accordion title="When am I charged for a run?">
+    A run is billed only when it **finishes successfully**, for the actual GPU
+    time it used; a run that doesn't complete isn't billed. Nothing is charged at
+    submit. Preview the cost before you submit with the pre-flight estimate:
 
     ```bash
     flash train config.toml --cost
@@ -181,7 +182,7 @@ full traceback.
     server-side. Re-follow it any time, and cancel explicitly if you mean to:
 
     ```bash
-    flash ps                # state and cost of your runs
+    flash runs              # state and cost of your runs
     flash status <run-id> -f    # re-follow the logs
     flash cancel <run-id>       # stop it
     ```
@@ -222,5 +223,5 @@ full traceback.
 ## Getting help
 
 Still stuck? Add `--debug` to surface the full traceback, then reach out through
-[freesolo.co/contact](https://freesolo.co/contact) with the run id (`flash ps`)
+[freesolo.co/contact](https://freesolo.co/contact) with the run id (`flash runs`)
 and the failing command.

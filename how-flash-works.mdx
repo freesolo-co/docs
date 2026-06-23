@@ -146,10 +146,10 @@ infrastructure:
 | (nothing)                       | Storage: each run streams its adapter and checkpoints to a private HF repo    |
 | `flash deploy <run-id>`         | Multi-LoRA serving behind an OpenAI-compatible endpoint                       |
 
-Billing follows the same managed model: every run is charged a **pre-flight
-cost up front** and gated on your prepaid balance, so a run can't start
-unless you can pay for it. Preview it any time with `flash train config.toml
---cost`. See [Cost and billing](/guides/training#cost-and-billing).
+Billing follows the same managed model: a run is billed **when it finishes
+successfully**, for the actual GPU time it used, from your prepaid balance.
+Nothing is charged at submit. Preview the cost any time with `flash train
+config.toml --cost`. See [Cost and billing](/guides/training#cost-and-billing).
 
 <Note>
   Every `flash` command is a thin, authenticated call to Freesolo's hosted
