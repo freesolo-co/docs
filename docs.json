@@ -25,7 +25,7 @@
 			},
 			{
 				"group": "Core concepts",
-				"pages": ["how-flash-works"]
+				"pages": ["how-flash-works", "directory-structure"]
 			},
 			{
 				"group": "Guides",
