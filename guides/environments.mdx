@@ -16,20 +16,19 @@ id = "your-name/your-env"
 ## Scaffold one
 
 ```bash
-flash env init my-task
+flash env setup
 ```
 
-This creates `environments/my-task/my_task.py` with a working starter:
-`load_environment()` returns a Freesolo `EnvironmentSingleTurn` with a sample dataset
-and reward.
+This creates `environment.py` with a working starter. `load_environment()`
+returns a Freesolo `EnvironmentSingleTurn` with a sample dataset and reward.
 
-```python environments/my-task/my_task.py
+```python environment.py
 from freesolo.datasets.types import TaskExample
 from freesolo.environments import EnvironmentSingleTurn, RewardResult
 
 DATASET = [
-    {"task": "What is 2 + 2?", "expected_output": "4"},
-    {"task": "What is 3 + 5?", "expected_output": "8"},
+    {"input": "What is 2 + 2?", "output": "4"},
+    {"input": "What is 3 + 5?", "output": "8"},
 ]
 
 
@@ -58,22 +57,107 @@ Replace the dataset and reward with your task:
 
 For multi-turn tasks, use `EnvironmentMultiTurn` and implement turn-step hooks.
 
+## Structure the package
+
+A published environment is a small folder. Flash packages that folder, imports
+its `environment.py` entrypoint on the worker, and calls
+`load_environment(**params)`. That function must return a Freesolo SDK
+environment. The folder can be named anything; `math/` and
+`environments/math/` are both fine as long as the folder you pass to
+`flash env push` contains `environment.py` at its root.
+
+```text
+math/
+  environment.py          # defines load_environment()
+  helpers.py              # optional Python helpers
+  datasets/
+    train.jsonl           # input/output records
+    eval.jsonl
+```
+
+The recommended shape is a folder with `environment.py` at the top. Publish the
+folder:
+
+```bash
+flash env push --name math math
+```
+
+Folder upload is important because it carries everything the environment needs:
+helper modules, `datasets/`, and common data files. Single `.py` file upload is
+still supported for tiny smoke tests, but real environments should be pushed as
+folders.
+
+Keep all imports either from installed packages or from sibling files in the
+folder you publish.
+
+## Use the SDK
+
+Your environment code imports from the `freesolo` package. For local authoring
+or `--dry-run` checks that import the environment, install it in the same Python
+environment you use for Flash:
+
+```bash
+uv pip install freesolo
+```
+
+For a single-turn task, subclass `EnvironmentSingleTurn`:
+
+```python environment.py
+from pathlib import Path
+
+from freesolo.datasets.records import load_task_examples
+from freesolo.datasets.types import TaskExample
+from freesolo.environments import EnvironmentSingleTurn, RewardResult
+
+ROOT = Path(__file__).parent
+
+
+class MathEnv(EnvironmentSingleTurn):
+    def __init__(self, *, split: str = "train") -> None:
+        self.dataset = load_task_examples(ROOT / "datasets" / f"{split}.jsonl")
+
+    def build_prompt_messages(self, example: TaskExample, prompt_text: str):
+        return [{"role": "user", "content": example.task}]
+
+    def score_response(self, example: TaskExample, response_text: str) -> RewardResult:
+        expected = str(example.expected_output or "").strip()
+        score = 1.0 if expected and expected in response_text else 0.0
+        return RewardResult(score=score, threshold=1.0)
+
+
+def load_environment(split: str = "train", **kwargs) -> MathEnv:
+    return MathEnv(split=split)
+```
+
+The dataset file uses the user-facing `input`/`output` row shape:
+
+```jsonl datasets/train.jsonl
+{"input":"What is 2 + 2?","output":"4"}
+{"input":"What is 3 + 5?","output":"8"}
+```
+
+At runtime, read the same values from `example.record["input"]` and
+`example.record["output"]` if you need the raw row. For the common case,
+`load_task_examples(...)` maps `input` to `example.task` and `output` to
+`example.expected_output`.
+
 ## Publish it
 
 Training runs on managed GPUs, so the environment has to be reachable by id.
-Publish your local environment to the managed Environments Hub:
+Publish your local environment folder to the managed Environments Hub:
 
 ```bash
-flash env push environments/my-task/my_task.py
+flash env push --name math math
 ```
 
 It prints the published id
-(`your-name/my-task`). Put that in your config's `[environment] id`.
+(`your-name/math`). Put that in your config's `[environment] id`.
 
 <Note>
-  Publishing is fully managed: `flash env push` uploads your env to Freesolo's
-  hosted Environments Hub (published **private**) under one managed account, using
-  only your Freesolo API key.
+  Publishing is fully managed: `flash env push --name ...` uploads your env to
+  Freesolo's hosted Environments Hub (published **private**) under one managed
+  account, using only your Freesolo API key. Publish the whole folder so local
+  data and helper files are included.
 </Note>
 
 ## Use an existing environment

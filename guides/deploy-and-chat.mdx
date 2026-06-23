@@ -7,41 +7,15 @@ Once a run reaches `done`, deploy its adapter and chat with it, from the CLI or
 any OpenAI-compatible client.
 
 `flash deploy` registers your adapter with Freesolo's **managed multi-LoRA
-serving service**. Every adapter for a given base model is served from one shared
-GPU that **scales to zero when idle**, so there's nothing to keep warm and **no
-per-day idle charge**: you're billed per token only for the requests you send
-(see [Billing](#billing)).
+serving service**. There is no serving mode to choose and no per-day idle charge:
+you register the adapter, send requests to it, and pay only for prompt and
+completion tokens (see [Billing](#billing)).
 
 ## Deploy
 
 ```bash
 flash deploy <run-id>
 ```
-
-Pick a serving mode with `--mode`:
-
-<CodeGroup>
-
-```bash Scale-to-zero (default)
-flash deploy <run-id> --mode dev
-```
-
-```bash Always-on
-flash deploy <run-id> --mode always-on
-```
-
-</CodeGroup>
-
-<CardGroup cols={2}>
-  <Card title="dev: scale-to-zero" icon="moon">
-    The default. The adapter scales to zero when idle and cold-starts on the first
-    request. Tune the idle window with `--idle-timeout <seconds>` (default 300).
-  </Card>
-  <Card title="always-on" icon="bolt">
-    Requests that the adapter stay warm to avoid cold starts. Either way there's
-    **no per-day idle charge**: serving is billed per token (see below).
-  </Card>
-</CardGroup>
 
 Preview what a deploy would do without creating it:
 
@@ -53,9 +27,9 @@ flash deploy <run-id> --dry-run
 
 Serving is **billed per token**. Each request costs its prompt + completion
 tokens at the base model's serverless list price plus a 20% markup, debited from
-your org's prepaid balance. This applies to **both** modes: even a `dev`
-deployment that's free while idle is billed for the tokens of every request it
-serves. There is no separate per-day or warm-GPU charge.
+your org's prepaid balance. See the actual per-model prices in
+[Supported models](/reference/models#serving-prices). There is no separate
+per-day idle or warm-GPU charge.
 
 ## Chat from the CLI
 
@@ -78,15 +52,13 @@ flash chat <run-id> -m "Write a haiku about GPUs" --temperature 0.8 --max-tokens
 ## Manage deployments
 
 ```bash
-flash deployments        # list active deployments: mode, GPU, endpoint
+flash deployments        # list active deployments: GPU and endpoint
 flash undeploy <run-id>  # deregister the adapter from serving
 ```
 
 <Note>
-  Because serving scales to zero, there's no idle cost to stop: the `$/DAY`
-  column in `flash deployments` is always `0`. `flash undeploy` deregisters the
-  adapter so it no longer accepts requests; you're only ever billed per token for
-  requests you actually send.
+  `flash undeploy` deregisters the adapter so it no longer accepts requests.
+  You're only billed per token for requests you actually send.
 </Note>
 
 ## Use it from your own code
@@ -110,6 +82,6 @@ print(resp.choices[0].message.content)
 ```
 
 <Tip>
-  `flash lab setup` creates a `configs/endpoints.toml` where you can keep the
+  `flash env setup` creates a `configs/endpoints.toml` where you can keep the
   endpoints returned by `flash deploy` for easy reuse.
 </Tip>

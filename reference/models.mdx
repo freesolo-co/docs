@@ -1,6 +1,6 @@
 ---
 title: "Supported models"
-description: "The base models Flash can fine-tune, with sizes, reasoning, and GPU needs."
+description: "The base models Flash can fine-tune and serve, with sizes, reasoning, and token prices."
 ---
 
 Flash trains a **LoRA adapter** on top of a curated catalog of base models. You
@@ -23,34 +23,53 @@ current catalog.
 Every catalog model supports **both SFT and GRPO**, and all are
 reasoning ("thinking") capable.
 
-| Model (`model =`)     | Params | Reasoning | Recommended GPU | Min VRAM               |
-| --------------------- | ------ | --------- | --------------- | ---------------------- |
-| `Qwen/Qwen3.5-0.8B`   | 0.9B   | Hybrid    | RTX 4090        | 12 GB                  |
-| `openbmb/MiniCPM5-1B` | 1.2B   | Hybrid    | RTX 4090        | 12 GB                  |
-| `Qwen/Qwen3.5-2B`     | 2.3B   | Hybrid    | RTX 4090        | 16 GB                  |
-| `Qwen/Qwen3.5-4B`     | 4.7B   | Hybrid    | RTX 5090        | 32 GB                  |
-| `Qwen/Qwen3.5-9B`     | 9.7B   | Hybrid    | A100 PCIe       | 48 GB SFT / 80 GB GRPO |
+| Model (`model =`)     | Params | Reasoning |
+| --------------------- | ------ | --------- |
+| `Qwen/Qwen3.5-0.8B`   | 0.9B   | Hybrid    |
+| `openbmb/MiniCPM5-1B` | 1.2B   | Hybrid    |
+| `Qwen/Qwen3.5-2B`     | 2.3B   | Hybrid    |
+| `Qwen/Qwen3.5-4B`     | 4.7B   | Hybrid    |
+| `Qwen/Qwen3.5-9B`     | 9.7B   | Hybrid    |
 
 <Note>
-  **You don't pick the GPU.** "Recommended GPU" and "Min VRAM" describe what the
-  run needs; the allocator picks the cheapest live-validated class that fits
-  across providers. See [`flash gpus`](/reference/cli#discovery) for live
-  classes and pricing, and [GPU
+  **You don't pick the GPU.** For training, the allocator picks the cheapest
+  live-validated GPU class that fits across providers. See [`flash
+  gpus`](/reference/cli#discovery) for live classes and pricing, and [GPU
   selection](/guides/training#gpu-selection-is-automatic).
+</Note>
+
+## Serving prices
+
+Serving is billed per token after deployment. Each request costs prompt tokens
+plus completion tokens at the base model's serverless list price plus a 20%
+markup. The table below lists prices per 1M tokens and mirrors the Flash source
+of truth: [`flash/serve/pricing.py`](https://github.com/freesolo-co/flash/blob/dev/flash/serve/pricing.py).
+
+| Model | Base input | Base output | Flash input | Flash output |
+| --- | ---: | ---: | ---: | ---: |
+| `Qwen/Qwen3.5-0.8B` | $0.05 | $0.10 | $0.06 | $0.12 |
+| `openbmb/MiniCPM5-1B` | $0.05 | $0.10 | $0.06 | $0.12 |
+| `Qwen/Qwen3.5-2B` | $0.10 | $0.20 | $0.12 | $0.24 |
+| `Qwen/Qwen3.5-4B` | $0.20 | $0.40 | $0.24 | $0.48 |
+| `Qwen/Qwen3.5-9B` | $0.50 | $1.00 | $0.60 | $1.20 |
+
+<Note>
+  Training costs are separate from serving costs. Training is estimated before
+  submit with `flash train CONFIG --cost` and charged up front when the run
+  starts. Serving charges only for tokens served after `flash deploy`.
 </Note>
 
 ### Notes per model
 
 - **`Qwen/Qwen3.5-0.8B`**: the smallest Qwen3.5. Cheapest for smoke tests and
-  dev loops on the modern stack.
+  fast iteration on the modern stack.
 - **`openbmb/MiniCPM5-1B`**: an on-device-class small model (131k context) on a
   standard Llama architecture.
 - **`Qwen/Qwen3.5-2B`**: a small, capable step up when 0.8B underfits.
 - **`Qwen/Qwen3.5-4B`**: the **default**. A current-gen dense 4B and the safe
   out-of-the-box choice for most tasks.
-- **`Qwen/Qwen3.5-9B`**: the largest catalog model. Trained as a bf16 LoRA; SFT
-  fits a 48 GB card, while GRPO co-locates a rollout engine and needs an
-  80 GB-class GPU.
+- **`Qwen/Qwen3.5-9B`**: the largest catalog model. Use it when quality matters
+  more than the run cost.
 
 <Note>
   The Qwen3.5 entries are **text-only** fine-tunes: the checkpoints are natively

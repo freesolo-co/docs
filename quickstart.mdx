@@ -55,26 +55,23 @@ flash whoami    # confirm who your stored key resolves to
 ## 3. Scaffold a project
 
 ```bash
-flash lab setup
+flash env setup
 ```
 
 This drops a ready-to-edit starter in the current directory:
 
 ```
-environments/
-  starter_env.py          # a Freesolo environment (task + reward)
+environment.py            # a Freesolo environment (task + reward)
 configs/
-  freesolo_grpo.toml     # a training config to start from
+  grpo.toml               # a GRPO training config to start from
+  sft.toml                # an SFT training config to start from
   endpoints.toml          # somewhere to stash deploy endpoints
 ```
 
 <Note>
-  `flash lab setup` writes a single starter module, `environments/starter_env.py`.
-  To scaffold an additional, named environment later, use
-  [`flash env init NAME`](/guides/environments), which creates a per-task
-  directory with a snake_cased module file instead (e.g. `flash env init my-task`
-  creates `environments/my-task/my_task.py`). Both forms are valid env files you can
-  `flash env push`.
+  `flash env setup` writes `environment.py` in the current folder. Publish a
+  folder, not just the Python file, so helper modules and datasets beside it are
+  included.
 </Note>
 
 ## 4. Publish your environment
@@ -83,23 +80,25 @@ An [environment](/guides/environments) defines what your model trains on and
 how it's graded. Publish the scaffolded one to the managed Environments Hub to get an id:
 
 ```bash
-flash env push environments/starter_env.py
+flash env push --name starter .
 ```
 
 This prints an environment id of the form `your-name/starter`.
 
 <Note>
-  Publishing is fully managed. `flash env push` packages your env and uploads it
-  to Freesolo's hosted Environments Hub (published **private**) using just your
-  Freesolo API key. Already have a published env id? Skip straight to step 5.
+  Publishing is fully managed. `flash env push --name ... .` packages the
+  environment from the current folder and uploads it to Freesolo's hosted
+  Environments Hub
+  (published **private**) using just your Freesolo API key. Already have a
+  published env id? Skip straight to step 5.
 </Note>
 
 ## 5. Configure your run
 
-Open `configs/freesolo_grpo.toml` and set the one thing that's yours, the
+Open `configs/grpo.toml` and set the one thing that's yours, the
 environment id from the previous step:
 
-```toml configs/freesolo_grpo.toml
+```toml configs/grpo.toml
 model = "Qwen/Qwen3.5-4B"
 algorithm = "grpo"
 
@@ -123,20 +122,29 @@ Validate it locally first. `--dry-run` parses and checks the config with no
 credentials, server, or GPU:
 
 ```bash
-flash train configs/freesolo_grpo.toml --dry-run
+flash train configs/grpo.toml --dry-run
 ```
 
 See what the run will cost before committing. `--cost` prints the pre-flight
 USD estimate and exits without submitting:
 
 ```bash
-flash train configs/freesolo_grpo.toml --cost
+flash train configs/grpo.toml --cost
 ```
+
+<Note>
+  **Training pricing is GPU-time pricing, not token pricing.** Flash estimates
+  the wall-clock time for your selected model, algorithm, and training settings,
+  multiplies that by the managed GPU price, and shows the exact pre-flight charge
+  with `--cost`. `flash train configs/grpo.toml` charges that estimate to your
+  org balance up front before any GPU starts; serving token charges are separate
+  and only begin after `flash deploy`.
+</Note>
 
 ## 6. Train
 
 ```bash
-flash train configs/freesolo_grpo.toml
+flash train configs/grpo.toml
 ```
 
 Submitting charges the pre-flight estimate (the `--cost` number) to your org's
@@ -154,9 +162,9 @@ The run reaches `done` when training finishes.
 
 ## 7. Deploy
 
-Serve the trained adapter on Freesolo's managed serving service. It
-**scales to zero when idle** (no charge for idle time) and cold-starts on the
-first request; you're billed per token for the requests it serves:
+Serve the trained adapter on Freesolo's managed serving service. There is no
+per-day idle charge: deployment registers the adapter, and serving is billed per
+prompt and completion token for requests you send:
 
 ```bash
 flash deploy <run-id>
@@ -187,7 +195,7 @@ flash undeploy <run-id>
     Package records, files, and split parameters with an environment.
   </Card>
   <Card title="Deploy & chat" icon="comments" href="/guides/deploy-and-chat">
-    Scale-to-zero vs always-on, and the OpenAI-compatible API.
+    Serving billing and the OpenAI-compatible API.
   </Card>
   <Card title="CLI reference" icon="terminal" href="/reference/cli">
     Every `flash` command and flag.

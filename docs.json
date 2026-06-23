@@ -32,10 +32,6 @@
 				]
 			},
 			{
-				"group": "Examples",
-				"pages": ["examples/overview"]
-			},
-			{
 				"group": "Reference",
 				"pages": ["reference/models", "reference/cli", "reference/configuration", "reference/troubleshooting"]
 			}

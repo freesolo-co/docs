@@ -47,19 +47,19 @@ thin, authenticated call to the hosted control plane. Run `flash --help` or
 
 ## Environments
 
-<ResponseField name="flash lab setup">
-  Scaffold `environments/` and `configs/` in the current directory with a
-  starter environment and config.
+<ResponseField name="flash env setup">
+  Scaffold `environment.py` and `configs/` in the current directory with a
+  starter environment plus `configs/grpo.toml`, `configs/sft.toml`, and
+  `configs/endpoints.toml`.
 </ResponseField>
 
-<ResponseField name="flash env init NAME">
-  Scaffold a new local Freesolo environment at `environments/NAME/`.
-</ResponseField>
-
-<ResponseField name="flash env push [PATH]">
+<ResponseField name="flash env push --name NAME [PATH]">
   Publish a local Freesolo environment to Freesolo's managed Environments Hub
-  (private) and print its id (`your-name/your-env`). `PATH` defaults to the
-  current directory. Fully managed with your Freesolo API key.
+  (private) and print its id (`your-name/NAME`). `--name` is required; `PATH`
+  defaults to the current directory. Pass `.` or any folder with
+  `environment.py` at its root so helper modules, `datasets/`, and common
+  sibling data files are uploaded.
+  Fully managed with your Freesolo API key.
 </ResponseField>
 
 <ResponseField name="flash env install ENV_ID">
@@ -116,12 +116,11 @@ thin, authenticated call to the hosted control plane. Run `flash --help` or
 
 <ResponseField name="flash deploy RUN_ID [flags]">
   Register a trained adapter with the managed multi-LoRA serving service.
-  Serving scales to zero when idle and is [billed per token](/guides/deploy-and-chat#billing).
+  Serving is [billed per token](/guides/deploy-and-chat#billing); there is no
+  per-day idle charge.
 
   | Flag | Default | Effect |
   | --- | --- | --- |
-  | `--mode` | `dev` | `dev` (scale-to-zero) or `always-on` (kept warm to avoid cold starts) |
-  | `--idle-timeout SECONDS` | `300` | `dev` mode: idle seconds before scaling to zero |
   | `--dry-run` | - | Preview the deploy without creating it |
 </ResponseField>
 
@@ -136,8 +135,7 @@ thin, authenticated call to the hosted control plane. Run `flash --help` or
 </ResponseField>
 
 <ResponseField name="flash deployments">
-  List active serving deployments with mode, GPU, `$/day` (always `0`, serving
-  scales to zero), and endpoint.
+  List active serving deployments with GPU and endpoint.
 </ResponseField>
 
 <ResponseField name="flash undeploy RUN_ID">
