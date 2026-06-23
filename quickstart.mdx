@@ -130,16 +130,16 @@ flash train configs/grpo.toml
 ```
 
 <Note>
-  This is the first step that spends money. Submitting charges the pre-flight
-  cost (the `--cost` number) to your org's balance up front; if the balance
-  can't cover it, the run is rejected and never starts.
+  This is the first step that spends money. A run is billed only when it
+  finishes successfully, for the actual GPU time it used; the `--cost` number is
+  a pre-flight estimate, and a run that never completes isn't billed.
 </Note>
 
 Flash then follows the logs live. Press `Ctrl-C` to detach. The run keeps going
 on the server, and you can follow it again any time:
 
 ```bash
-flash ps                  # list your runs and their state/cost
+flash runs                # list your runs and their state/cost
 flash status <run-id>     # status JSON, including accrued cost
 flash status <run-id> -f  # stream logs until the run finishes
 ```
@@ -181,7 +181,7 @@ The commands you used above, plus the ones you'll reach for next. Run
 | `flash env push`     | Publish an environment and print its id    | `flash env push --name starter .`      |
 | `flash train`        | Submit a run and follow its logs           | `flash train configs/grpo.toml`        |
 | `flash train --cost` | Preview the pre-flight cost, no submit     | `flash train configs/grpo.toml --cost` |
-| `flash ps`           | List your runs with state, cost, GPU       | `flash ps`                             |
+| `flash runs`         | List your runs with state, cost, GPU       | `flash runs`                           |
 | `flash status`       | Show run status, or stream its logs        | `flash status <run-id> -f`             |
 | `flash deploy`       | Serve a trained adapter                    | `flash deploy <run-id>`                |
 | `flash chat`         | Send a message to a deployment             | `flash chat <run-id> -m "hi"`          |

@@ -54,9 +54,10 @@ of truth: [`flash/serve/pricing.py`](https://github.com/freesolo-co/flash/blob/d
 | `Qwen/Qwen3.5-9B` | $0.50 | $1.00 | $0.60 | $1.20 |
 
 <Note>
-  Training costs are separate from serving costs. Training cost is calculated before
-  submit with `flash train CONFIG --cost` and charged up front when the run
-  starts. Serving charges only for tokens served after `flash deploy`.
+  Training costs are separate from serving costs. Preview a training run's cost
+  before submit with `flash train CONFIG --cost`; the run is charged for the
+  actual GPU time it used when it finishes successfully. Serving charges only for
+  tokens served after `flash deploy`.
 </Note>
 
 ### Notes per model

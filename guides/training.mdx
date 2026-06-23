@@ -11,7 +11,8 @@ the [configuration reference](/reference/configuration) for every field.
 ## Pick a base model
 
 Flash trains a **LoRA adapter** on top of a supported base model. List the
-catalog, with each model's supported algorithms and reasoning capability:
+catalog of base model ids and their parameter sizes (see
+[Supported models](/reference/models) for algorithms, reasoning, and pricing):
 
 ```bash
 flash models
@@ -113,11 +114,12 @@ flash train config.toml --set train.steps=300 --set train.lora_rank=16
 
 ## Cost and billing
 
-Every run is **charged the pre-flight cost up front, at submit time**.
-`flash train` computes the same number that `flash train --cost` prints (GPU
-$/hr × wall-clock) and debits it from your org's prepaid balance before
-the run is accepted. The charge **gates the run**: if the balance can't cover the
-cost, the submit is rejected and nothing runs. Preview it any time:
+A run is **billed when it finishes successfully**, for the actual GPU time it
+used. Once the run reaches `done`, Flash measures the real cost (GPU $/hr ×
+wall-clock) and debits it from your org's prepaid balance; nothing is charged at
+submit, and a run that never completes isn't billed. Preview the cost before you
+submit with `flash train --cost`, which prints a deterministic pre-flight
+estimate (the final charge is the measured actual, which can differ):
 
 ```bash
 flash train config.toml --cost
@@ -126,7 +128,7 @@ flash train config.toml --cost
 ```text
 Run        : Qwen/Qwen3.5-4B  [GRPO, 150 steps]
 GPU        : RTX 5090 on runpod (32 GB; run needs >= 32 GB) @ $0.69/hr
-Setup      : 7.0 min (cold start: boot + deps + download + vLLM init)
+Setup      : 7.0 min (cold start: boot + deps + model load + vLLM init)
 Per step   : 9.50 s
 Train      : 23.8 min
 Wall clock : 0.51 h
@@ -144,7 +146,7 @@ TOTAL      : $0.35
 `Ctrl-C` during `flash train` just detaches you. The run keeps going server-side.
 
 ```bash
-flash ps                  # all your runs: state, cost, GPU, model
+flash runs                # all your runs: state, cost, GPU, model
 flash status <run-id>     # status JSON, including accrued cost
 flash status <run-id> --logs    # print logs, then status
 flash status <run-id> --follow  # stream logs until completion, then status
