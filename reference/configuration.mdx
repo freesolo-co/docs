@@ -22,12 +22,8 @@ seeds = [0]
 ```
 
 <Note>
-  **The GPU and the run's artifact storage are fully managed**: there is no
-  `[gpu]` pin to set and no `hf_repo` to supply. The allocator picks the cheapest
-  validated GPU class that fits across providers, and each run gets its own
-  private Hugging Face repo provisioned server-side. Unknown config sections or
-  `[train]` keys are rejected at parse time, so a typo fails fast rather than
-  silently training against defaults.
+  Unknown config sections or `[train]` keys are rejected at parse time, so a typo
+  fails fast rather than silently training against defaults.
 </Note>
 
 ## Top level
