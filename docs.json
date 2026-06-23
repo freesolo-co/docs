@@ -1,8 +1,9 @@
 {
 	"$schema": "https://mintlify.com/docs.json",
 	"theme": "mint",
-	"name": "Freesolo",
+	"name": "Freesolo Docs",
 	"description": "Train, deploy, and chat with custom LoRA models on managed GPUs.",
+	"favicon": "/favicon.ico",
 	"colors": {
 		"primary": "#5f72ff",
 		"light": "#8b98ff",
