@@ -49,6 +49,10 @@
    footer: restyle mintlify's footer to match the freesolo website footer
    (full lockup logo, social chips under it, uppercase headers, copyright, and
    the giant freesolo lockup across the bottom).
+
+   note: asset url()s use the /docs/ prefix because the site is served under the
+   /docs subpath; mintlify does not base-rewrite raw css url() (only docs.json
+   assets). local `mint dev` serves at / so these images 404 in local preview only.
    --------------------------------------------------------------------------- */
 
 /* swap the small footer mark for the full freesolo lockup. */
@@ -56,11 +60,11 @@
 	display: inline-block;
 	width: 156px;
 	height: 26px;
-	background: url("/logo/freesolo-wordmark-light.svg") left center / contain
+	background: url("/docs/logo/freesolo-wordmark-light.svg") left center / contain
 		no-repeat;
 }
 .dark #footer a:has(> .nav-logo) {
-	background-image: url("/logo/freesolo-wordmark-dark.svg");
+	background-image: url("/docs/logo/freesolo-wordmark-dark.svg");
 }
 #footer a:has(> .nav-logo) .nav-logo {
 	display: none;
@@ -91,9 +95,9 @@
 /* uppercase, muted column headers like the site. */
 #footer p.font-semibold {
 	text-transform: uppercase;
-	letter-spacing: 0.08em;
-	font-size: 0.75rem;
-	font-weight: 600;
+	letter-spacing: 0.02em;
+	font-size: 0.875rem;
+	font-weight: 500;
 	color: #6b7280;
 }
 
@@ -135,9 +139,19 @@
 	padding: 2.5rem 2rem 0;
 	box-sizing: border-box;
 	aspect-ratio: 465 / 80;
-	background: url("/logo/freesolo-wordmark-light.svg") center bottom / contain
+	background: url("/docs/logo/freesolo-wordmark-light.svg") center bottom / contain
 		no-repeat;
 }
 .dark #footer::after {
-	background-image: url("/logo/freesolo-wordmark-dark.svg");
+	background-image: url("/docs/logo/freesolo-wordmark-dark.svg");
+}
+
+/* thick navy bar across the very bottom, like the marketing site footer. */
+#footer {
+	border-bottom: 8px solid #1b1b4b;
+}
+@media (min-width: 768px) {
+	#footer {
+		border-bottom: 16px solid #1b1b4b;
+	}
 }

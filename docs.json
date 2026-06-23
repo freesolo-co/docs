@@ -55,15 +55,6 @@
 		},
 		"links": [
 			{
-				"header": "Product",
-				"items": [
-					{
-						"label": "Blog",
-						"href": "https://freesolo.co/blog"
-					}
-				]
-			},
-			{
 				"header": "Company",
 				"items": [
 					{
