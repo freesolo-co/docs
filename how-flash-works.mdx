@@ -1,6 +1,6 @@
 ---
 title: "How Flash works"
-description: "Post-training in plain terms, and how Flash's managed system runs it for you."
+description: "Post-training in plain terms: the few concepts that matter, and how Flash runs them for you."
 ---
 
 If you've heard of "post-training" or "fine-tuning" but never shipped one, this
@@ -84,8 +84,9 @@ An **environment** is the task, expressed as code. It bundles two things:
 The environment is the single source of truth for _what the model practices on_
 and _how it's graded_. Flash uses Freesolo environments. You author one locally,
 publish it to the managed Environments Hub, and reference it from your config by
-Freesolo id. See [Environments](/guides/environments) and
-[Datasets](/guides/datasets).
+Freesolo id. See the [Environment model](/environment-model) for the mental
+model, or [Environments](/guides/environments) and [Datasets](/guides/datasets)
+to build one.
 
 ### Two ways to teach: SFT and GRPO
 
@@ -143,7 +144,7 @@ infrastructure:
 | `flash train config.toml`       | Allocating the cheapest validated GPU that fits, across providers             |
 | (nothing)                       | Supervision: a stall watchdog and bounded auto-retry from the last checkpoint |
 | (nothing)                       | Storage: each run streams its adapter and checkpoints to a private HF repo    |
-| `flash deploy <run-id>`         | Multi-LoRA serving behind an OpenAI-compatible endpoint                      |
+| `flash deploy <run-id>`         | Multi-LoRA serving behind an OpenAI-compatible endpoint                       |
 
 Billing follows the same managed model: every run is charged a **pre-flight
 cost up front** and gated on your prepaid balance, so a run can't start
