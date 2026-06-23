@@ -23,28 +23,28 @@ current catalog.
 Every catalog model supports **both SFT and GRPO**, and all are
 reasoning ("thinking") capable.
 
-| Model (`model =`)     | Params | Reasoning |
-| --------------------- | ------ | --------- |
-| `Qwen/Qwen3.5-0.8B`   | 0.9B   | Hybrid    |
-| `openbmb/MiniCPM5-1B` | 1.2B   | Hybrid    |
-| `Qwen/Qwen3.5-2B`     | 2.3B   | Hybrid    |
-| `Qwen/Qwen3.5-4B`     | 4.7B   | Hybrid    |
-| `Qwen/Qwen3.5-9B`     | 9.7B   | Hybrid    |
+| Model (`model =`)     | Reasoning |
+| --------------------- | --------- |
+| `Qwen/Qwen3.5-0.8B`   | Hybrid    |
+| `openbmb/MiniCPM5-1B` | Hybrid    |
+| `Qwen/Qwen3.5-2B`     | Hybrid    |
+| `Qwen/Qwen3.5-4B`     | Hybrid    |
+| `Qwen/Qwen3.5-9B`     | Hybrid    |
 
 ## Serving prices
 
-Serving is billed per token after deployment. Each request costs prompt tokens
-plus completion tokens at the base model's serverless list price plus a 20%
-markup. The table below lists prices per 1M tokens and mirrors the Flash source
-of truth: [`flash/serve/pricing.py`](https://github.com/freesolo-co/flash/blob/dev/flash/serve/pricing.py).
+Serving is billed per token after deployment: you pay for **input** (prompt)
+tokens plus **output** (completion) tokens. The prices below are **per 1M
+tokens** and mirror the Flash source of truth:
+[`flash/serve/pricing.py`](https://github.com/freesolo-co/flash/blob/dev/flash/serve/pricing.py).
 
-| Model | Base input | Base output | Flash input | Flash output |
-| --- | ---: | ---: | ---: | ---: |
-| `Qwen/Qwen3.5-0.8B` | $0.05 | $0.10 | $0.06 | $0.12 |
-| `openbmb/MiniCPM5-1B` | $0.05 | $0.10 | $0.06 | $0.12 |
-| `Qwen/Qwen3.5-2B` | $0.10 | $0.20 | $0.12 | $0.24 |
-| `Qwen/Qwen3.5-4B` | $0.20 | $0.40 | $0.24 | $0.48 |
-| `Qwen/Qwen3.5-9B` | $0.50 | $1.00 | $0.60 | $1.20 |
+| Model | Input | Output |
+| --- | ---: | ---: |
+| `Qwen/Qwen3.5-0.8B` | $0.06 | $0.12 |
+| `openbmb/MiniCPM5-1B` | $0.06 | $0.12 |
+| `Qwen/Qwen3.5-2B` | $0.12 | $0.24 |
+| `Qwen/Qwen3.5-4B` | $0.24 | $0.48 |
+| `Qwen/Qwen3.5-9B` | $0.60 | $1.20 |
 
 ### Notes per model
 
