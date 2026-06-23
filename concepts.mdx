@@ -165,7 +165,8 @@ Putting it together, a full loop is five commands:
     Choose from the [catalog](/reference/models) and set `model` in your config.
   </Step>
   <Step title="Define an environment">
-    Write (or reuse) a dataset and reward, then `flash env push` to publish it.
+    Write (or reuse) a dataset and reward, then publish the environment folder
+    with `flash env push --name <name> <folder>`.
   </Step>
   <Step title="Train">
     `flash train config.toml` allocates a GPU, runs the loop, and streams logs

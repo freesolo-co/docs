@@ -57,11 +57,11 @@ full traceback.
 <AccordionGroup>
   <Accordion title="flash env push fails">
     Publishing is fully managed and only needs your Freesolo API key. Make sure
-    the file you push defines a `load_environment()` function that returns a
-    Freesolo environment, then:
+    the folder you push contains an `environment.py` file with a
+    `load_environment()` function that returns a Freesolo environment, then:
 
     ```bash
-    flash env push environments/my-task/my_task.py
+    flash env push --name my-task environments/my_task
     ```
 
     It prints the published id (`your-name/my-task`) to put in your config's
