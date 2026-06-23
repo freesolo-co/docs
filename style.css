@@ -166,3 +166,17 @@
 		border-bottom: 16px solid #1b1b4b;
 	}
 }
+
+/* ---------------------------------------------------------------------------
+   square corners: the freesolo marketing site uses sharp (non-rounded) corners
+   everywhere, so flatten all border-radius across the docs to match it.
+   --------------------------------------------------------------------------- */
+*,
+*::before,
+*::after {
+	border-radius: 0 !important;
+}
+/* webkit scrollbar thumbs aren't covered by the universal selector above. */
+::-webkit-scrollbar-thumb {
+	border-radius: 0 !important;
+}
