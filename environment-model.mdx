@@ -28,8 +28,9 @@ Every environment bundles three things behind one `load_environment()` entrypoin
   </Card>
 </CardGroup>
 
-The same environment drives **SFT, GRPO, and eval**. You don't restate your task
-per algorithm; you swap one line in the config and the environment stays put.
+The same environment drives **SFT** (learn from gold answers), **GRPO** (learn
+from reward scores), **and eval**. You don't restate your task per algorithm;
+you swap one line in the config and the environment stays put.
 
 ## The one thing you write
 
@@ -38,13 +39,13 @@ the rest of the loop.
 
 | You write                                                | Flash runs                                                                       |
 | -------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| The dataset, interaction, and reward in `environment.py` | The training loop: sampling prompts, generating rollouts, applying the algorithm |
+| The dataset, interaction, and reward in `environment.py` | The training loop: sampling prompts, generating model attempts (rollouts), applying the algorithm |
 | (nothing)                                                | The GPU, batching, checkpointing, and auto-retry                                 |
 | (nothing)                                                | A versioned Environments Hub and per-token serving                               |
 
-This is why the environment matters so much: it is the entirety of what makes a
-run _yours_. The quality of its dataset and reward sets the ceiling on what
-training can achieve. For the full split of responsibilities, see
+The environment is the entirety of what makes a run _yours_. The quality of its
+dataset and reward sets the ceiling on what training can achieve. For the full
+split of responsibilities, see
 [How Flash works](/how-flash-works#how-flash-supports-you).
 
 ## Where it sits in the training loop
@@ -75,7 +76,8 @@ The interaction model is set by which base class you subclass:
 - **`EnvironmentSingleTurn`:** prompt in, completion out, reward computed. Most
   tasks start here.
 - **`EnvironmentMultiTurn`:** for conversations or tool use, where the model takes
-  several steps before its trajectory is scored. You implement the turn-step hooks.
+  several steps before the whole sequence (its trajectory) is scored. You
+  implement the turn-step hooks.
 
 A minimal single-turn environment, just for orientation:
 

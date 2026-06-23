@@ -3,8 +3,9 @@ title: "Environments"
 description: "Define the task your model trains on and is graded by."
 ---
 
-An **environment** is the task: the data your model sees and the reward that
-scores its outputs. Flash loads environments through the Freesolo environment SDK.
+An **environment** is the task: the data your model sees and the reward, a
+numeric score your code assigns to each model output. Flash loads environments
+through the Freesolo environment SDK.
 You author one locally, publish it to Freesolo's managed Environments Hub, and
 reference it in config by its Freesolo environment id.
 
@@ -52,8 +53,9 @@ Replace the dataset and reward with your task:
 
 - **Dataset**: the prompts (and any gold answers) your model trains and is
   evaluated on.
-- **Reward**: `score_response` returns a `RewardResult`; that score is the signal
-  GRPO optimizes and SFT can also use for target scoring behavior.
+- **Reward**: `score_response` returns a `RewardResult`. That score is the
+  signal GRPO (reinforcement learning) optimizes; SFT instead trains directly on
+  the example answers in your dataset, not on the score.
 
 For multi-turn tasks, use `EnvironmentMultiTurn` and implement turn-step hooks.
 
@@ -82,10 +84,9 @@ folder:
 flash env push --name math math
 ```
 
-Folder upload is important because it carries everything the environment needs:
-helper modules, `datasets/`, and common data files. Single `.py` file upload is
-still supported for tiny smoke tests, but real environments should be pushed as
-folders.
+A folder carries everything the environment needs: helper modules, `datasets/`,
+and common data files. Single `.py` upload still works for tiny smoke tests, but
+push real environments as folders.
 
 Keep all imports either from installed packages or from sibling files in the
 folder you publish.

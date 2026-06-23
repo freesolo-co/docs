@@ -20,9 +20,10 @@ flash chat <run-id> -m "hi"  # talk to it
 
 <AccordionGroup>
   <Accordion title="Fine-tune a model on your own task" icon="dumbbell">
-    Write a TOML config, run one command, and Flash trains a LoRA adapter on top
-    of a supported base model. You pick the model and the task; the platform
-    picks and runs the GPU. See [Training](/guides/training).
+    Write a TOML config, run one command, and Flash trains a LoRA adapter (a
+    small set of add-on weights) on top of a supported base model. You pick the
+    model and the task; the platform picks and runs the GPU. See
+    [Training](/guides/training).
 
     ```bash
     flash train config.toml

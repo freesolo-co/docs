@@ -69,10 +69,10 @@ full traceback.
   </Accordion>
 
   <Accordion title="ModuleNotFoundError: No module named 'freesolo' (local authoring)">
-    Training runs managed, so the env's dependencies live server-side. But
-    authoring locally, and any `--dry-run`/`--cost` that **loads** the
-    environment (for example, to count examples for SFT cost), needs the
-    env's libraries installed locally:
+    Training is managed, so the env's dependencies live server-side. But local
+    authoring needs them installed locally, as does any `--dry-run`/`--cost`
+    that **loads** the environment (for example, to count examples for SFT
+    cost):
 
     ```bash
     uv pip install freesolo
@@ -143,8 +143,9 @@ full traceback.
 
 <AccordionGroup>
   <Accordion title="GRPO needs a bigger GPU than SFT for the same model">
-    Expected. GRPO co-locates a rollout engine that holds a second copy of the
-    weights plus a KV cache, so it needs more VRAM than SFT. The 9B model, for
+    Expected. GRPO has to generate sample answers (rollouts) as it trains, so it
+    runs a generation engine alongside training that holds a second copy of the
+    weights plus a KV cache. That needs more VRAM than SFT. The 9B model, for
     instance, fits a 48 GB card for SFT but needs an 80 GB-class card for GRPO.
     Pick a smaller model or use `sft`. See [Supported models](/reference/models).
   </Accordion>
@@ -165,8 +166,9 @@ full traceback.
   </Accordion>
 
 <Accordion title="GRPO reward is stuck at 0">
-  The task is too hard for the model at its current ability: if no rollout ever
-  scores, there's no signal to learn from. Try a stronger/larger base model,
+  The task is too hard for the model at its current ability: GRPO learns by
+  rewarding the model's better attempts (rollouts), so if none ever score,
+  there's nothing to reinforce. Try a stronger/larger base model,
   make the task easier to get started, or double-check your reward actually
   returns a positive reward for good answers.
 </Accordion>
@@ -174,7 +176,7 @@ full traceback.
 <Accordion title="Reward is stuck at 1 (or never moves)">
   Usually the reward is not discriminative: it scores almost everything the
   same. Make the reward function separate better answers from worse ones so GRPO
-  has a gradient to follow. See [Environments](/guides/environments).
+  has a spread of scores to learn from. See [Environments](/guides/environments).
 </Accordion>
 
   <Accordion title="Did pressing Ctrl-C kill my run?">

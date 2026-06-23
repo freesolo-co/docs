@@ -10,7 +10,8 @@ the [configuration reference](/reference/configuration) for every field.
 
 ## Pick a base model
 
-Flash trains a **LoRA adapter** on top of a supported base model. List the
+Flash trains a **LoRA adapter**, a small set of extra weights layered on top of
+a supported base model with the base weights frozen. List the
 catalog of base model ids and their parameter sizes (see
 [Supported models](/reference/models) for algorithms, reasoning, and pricing):
 
@@ -40,11 +41,11 @@ algorithm = "sft"
 
 </CodeGroup>
 
-- **`grpo`**: reinforcement learning. The model generates completions, your
-  environment's reward scores them, and the policy is updated toward
-  higher-reward behavior.
-- **`sft`**: supervised fine-tuning on the prompts/answers in your environment's
-  dataset.
+- **`grpo`**: reinforcement learning, for when there's no fixed answer to copy.
+  The model generates several completions per prompt, your environment's reward
+  scores each one, and the model is nudged to produce more of what scores high.
+- **`sft`**: supervised fine-tuning, for when you already have the answers. The
+  model learns to imitate the prompt/answer pairs in your environment's dataset.
 
 Both are driven by the same [environment](/guides/environments).
 
