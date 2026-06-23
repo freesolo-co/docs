@@ -27,6 +27,7 @@
 				"pages": [
 					"guides/training",
 					"guides/environments",
+					"guides/datasets",
 					"guides/deploy-and-chat"
 				]
 			},

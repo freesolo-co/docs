@@ -42,7 +42,7 @@ algorithm** that improves the model from that score.
   </Step>
   <Step title="The environment scores it">
     Your environment grades the answer, either against a known good answer or
-    with a rubric that returns a reward.
+    with a reward function.
   </Step>
   <Step title="The algorithm updates the model">
     The training algorithm nudges the model's weights toward answers that score
@@ -78,14 +78,14 @@ Pick the base model with one line in your config. Browse the catalog with
 An **environment** is the task, expressed as code. It bundles two things:
 
 - A **dataset**: the prompts your model practices on (and any gold answers).
-- A **rubric**: one or more reward functions that look at an answer and return a
+- A **reward**: a scoring function that looks at an answer and returns a
   score.
 
 The environment is the single source of truth for _what the model practices on_
-and _how it's graded_. Flash uses
-[Prime Intellect `verifiers`](https://github.com/PrimeIntellect-ai/verifiers)
-environments. You author one locally, publish it, and reference it from your
-config by id. See [Environments](/guides/environments).
+and _how it's graded_. Flash uses Freesolo environments. You author one locally,
+publish it to the managed Environments Hub, and reference it from your config by
+GitHub-backed id. See [Environments](/guides/environments) and
+[Datasets](/guides/datasets).
 
 ### Two ways to teach: SFT and GRPO
 
@@ -99,7 +99,7 @@ between them with one line of config.
     want.
   </Card>
   <Card title="GRPO: learn by practice" icon="trophy">
-    **Reinforcement learning.** The model generates attempts, your rubric scores
+    **Reinforcement learning.** The model generates attempts, your reward scores
     them, and the model is pushed toward the higher-scoring ones. Best when good
     output is easier to *score* than to *write out* by hand.
   </Card>
@@ -114,10 +114,10 @@ one, that scoring function is exactly what **GRPO** needs. See
 
 In GRPO, a **rollout** is one attempt the model generates for a prompt. For each
 prompt, GRPO samples a _group_ of rollouts (the `group_size`), scores each one
-with your rubric, and reinforces the rollouts that beat the group's average. The
-**reward** is just your rubric's score.
+with your environment, and reinforces the rollouts that beat the group's
+average. The **reward** is the score your environment returns.
 
-This is why the rubric matters so much: it is the teacher. If your reward
+This is why the reward matters so much: it is the teacher. If your reward
 function can reliably separate good answers from bad ones, GRPO can optimize
 toward it. If the task is so hard that every rollout scores zero, there's no
 signal to learn from, so start with a model and task where some attempts succeed.
@@ -165,7 +165,7 @@ Putting it together, a full loop is five commands:
     Choose from the [catalog](/reference/models) and set `model` in your config.
   </Step>
   <Step title="Define an environment">
-    Write (or reuse) a dataset and rubric, then `flash env push` to publish it.
+    Write (or reuse) a dataset and reward, then `flash env push` to publish it.
   </Step>
   <Step title="Train">
     `flash train config.toml` allocates a GPU, runs the loop, and streams logs
@@ -205,7 +205,7 @@ your environment sets the ceiling on what training can achieve.
     SFT vs GRPO, config options, monitoring, and cost.
   </Card>
   <Card title="Build an environment" icon="flask" href="/guides/environments">
-    Turn your task into a dataset and a rubric.
+    Turn your task into a dataset and a reward.
   </Card>
   <Card title="Supported models" icon="layer-group" href="/reference/models">
     The base models you can fine-tune, with sizes and GPU needs.

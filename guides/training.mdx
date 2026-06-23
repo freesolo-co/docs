@@ -40,7 +40,7 @@ algorithm = "sft"
 </CodeGroup>
 
 - **`grpo`**: reinforcement learning. The model generates completions, your
-  environment's rubric scores them, and the policy is updated toward
+  environment's reward scores them, and the policy is updated toward
   higher-reward behavior.
 - **`sft`**: supervised fine-tuning on the prompts/answers in your environment's
   dataset.
@@ -55,7 +55,7 @@ algorithm = "grpo"
 # thinking = true        # opt into reasoning mode (thinking-capable models only)
 
 [environment]
-id = "your-name/your-env"            # a published verifiers / Prime Hub env slug
+id = "github:freesolo-co/environment-hub@main:you/my-task/<publish-id>/environment.py"
 
 [train]
 steps = 150
@@ -72,18 +72,18 @@ seeds = [0]
 
 <Note>
   You don't configure a GPU or an artifact repo. **Both are fully managed:** the
-  allocator picks the cheapest validated GPU class that fits across providers, and
-  each run streams its LoRA adapters and checkpoints into its own private Hugging
-  Face repo provisioned for you server-side. The only fields you must set are
-  `model` and `[environment] id`; see the
+  allocator picks the cheapest validated GPU class that fits across providers,
+  and each run streams its LoRA adapters and checkpoints into its own private
+  Hugging Face repo provisioned for you server-side. The only fields you must
+  set are `model` and `[environment] id`; see the
   [configuration reference](/reference/configuration) for every option.
 </Note>
 
 ## GPU selection is automatic
 
 You don't pin a GPU. At submit time the allocator always picks the cheapest
-live-validated GPU class that fits your run across providers (and a retry walks
-to the next-cheapest class if one is unavailable). To see the live GPU classes,
+live-validated GPU class that fits your run across providers, and a retry walks
+to the next-cheapest class if one is unavailable. To see the live GPU classes,
 VRAM, and per-provider hourly pricing the allocator chooses from:
 
 ```bash

@@ -30,6 +30,7 @@ quickstart.mdx            # install -> login -> train -> deploy -> chat
 guides/
   training.mdx
   environments.mdx
+  datasets.mdx
   deploy-and-chat.mdx
 reference/
   cli.mdx                 # every flash command + flag
@@ -41,6 +42,6 @@ reference/
 - Pages are `.mdx` with YAML frontmatter (`title`, `description`).
 - Add a new page by creating the `.mdx` file and adding its path (without the
   extension) to the right group in `docs.json` `navigation.groups`.
-- Keep content accurate to the `flash` CLI — when a command or config field
+- Keep content accurate to the `flash` CLI; when a command or config field
   changes in [flash](https://github.com/freesolo-co/flash), update the matching
   reference page here.

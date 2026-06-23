@@ -56,31 +56,32 @@ full traceback.
 
 <AccordionGroup>
   <Accordion title="flash env push fails">
-    Publishing is fully managed and only needs your Freesolo API key, no Prime
-    Intellect account or `prime` CLI. Make sure the file you push defines a
-    `load_environment()` that returns a `verifiers` environment, then:
+    Publishing is fully managed and only needs your Freesolo API key. Make sure
+    the file you push defines a `load_environment()` function that returns a
+    Freesolo environment, then:
 
     ```bash
     flash env push environments/my-task/my_task.py
     ```
 
-    It prints the published id (`owner/name`) to put in your config's
-    `[environment] id`.
+    It prints the published id
+    (`github:freesolo-co/environment-hub@main:<namespace>/<project>/<publish-id>/environment.py`)
+    to put in your config's `[environment] id`.
 
   </Accordion>
 
-  <Accordion title="ModuleNotFoundError: No module named 'verifiers' (local authoring)">
+  <Accordion title="ModuleNotFoundError: No module named 'freesolo' (local authoring)">
     Training runs managed, so the env's dependencies live server-side. But
     authoring locally, and any `--dry-run`/`--cost` that **loads** the
     environment (for example, to count examples for an SFT estimate), needs the
     env's libraries installed locally:
 
     ```bash
-    uv pip install verifiers datasets
+    uv pip install freesolo
     ```
 
     To pull a published env into your project for local work, use
-    `flash env install owner/name`.
+    `flash env install github:freesolo-co/environment-hub@main:<namespace>/<project>/<publish-id>/environment.py`.
 
   </Accordion>
 
@@ -91,9 +92,11 @@ full traceback.
 </Accordion>
 
   <Accordion title="What id do I reference in my config?">
-    The `[environment] id` must be a **published** slug of the form `owner/name`,
-    produced by `flash env push`. A local file path is not a valid id, so publish it
-    first, or `flash env install` an existing one.
+    The `[environment] id` must be a published GitHub-backed environment ref,
+    produced by `flash env push`, for example
+    `github:freesolo-co/environment-hub@main:<namespace>/<project>/<publish-id>/environment.py`.
+    A local file path is not a valid id, so publish it first or install an
+    existing one.
   </Accordion>
 </AccordionGroup>
 
@@ -166,12 +169,12 @@ full traceback.
 <Accordion title="GRPO reward is stuck at 0">
   The task is too hard for the model at its current ability: if no rollout ever
   scores, there's no signal to learn from. Try a stronger/larger base model,
-  make the task easier to get started, or double-check your rubric actually
+  make the task easier to get started, or double-check your reward actually
   returns a positive reward for good answers.
 </Accordion>
 
 <Accordion title="Reward is stuck at 1 (or never moves)">
-  Usually the rubric isn't discriminative: it scores almost everything the
+  Usually the reward is not discriminative: it scores almost everything the
   same. Make the reward function separate better answers from worse ones so GRPO
   has a gradient to follow. See [Environments](/guides/environments).
 </Accordion>

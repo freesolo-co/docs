@@ -62,9 +62,9 @@ This drops a ready-to-edit starter in the current directory:
 
 ```
 environments/
-  starter_env.py          # a verifiers environment (the task + rubric)
+  starter_env.py          # a Freesolo environment (task + reward)
 configs/
-  verifiers_grpo.toml     # a training config to start from
+  freesolo_grpo.toml     # a training config to start from
   endpoints.toml          # somewhere to stash deploy endpoints
 ```
 
@@ -73,39 +73,39 @@ configs/
   To scaffold an additional, named environment later, use
   [`flash env init NAME`](/guides/environments), which creates a per-task
   directory with a snake_cased module file instead (e.g. `flash env init my-task`
-  → `environments/my-task/my_task.py`). Both forms are valid env sources you can
+  creates `environments/my-task/my_task.py`). Both forms are valid env files you can
   `flash env push`.
 </Note>
 
 ## 4. Publish your environment
 
 An [environment](/guides/environments) defines what your model trains on and
-how it's graded. Publish the scaffolded one to the Prime Hub to get an id:
+how it's graded. Publish the scaffolded one to the managed Environments Hub to get an id:
 
 ```bash
 flash env push environments/starter_env.py
 ```
 
-This prints an environment id of the form `owner/name`.
+This prints an environment id of the form
+`github:freesolo-co/environment-hub@main:<namespace>/<project>/<publish-id>/environment.py`.
 
 <Note>
   Publishing is fully managed. `flash env push` packages your env and uploads it
   to Freesolo's hosted Environments Hub (published **private**) using just your
-  Freesolo API key. **No Prime Intellect account or `prime` CLI needed.** Already
-  have a published env id? Skip straight to step 5.
+  Freesolo API key. Already have a published env id? Skip straight to step 5.
 </Note>
 
 ## 5. Configure your run
 
-Open `configs/verifiers_grpo.toml` and set the one thing that's yours, the
+Open `configs/freesolo_grpo.toml` and set the one thing that's yours, the
 environment id from the previous step:
 
-```toml configs/verifiers_grpo.toml
+```toml configs/freesolo_grpo.toml
 model = "Qwen/Qwen3.5-4B"
 algorithm = "grpo"
 
 [environment]
-id = "your-name/starter-env"        # from `flash env push`
+id = "github:freesolo-co/environment-hub@main:you/starter/<publish-id>/environment.py"
 
 [train]
 steps = 150
@@ -124,20 +124,20 @@ Validate it locally first. `--dry-run` parses and checks the config with no
 credentials, server, or GPU:
 
 ```bash
-flash train configs/verifiers_grpo.toml --dry-run
+flash train configs/freesolo_grpo.toml --dry-run
 ```
 
 See what the run will cost before committing. `--cost` prints the pre-flight
 USD estimate and exits without submitting:
 
 ```bash
-flash train configs/verifiers_grpo.toml --cost
+flash train configs/freesolo_grpo.toml --cost
 ```
 
 ## 6. Train
 
 ```bash
-flash train configs/verifiers_grpo.toml
+flash train configs/freesolo_grpo.toml
 ```
 
 Submitting charges the pre-flight estimate (the `--cost` number) to your org's
@@ -182,7 +182,10 @@ flash undeploy <run-id>
     SFT vs GRPO, config options, monitoring, and cost.
   </Card>
   <Card title="Build an environment" icon="flask" href="/guides/environments">
-    Replace the starter task with your own data and rubric.
+    Replace the starter task with your own data and reward.
+  </Card>
+  <Card title="Datasets" icon="database" href="/guides/datasets">
+    Package records, files, and split parameters with an environment.
   </Card>
   <Card title="Deploy & chat" icon="comments" href="/guides/deploy-and-chat">
     Scale-to-zero vs always-on, and the OpenAI-compatible API.
