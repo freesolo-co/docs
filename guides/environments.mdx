@@ -153,13 +153,6 @@ flash env push --name math math
 It prints the published id
 (`your-name/math`). Put that in your config's `[environment] id`.
 
-<Note>
-  Publishing is fully managed: `flash env push --name ...` uploads your env to
-  Freesolo's hosted Environments Hub (published **private**) under one managed
-  account, using only your Freesolo API key. Publish the whole folder so local
-  data and helper files are included.
-</Note>
-
 ## Use an existing environment
 
 If you already have a published env id (yours or one shared with you), you don't
@@ -201,27 +194,34 @@ num_examples = 500
 ## Use API keys
 
 If your environment needs an external service, read the key from `os.environ` in
-`environment.py`:
+`environment.py`. This is the only code path your environment needs:
 
 ```python environment.py
 import os
 
-SERPAPI_API_KEY = os.environ["SERPAPI_API_KEY"]
+SERVICE_API_KEY = os.environ["SERVICE_API_KEY"]
 ```
 
-Declare only the environment variable names in your training config:
+Then declare the environment variable names in your training config. The config
+contains names only, never values:
 
 ```toml
 [environment]
 id = "your-name/your-env"
-secrets = ["SERPAPI_API_KEY"]
+secrets = ["SERVICE_API_KEY"]
 ```
 
-Set the value in your shell or a local `.env` file before submitting:
+Set the value in your shell before submitting:
 
 ```bash
-export SERPAPI_API_KEY="..."
+export SERVICE_API_KEY="..."
 flash train configs/grpo.toml
+```
+
+You can also put local development values in `.env` or `.env.local`:
+
+```bash
+SERVICE_API_KEY=...
 ```
 
 Flash sends declared secret values to the worker out-of-band. Secret values are

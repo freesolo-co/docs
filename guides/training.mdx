@@ -70,15 +70,6 @@ seeds = [0]
 # project = "my-project"             # optional Weights & Biases logging
 ```
 
-<Note>
-  You don't configure a GPU or an artifact repo. **Both are fully managed:** the
-  allocator picks the cheapest validated GPU class that fits across providers,
-  and each run streams its LoRA adapters and checkpoints into its own private
-  Hugging Face repo provisioned for you server-side. The only fields you must
-  set are `model` and `[environment] id`; see the
-  [configuration reference](/reference/configuration) for every option.
-</Note>
-
 ## GPU selection is automatic
 
 You don't pin a GPU. At submit time the allocator always picks the cheapest

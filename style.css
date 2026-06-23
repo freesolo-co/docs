@@ -70,14 +70,14 @@
 	display: none;
 }
 
-/* render the social icons as rounded button chips. */
+/* render the social icons as sharp square button chips like the site footer. */
 #footer a:has(> svg[style*="mask-image"]) {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	width: 2.25rem;
 	height: 2.25rem;
-	border-radius: 0.625rem;
+	border-radius: 0;
 	background: #f3f4f6;
 }
 #footer a:has(> svg[style*="mask-image"]) svg {
@@ -99,6 +99,17 @@
 	font-size: 0.875rem;
 	font-weight: 500;
 	color: #6b7280;
+}
+
+/* the link items under each column header (Careers, Privacy, Terms, Sales,
+   Support) are the site's dark navy (text-primary = #1b1b4b), not muted gray.
+   excludes the logo anchor and the social-icon anchors. */
+#footer a:not(:has(.nav-logo)):not(:has(svg[style*="mask-image"])) {
+	color: #1b1b4b;
+	font-weight: 500;
+}
+.dark #footer a:not(:has(.nav-logo)):not(:has(svg[style*="mask-image"])) {
+	color: #e5e7eb;
 }
 
 /* Copyright line under the footer logo, rendered on ALL viewports (mobile + desktop),
@@ -154,4 +165,18 @@
 	#footer {
 		border-bottom: 16px solid #1b1b4b;
 	}
+}
+
+/* ---------------------------------------------------------------------------
+   square corners: the freesolo marketing site uses sharp (non-rounded) corners
+   everywhere, so flatten all border-radius across the docs to match it.
+   --------------------------------------------------------------------------- */
+*,
+*::before,
+*::after {
+	border-radius: 0 !important;
+}
+/* webkit scrollbar thumbs aren't covered by the universal selector above. */
+::-webkit-scrollbar-thumb {
+	border-radius: 0 !important;
 }

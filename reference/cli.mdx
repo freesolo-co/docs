@@ -3,10 +3,9 @@ title: "CLI reference"
 description: "Every flash command and flag."
 ---
 
-The CLI is `flash` (installed from the **`freesolo-flash`** package, see the
-[Quickstart](/quickstart#step-1-install-the-cli)). Every run-lifecycle command is a
-thin, authenticated call to the hosted control plane. Run `flash --help` or
-`flash <command> --help` for inline help.
+The CLI is `flash`. Every run-lifecycle command is a thin, authenticated call to
+the hosted control plane. Run `flash --help` or `flash <command> --help` for
+inline help.
 
 ## Global flags
 
@@ -41,16 +40,14 @@ thin, authenticated call to the hosted control plane. Run `flash --help` or
 </ResponseField>
 
 <ResponseField name="flash gpus">
-  List managed GPU classes with VRAM, live per-provider `$/hr`, and where each
-  class is validated.
+  List managed GPU classes with VRAM, `$/hr`, and where each class is validated.
 </ResponseField>
 
 ## Environments
 
 <ResponseField name="flash env setup">
   Scaffold `environment.py` and `configs/` in the current directory with a
-  starter environment plus `configs/grpo.toml`, `configs/sft.toml`, and
-  `configs/endpoints.toml`.
+  starter environment plus `configs/grpo.toml` and `configs/sft.toml`.
 </ResponseField>
 
 <ResponseField name="flash env push --name NAME [PATH]">
@@ -59,7 +56,6 @@ thin, authenticated call to the hosted control plane. Run `flash --help` or
   defaults to the current directory. Pass `.` or any folder with
   `environment.py` at its root so helper modules, `datasets/`, and common
   sibling data files are uploaded.
-  Fully managed with your Freesolo API key.
 </ResponseField>
 
 <ResponseField name="flash env install ENV_ID">

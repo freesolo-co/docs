@@ -29,9 +29,6 @@ Make sure you have:
 
 ## Step 1: Install the CLI
 
-The CLI is published to PyPI as **`freesolo-flash`** (the bare `flash` name is
-taken by another project). It installs a single command, `flash`.
-
 <CodeGroup>
 
 ```bash uv
@@ -80,14 +77,7 @@ environment.py            # a Freesolo environment (task + reward)
 configs/
   grpo.toml               # a GRPO training config to start from
   sft.toml                # an SFT training config to start from
-  endpoints.toml          # somewhere to stash deploy endpoints
 ```
-
-<Note>
-  `flash env setup` writes `environment.py` in the current folder. Publish a
-  folder, not just the Python file, so helper modules and datasets beside it are
-  included.
-</Note>
 
 ## Step 4: Publish your environment
 
@@ -100,13 +90,6 @@ flash env push --name starter .
 ```
 
 This prints an environment id of the form `your-name/starter`.
-
-<Note>
-  Publishing is fully managed. `flash env push --name ... .` packages the
-  environment from the current folder and uploads it to Freesolo's hosted
-  Environments Hub (published **private**) using just your Freesolo API key.
-  Already have a published env id? Skip straight to step 5.
-</Note>
 
 ## Step 5: Configure and validate your run
 
@@ -126,14 +109,6 @@ lora_rank = 32
 seeds = [0]
 ```
 
-<Note>
-  The only fields you must set are `model` and `[environment] id`. **The GPU and
-  the run's artifact storage are fully managed**: the allocator picks the
-  cheapest GPU class that fits across providers, and each run gets its own
-  private HF repo automatically. You don't pick a GPU or supply a Hugging Face
-  repo.
-</Note>
-
 Validate it locally first. `--dry-run` parses and checks the config with no
 credentials, server, or GPU:
 
@@ -147,14 +122,6 @@ cost and exits without submitting:
 ```bash
 flash train configs/grpo.toml --cost
 ```
-
-<Note>
-  **Training pricing is GPU-time pricing, not token pricing.** Flash calculates
-  the wall-clock time for your selected model, algorithm, and training settings,
-  multiplies that by the managed GPU price, and shows the pre-flight charge with
-  `--cost`. Serving token charges are separate and only begin after `flash
-  deploy`.
-</Note>
 
 ## Step 6: Train
 
