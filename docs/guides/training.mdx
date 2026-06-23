@@ -1,0 +1,154 @@
+---
+title: "Training"
+description: "Write a config, submit a managed run, and follow it to completion."
+---
+
+A training run is described by a single TOML config and submitted with
+`flash train`. Flash allocates a GPU, supervises the job, and streams checkpoints
+and logs back to you. This guide covers the config and the run lifecycle; see
+the [configuration reference](/reference/configuration) for every field.
+
+## Pick a base model
+
+Flash trains a **LoRA adapter** on top of a supported base model. List the
+catalog, with each model's supported algorithms and reasoning capability:
+
+```bash
+flash models
+```
+
+Set your choice at the top of the config (the default is `Qwen/Qwen3.5-4B`):
+
+```toml
+model = "Qwen/Qwen3.5-4B"
+```
+
+## Choose SFT or GRPO
+
+One line selects the training algorithm:
+
+<CodeGroup>
+
+```toml GRPO (RL)
+algorithm = "grpo"
+```
+
+```toml SFT
+algorithm = "sft"
+```
+
+</CodeGroup>
+
+- **`grpo`** — reinforcement learning. The model generates completions, your
+  environment's rubric scores them, and the policy is updated toward
+  higher-reward behavior.
+- **`sft`** — supervised fine-tuning on the prompts/answers in your environment's
+  dataset.
+
+Both are driven by the same [environment](/guides/environments).
+
+## Anatomy of a config
+
+```toml
+model = "Qwen/Qwen3.5-4B"
+algorithm = "grpo"
+# thinking = true        # opt into reasoning mode (thinking-capable models only)
+
+[environment]
+id = "github:owner/repo@main:freesolo/environment.py"            # a published Freesolo env ref
+
+[train]
+steps = 150
+lora_rank = 32
+lora_alpha = 64
+seeds = [0]
+# learning_rate = 1e-4
+# batch_size = 8
+# group_size = 8                     # GRPO: completions sampled per prompt
+
+[wandb]
+# project = "my-project"             # optional Weights & Biases logging
+```
+
+## Validate before you submit
+
+`--dry-run` parses and validates the config fully locally — no credentials, no
+server, no GPU — and prints the resolved job spec:
+
+```bash
+flash train config.toml --dry-run
+```
+
+## Submit the run
+
+```bash
+flash train config.toml
+```
+
+By default `flash train` follows the logs until the run finishes. Useful flags:
+
+| Flag | Effect |
+| --- | --- |
+| `--background` | Submit and return immediately instead of following logs |
+| `--dry-run` | Validate locally without submitting |
+| `--cost` | Print the pre-flight USD cost estimate and exit (no submit) |
+| `--set key=value` | Override a config value (repeatable) |
+| `--config other.toml` | Deep-merge additional TOML for config composition (repeatable) |
+
+```bash
+# override values at submit time
+flash train config.toml --set train.steps=300 --set train.lora_rank=16
+```
+
+## Cost and billing
+
+Every run is **charged the pre-flight estimate up front, at submit time** —
+`flash train` computes the same number that `flash train --cost` prints (GPU
+$/hr × estimated wall-clock) and debits it from your org's prepaid balance before
+the run is accepted. The charge **gates the run**: if the balance can't cover the
+estimate, the submit is rejected and nothing runs. Preview it any time:
+
+```bash
+flash train config.toml --cost
+```
+
+```text
+Run        : Qwen/Qwen3.5-4B  [GRPO, 150 steps]
+GPU        : RTX 5090 on runpod (32 GB; run needs >= 32 GB) @ $0.69/hr
+Setup      : 7.0 min (cold start: boot + deps + download + vLLM init)
+Per step   : 9.50 s
+Train      : 23.8 min
+Wall clock : 0.51 h
+TOTAL      : $0.35
+```
+
+<Note>
+  The estimate is catalog-deterministic and runs locally; for an uncapped SFT run
+  it loads the environment to count its training examples. Once a run starts,
+  `flash cost <run-id>` shows the cost accrued so far.
+</Note>
+
+## Monitor a run
+
+`Ctrl-C` during `flash train` just detaches you — the run keeps going server-side.
+
+```bash
+flash ps                  # all your runs: state, cost, GPU, model
+flash status <run-id>     # full status JSON for one run
+flash attach <run-id>     # re-follow logs to completion
+flash logs <run-id> -f    # stream logs
+flash cost <run-id>       # accrued cost (USD)
+flash cancel <run-id>     # cancel (best-effort)
+```
+
+<Note>
+  Runs are supervised server-side: a stall watchdog plus bounded auto-retry that
+  **resumes from the last streamed checkpoint**, so a transient GPU hiccup
+  doesn't cost you the whole run.
+</Note>
+
+## After training
+
+When a run reaches `done`, its adapter lives in the run's managed artifact repo.
+Serve it with [`flash deploy`](/guides/deploy-and-chat) and talk to it with
+`flash chat`.
