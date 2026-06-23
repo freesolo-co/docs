@@ -198,6 +198,38 @@ difficulty = "hard"
 num_examples = 500
 ```
 
+## Use API keys
+
+If your environment needs an external service, read the key from `os.environ` in
+`environment.py`:
+
+```python environment.py
+import os
+
+SERPAPI_API_KEY = os.environ["SERPAPI_API_KEY"]
+```
+
+Declare only the environment variable names in your training config:
+
+```toml
+[environment]
+id = "your-name/your-env"
+secrets = ["SERPAPI_API_KEY"]
+```
+
+Set the value in your shell or a local `.env` file before submitting:
+
+```bash
+export SERPAPI_API_KEY="..."
+flash train configs/grpo.toml
+```
+
+Flash sends declared secret values to the worker out-of-band. Secret values are
+not stored in the TOML config, run spec, status JSON, logs, or environment
+artifact. Do not put API keys in `[environment.params]` or `[worker_env]`.
+If a declared secret is missing when you submit, `flash train` fails before the
+run starts.
+
 <Tip>
   Single-turn environments (one prompt to one response, graded by a reward) are
   fully supported for SFT, GRPO, and eval. Start there, then grow the reward.

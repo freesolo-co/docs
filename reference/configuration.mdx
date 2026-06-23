@@ -44,14 +44,29 @@ seeds = [0]
 | --- | --- | --- | --- |
 | `id` | string | (required) | Published Freesolo environment id, `your-name/your-env`. |
 | `params` | table | `{}` | Keyword arguments passed to the env's `load_environment(**kwargs)`. |
+| `secrets` | list[string] | `[]` | Environment variable names to forward to the worker as runtime secrets. Values are read from your shell or local `.env` at submit time. |
 
 ```toml
 [environment]
 id = "your-name/your-env"
+secrets = ["SERPAPI_API_KEY"]
 
 [environment.params]
 difficulty = "hard"
 ```
+
+Environment code reads the secret normally:
+
+```python
+import os
+
+serpapi_key = os.environ["SERPAPI_API_KEY"]
+```
+
+Never put secret values in `[environment.params]` or `[worker_env]`; those are
+part of the run spec. `[environment].secrets` contains names only, and every
+listed value must exist in your shell or local `.env` when you submit a real
+run.
 
 ## `[train]`
 
