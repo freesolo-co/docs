@@ -18,15 +18,9 @@ definition of a good answer.
 Flash is a managed post-training service. You describe the task and pick a base
 model, Flash fine-tunes the model on a GPU, and then serves the result behind an
 OpenAI-compatible API. You never touch a GPU, a training framework, or a serving
-stack.
-
-<Note>
-  Post-training is not the only tool. If careful prompting already gets you what
-  you need, do that. Reach for post-training when you want **consistent**
-  behavior, a **smaller and cheaper** model that matches a big one on a narrow
-  task, or behavior that prompting can't reliably produce. More on [when to use
-  it](#is-post-training-right-for-your-task) below.
-</Note>
+stack. Reach for post-training when you want consistent behavior, a smaller and
+cheaper model that matches a big one on a narrow task, or behavior that
+prompting can't reliably produce. More on when to use it below.
 
 ## The training loop
 
