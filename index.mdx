@@ -25,6 +25,9 @@ flash chat <run-id> -m "hi"  # talk to it
   <Card title="Environments" icon="flask" href="/guides/environments">
     Define the task your model trains and is graded on.
   </Card>
+  <Card title="Datasets" icon="database" href="/guides/datasets">
+    Package task records and sidecar files with an environment.
+  </Card>
   <Card title="Deploy & chat" icon="comments" href="/guides/deploy-and-chat">
     Serve an adapter scale-to-zero or always-on, then chat with it.
   </Card>
@@ -39,9 +42,8 @@ flash chat <run-id> -m "hi"  # talk to it
   </Step>
   <Step title="Point at an environment">
     An [environment](/guides/environments) is the task: the data your model
-    sees and the rubric it's graded on. Flash uses
-    [Prime Intellect `verifiers`](https://github.com/PrimeIntellect-ai/verifiers)
-    environments, referenced by a published Hub slug.
+    sees and the reward it's graded by. Flash uses
+    Freesolo environments, referenced by id (for example `your-name/your-env`).
   </Step>
   <Step title="Train on a managed GPU">
     `flash train` submits the run to the control plane, which allocates the

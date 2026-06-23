@@ -53,22 +53,21 @@ thin, authenticated call to the hosted control plane. Run `flash --help` or
 </ResponseField>
 
 <ResponseField name="flash env init NAME">
-  Scaffold a new local verifiers environment at `environments/NAME/`.
+  Scaffold a new local Freesolo environment at `environments/NAME/`.
 </ResponseField>
 
 <ResponseField name="flash env push [PATH]">
-  Publish a local verifiers environment to Freesolo's managed Environments Hub
-  (private) and print its id. `PATH` defaults to the current directory. Fully
-  managed, no Prime Intellect account or `prime` CLI needed.
+  Publish a local Freesolo environment to Freesolo's managed Environments Hub
+  (private) and print its id (`your-name/your-env`). `PATH` defaults to the
+  current directory. Fully managed with your Freesolo API key.
 </ResponseField>
 
 <ResponseField name="flash env install ENV_ID">
-  Install a published Prime Hub environment (`owner/name`) locally for authoring
-  and `--dry-run`.
+  Install a published Freesolo environment locally for authoring and `--dry-run`.
 </ResponseField>
 
 <ResponseField name="flash env list">
-  List installed Hub environments and local sources you can publish.
+  List installed Hub environments and local environments you can publish.
 </ResponseField>
 
 ## Training

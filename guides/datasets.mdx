@@ -1,0 +1,121 @@
+---
+title: "Datasets"
+description: "Package task records and data files with Freesolo environments."
+---
+
+Datasets live inside the environment. A Flash config points at one published
+environment id; it does not take a separate dataset path. The environment's
+`load_environment()` function returns the dataset, prompt builder, and reward
+logic that Flash uses for SFT, GRPO, and local validation.
+
+```toml
+[environment]
+id = "your-name/your-env"
+```
+
+## Task records
+
+The Freesolo SDK normalizes dataset rows into `TaskExample` records:
+
+| Field | Description |
+| --- | --- |
+| `task` | Prompt text for the model. |
+| `task_id` | Optional stable id. |
+| `metadata` | Optional dictionary for split, tags, source ids, or other labels. |
+| `expected_output` | Optional target answer or gold output. |
+
+`load_task_examples(...)` accepts a local file path or an iterable of records.
+For files, it supports `.jsonl`, `.json`, `.csv`, `.txt`, and `.bson`.
+
+```jsonl datasets/train.jsonl
+{"id":"math-001","task":"What is 2 + 2?","expected_output":"4","metadata":{"split":"train"}}
+{"id":"math-002","prompt":"What is 3 + 5?","ground_truth":"8","metadata":{"split":"train"}}
+```
+
+The loader accepts common aliases:
+
+| Meaning | Accepted keys |
+| --- | --- |
+| Prompt text | `task`, `prompt`, `query`, `input` |
+| Target output | `ground_truth`, `expected_output`, `output`, `completion` |
+
+## Package layout
+
+Put dataset files beside `environment.py` so they are included when you publish:
+
+```text
+environments/math/
+  environment.py
+  helpers.py
+  datasets/
+    train.jsonl
+    eval.jsonl
+  state.sqlite
+```
+
+`flash env push` publishes a compact environment artifact to the managed
+Environments Hub and prints the Freesolo id you use in configs:
+
+```text
+your-name/math
+```
+
+Hub storage is fully managed by Freesolo. You only pass the environment id.
+
+## Load sidecars
+
+Read packaged files relative to `__file__`. That works locally and when the
+environment runs on a worker.
+
+```python environment.py
+from pathlib import Path
+
+from freesolo.datasets import TaskExample
+from freesolo.datasets.records import load_task_examples
+from freesolo.environments import EnvironmentSingleTurn, RewardResult
+
+ROOT = Path(__file__).parent
+
+
+class MathEnv(EnvironmentSingleTurn):
+    def __init__(self, *, split: str = "train") -> None:
+        self.dataset = load_task_examples(ROOT / "datasets" / f"{split}.jsonl")
+
+    def build_prompt_messages(self, example: TaskExample, prompt_text: str):
+        return [{"role": "user", "content": example.task}]
+
+    def score_response(self, example: TaskExample, response_text: str) -> RewardResult:
+        expected = str(example.expected_output or "").strip()
+        score = 1.0 if expected and expected in response_text else 0.0
+        return RewardResult(score=score, threshold=1.0)
+
+
+def load_environment(split: str = "train", **kwargs) -> MathEnv:
+    return MathEnv(split=split)
+```
+
+Then select the split from your Flash config:
+
+```toml
+[environment]
+id = "your-name/math"
+
+[environment.params]
+split = "eval"
+```
+
+## What gets uploaded
+
+For a local environment directory, `flash env push` includes:
+
+- `environment.py`, always at the artifact root.
+- Sibling Python helper files.
+- Data sidecar directories named `assets`, `data`, `datasets`, `db`, or
+  `databases`.
+- Common data files such as `.jsonl`, `.json`, `.csv`, `.txt`, `.parquet`,
+  `.sqlite`, `.sqlite3`, `.db`, `.sql`, `.pkl`, `.yaml`, `.yml`, and `.bson`.
+
+Workspace metadata, cache directories, virtualenvs, and version-control files
+are skipped. Keep the artifact small: environment uploads are capped at 64 MB
+compressed and 256 MB uncompressed. For large corpora, keep the data in an
+external store and pass the identifier or URL through `[environment.params]`.
