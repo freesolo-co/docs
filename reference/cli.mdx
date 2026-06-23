@@ -74,13 +74,13 @@ thin, authenticated call to the hosted control plane. Run `flash --help` or
 
 <ResponseField name="flash train CONFIG [flags]">
   Submit a managed training run from a TOML config and follow its logs.
-  Submitting charges the pre-flight cost estimate to your org and is gated on
+  Submitting charges the pre-flight cost to your org and is gated on
   balance (see [Cost & billing](/guides/training#cost-and-billing)).
 
   | Flag | Effect |
   | --- | --- |
   | `--dry-run` | Validate the config locally and print the resolved job spec; don't submit |
-  | `--cost` | Print the pre-flight USD cost estimate for the config and exit (no submit) |
+  | `--cost` | Print the pre-flight USD cost for the config and exit (no submit) |
   | `--background` | Submit and return immediately instead of following logs |
   | `--set KEY=VALUE` | Override a config value (dotted key, repeatable) |
   | `--config FILE` | Deep-merge additional TOML for config composition (repeatable) |
@@ -92,24 +92,14 @@ thin, authenticated call to the hosted control plane. Run `flash --help` or
   List your runs with state, accrued cost, GPU, and model.
 </ResponseField>
 
-<ResponseField name="flash status RUN_ID">
-  Print a run's full status JSON.
-</ResponseField>
-
-<ResponseField name="flash attach RUN_ID">
-  Re-follow a running job's logs to completion (resumable any time).
-</ResponseField>
-
-<ResponseField name="flash logs RUN_ID [-f]">
-  Print a run's logs. `-f`/`--follow` streams new lines until the run ends.
-</ResponseField>
-
-<ResponseField name="flash cost RUN_ID">
-  Show a run's accrued cost in USD.
+<ResponseField name="flash status RUN_ID [--logs] [-f]">
+  Print a run's full status JSON, including accrued cost. `--logs` prints current
+  logs before the status JSON. `-f`/`--follow` streams logs until the run ends,
+  then prints final status.
 </ResponseField>
 
 <ResponseField name="flash cancel RUN_ID">
-  Cancel a run (best-effort).
+  Cancel a run.
 </ResponseField>
 
 ## Serving

@@ -91,7 +91,7 @@ By default `flash train` follows the logs until the run finishes. Useful flags:
 | --- | --- |
 | `--background` | Submit and return immediately instead of following logs |
 | `--dry-run` | Validate locally without submitting |
-| `--cost` | Print the pre-flight USD cost estimate and exit (no submit) |
+| `--cost` | Print the pre-flight USD cost and exit (no submit) |
 | `--set key=value` | Override a config value (repeatable) |
 | `--config other.toml` | Deep-merge additional TOML for config composition (repeatable) |
 
@@ -102,11 +102,11 @@ flash train config.toml --set train.steps=300 --set train.lora_rank=16
 
 ## Cost and billing
 
-Every run is **charged the pre-flight estimate up front, at submit time** —
+Every run is **charged the pre-flight cost up front, at submit time** —
 `flash train` computes the same number that `flash train --cost` prints (GPU
-$/hr × estimated wall-clock) and debits it from your org's prepaid balance before
+$/hr × wall-clock) and debits it from your org's prepaid balance before
 the run is accepted. The charge **gates the run**: if the balance can't cover the
-estimate, the submit is rejected and nothing runs. Preview it any time:
+cost, the submit is rejected and nothing runs. Preview it any time:
 
 ```bash
 flash train config.toml --cost
@@ -123,9 +123,9 @@ TOTAL      : $0.35
 ```
 
 <Note>
-  The estimate is catalog-deterministic and runs locally; for an uncapped SFT run
+  The cost is catalog-deterministic and runs locally; for an uncapped SFT run
   it loads the environment to count its training examples. Once a run starts,
-  `flash cost <run-id>` shows the cost accrued so far.
+  `flash status <run-id>` includes the cost accrued so far.
 </Note>
 
 ## Monitor a run
@@ -134,11 +134,10 @@ TOTAL      : $0.35
 
 ```bash
 flash ps                  # all your runs: state, cost, GPU, model
-flash status <run-id>     # full status JSON for one run
-flash attach <run-id>     # re-follow logs to completion
-flash logs <run-id> -f    # stream logs
-flash cost <run-id>       # accrued cost (USD)
-flash cancel <run-id>     # cancel (best-effort)
+flash status <run-id>     # status JSON, including accrued cost
+flash status <run-id> --logs    # print logs, then status
+flash status <run-id> --follow  # stream logs until completion, then status
+flash cancel <run-id>     # cancel a run
 ```
 
 <Note>

@@ -72,7 +72,7 @@ full traceback.
   <Accordion title="ModuleNotFoundError: No module named 'freesolo' (local authoring)">
     Training runs managed, so the env's dependencies live server-side. But
     authoring locally, and any `--dry-run`/`--cost` that **loads** the
-    environment (for example, to count examples for an SFT estimate), needs the
+    environment (for example, to count examples for SFT cost), needs the
     env's libraries installed locally:
 
     ```bash
@@ -154,8 +154,8 @@ full traceback.
 
 <AccordionGroup>
   <Accordion title="My run was rejected before it started (balance)">
-    Submitting a run charges the **pre-flight cost estimate up front** and is
-    gated on your org's prepaid balance; if the balance can't cover the estimate,
+    Submitting a run charges the **pre-flight cost up front** and is
+    gated on your org's prepaid balance; if the balance can't cover the cost,
     the run is rejected and nothing runs. Preview the number and top up:
 
     ```bash
@@ -183,8 +183,8 @@ full traceback.
 
     ```bash
     flash ps                # state and cost of your runs
-    flash attach <run-id>   # re-follow the logs
-    flash cancel <run-id>   # actually stop it (best-effort)
+    flash status <run-id> -f    # re-follow the logs
+    flash cancel <run-id>       # stop it
     ```
 
   </Accordion>
@@ -193,7 +193,7 @@ full traceback.
     Runs are supervised server-side: a stall watchdog plus bounded auto-retry that
     **resumes from the last streamed checkpoint**, and the allocator walks to the
     next-cheapest validated GPU class if one is unavailable. A transient failure
-    usually doesn't cost you the whole run. Watch with `flash logs <run-id> -f`.
+    usually doesn't cost you the whole run. Watch with `flash status <run-id> -f`.
   </Accordion>
 </AccordionGroup>
 
