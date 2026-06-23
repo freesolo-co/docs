@@ -21,11 +21,6 @@ lora_rank = 32
 seeds = [0]
 ```
 
-<Note>
-  Unknown config sections or `[train]` keys are rejected at parse time, so a typo
-  fails fast rather than silently training against defaults.
-</Note>
-
 ## Top level
 
 | Key | Type | Default | Description |
@@ -73,12 +68,6 @@ real run.
 | `max_length` | int | recipe default | Max sequence length. |
 | `save_every` | int | recipe default | Checkpoint cadence (steps). |
 | `init_from_adapter` | string | - | Warm-start from an existing adapter. |
-
-<Note>
-  `hf_repo` is **not** a user field. Each run's adapters and checkpoints stream
-  into a private Hugging Face repo that the control plane provisions automatically
-  (any `hf_repo` you set is ignored).
-</Note>
 
 ### GRPO-specific
 

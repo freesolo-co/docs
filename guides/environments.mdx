@@ -229,9 +229,3 @@ not stored in the TOML config, run spec, status JSON, logs, or environment
 artifact. Do not put API keys in `[environment.params]` or `[worker_env]`.
 If a declared secret is missing when you submit, `flash train` fails before the
 run starts.
-
-<Tip>
-  Single-turn environments (one prompt to one response, graded by a reward) are
-  fully supported for SFT, GRPO, and eval. Start there, then grow the reward.
-  See [Datasets](/guides/datasets) for packaged dataset files and sidecars.
-</Tip>

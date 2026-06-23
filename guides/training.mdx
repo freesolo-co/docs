@@ -153,12 +153,6 @@ flash status <run-id> --follow  # stream logs until completion, then status
 flash cancel <run-id>     # cancel a run
 ```
 
-<Note>
-  Runs are supervised server-side: a stall watchdog plus bounded auto-retry that
-  **resumes from the last streamed checkpoint**, so a transient GPU hiccup
-  doesn't cost you the whole run.
-</Note>
-
 ## After training
 
 When a run reaches `done`, its adapter lives in the run's managed artifact repo.
