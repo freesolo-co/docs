@@ -64,9 +64,8 @@ full traceback.
     flash env push environments/my-task/my_task.py
     ```
 
-    It prints the published id
-    (`github:freesolo-co/environment-hub@main:<namespace>/<project>/<publish-id>/environment.py`)
-    to put in your config's `[environment] id`.
+    It prints the published id (`your-name/my-task`) to put in your config's
+    `[environment] id`.
 
   </Accordion>
 
@@ -81,7 +80,7 @@ full traceback.
     ```
 
     To pull a published env into your project for local work, use
-    `flash env install github:freesolo-co/environment-hub@main:<namespace>/<project>/<publish-id>/environment.py`.
+    `flash env install your-name/your-env`.
 
   </Accordion>
 
@@ -92,9 +91,8 @@ full traceback.
 </Accordion>
 
   <Accordion title="What id do I reference in my config?">
-    The `[environment] id` must be a published GitHub-backed environment ref,
-    produced by `flash env push`, for example
-    `github:freesolo-co/environment-hub@main:<namespace>/<project>/<publish-id>/environment.py`.
+    The `[environment] id` must be a published Freesolo environment id, produced
+    by `flash env push`, for example `your-name/your-env`.
     A local file path is not a valid id, so publish it first or install an
     existing one.
   </Accordion>

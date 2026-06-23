@@ -86,8 +86,7 @@ how it's graded. Publish the scaffolded one to the managed Environments Hub to g
 flash env push environments/starter_env.py
 ```
 
-This prints an environment id of the form
-`github:freesolo-co/environment-hub@main:<namespace>/<project>/<publish-id>/environment.py`.
+This prints an environment id of the form `your-name/starter`.
 
 <Note>
   Publishing is fully managed. `flash env push` packages your env and uploads it
@@ -105,7 +104,7 @@ model = "Qwen/Qwen3.5-4B"
 algorithm = "grpo"
 
 [environment]
-id = "github:freesolo-co/environment-hub@main:you/starter/<publish-id>/environment.py"
+id = "your-name/starter"
 
 [train]
 steps = 150

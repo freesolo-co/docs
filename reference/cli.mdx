@@ -58,14 +58,12 @@ thin, authenticated call to the hosted control plane. Run `flash --help` or
 
 <ResponseField name="flash env push [PATH]">
   Publish a local Freesolo environment to Freesolo's managed Environments Hub
-  (private) and print its id. `PATH` defaults to the current directory. By
-  default published refs resolve under `freesolo-co/environment-hub`. Fully
-  managed with your Freesolo API key.
+  (private) and print its id (`your-name/your-env`). `PATH` defaults to the
+  current directory. Fully managed with your Freesolo API key.
 </ResponseField>
 
 <ResponseField name="flash env install ENV_ID">
-  Install a published GitHub-backed Freesolo environment locally for authoring
-  and `--dry-run`.
+  Install a published Freesolo environment locally for authoring and `--dry-run`.
 </ResponseField>
 
 <ResponseField name="flash env list">

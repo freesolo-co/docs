@@ -13,7 +13,7 @@ model = "Qwen/Qwen3.5-4B"
 algorithm = "grpo"
 
 [environment]
-id = "github:freesolo-co/environment-hub@main:you/my-task/<publish-id>/environment.py"
+id = "your-name/your-env"
 
 [train]
 steps = 150
@@ -42,12 +42,12 @@ seeds = [0]
 
 | Key | Type | Default | Description |
 | --- | --- | --- | --- |
-| `id` | string | (required) | Published Freesolo GitHub environment ref, `github:freesolo-co/environment-hub@main:<namespace>/<project>/<publish-id>/environment.py`. |
+| `id` | string | (required) | Published Freesolo environment id, `your-name/your-env`. |
 | `params` | table | `{}` | Keyword arguments passed to the env's `load_environment(**kwargs)`. |
 
 ```toml
 [environment]
-id = "github:freesolo-co/environment-hub@main:you/my-task/<publish-id>/environment.py"
+id = "your-name/your-env"
 
 [environment.params]
 difficulty = "hard"

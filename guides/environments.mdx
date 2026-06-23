@@ -6,11 +6,11 @@ description: "Define the task your model trains on and is graded by."
 An **environment** is the task: the data your model sees and the reward that
 scores its outputs. Flash loads environments through the Freesolo environment SDK.
 You author one locally, publish it to Freesolo's managed Environments Hub, and
-reference it in config by its GitHub environment ref.
+reference it in config by its Freesolo environment id.
 
 ```toml
 [environment]
-id = "github:freesolo-co/environment-hub@main:you/my-task/<publish-id>/environment.py"
+id = "your-name/your-env"
 ```
 
 ## Scaffold one
@@ -68,30 +68,28 @@ flash env push environments/my-task/my_task.py
 ```
 
 It prints the published id
-(`github:freesolo-co/environment-hub@main:<namespace>/<project>/<publish-id>/environment.py`).
-Put that in your config's `[environment] id`.
+(`your-name/my-task`). Put that in your config's `[environment] id`.
 
 <Note>
   Publishing is fully managed: `flash env push` uploads your env to Freesolo's
   hosted Environments Hub (published **private**) under one managed account, using
-  only your Freesolo API key. By default this writes to `freesolo-co/environment-hub`;
-  override with `FLASH_ENV_GITHUB_REPO` if you use a private repo.
+  only your Freesolo API key.
 </Note>
 
 ## Use an existing environment
 
-If you already have a published env ref (yours or one shared with you), you don't
+If you already have a published env id (yours or one shared with you), you don't
 need to author anything. Just reference it:
 
 ```toml
 [environment]
-id = "github:freesolo-co/environment-hub@main:you/my-task/<publish-id>/environment.py"
+id = "your-name/your-env"
 ```
 
 To pull it into your local project for authoring and `--dry-run`:
 
 ```bash
-flash env install github:freesolo-co/environment-hub@main:you/my-task/<publish-id>/environment.py
+flash env install your-name/your-env
 ```
 
 ## List what you have
@@ -109,7 +107,7 @@ If your `load_environment(**kwargs)` accepts arguments, set them under
 
 ```toml
 [environment]
-id = "github:freesolo-co/environment-hub@main:you/my-task/<publish-id>/environment.py"
+id = "your-name/your-env"
 
 [environment.params]
 difficulty = "hard"

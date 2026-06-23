@@ -10,7 +10,7 @@ logic that Flash uses for SFT, GRPO, and local validation.
 
 ```toml
 [environment]
-id = "github:freesolo-co/environment-hub@main:you/my-task/<publish-id>/environment.py"
+id = "your-name/your-env"
 ```
 
 ## Task records
@@ -54,20 +54,18 @@ environments/math/
 ```
 
 `flash env push` publishes a compact environment artifact to the managed
-Environments Hub. The published path is versioned:
+Environments Hub and prints the Freesolo id you use in configs:
 
 ```text
-<namespace>/<project>/<publish-id>/environment.py
+your-name/math
 ```
 
-The `publish-id` is an immutable snapshot id. Re-publishing the same logical
-environment creates a new snapshot, so older runs can keep resolving the exact
-code and data they were submitted with.
+Hub storage is fully managed by Freesolo. You only pass the environment id.
 
 ## Load sidecars
 
-Read packaged files relative to `__file__`. That works locally and after the
-environment is loaded from GitHub on a worker.
+Read packaged files relative to `__file__`. That works locally and when the
+environment runs on a worker.
 
 ```python environment.py
 from pathlib import Path
@@ -100,7 +98,7 @@ Then select the split from your Flash config:
 
 ```toml
 [environment]
-id = "github:freesolo-co/environment-hub@main:you/math/<publish-id>/environment.py"
+id = "your-name/math"
 
 [environment.params]
 split = "eval"

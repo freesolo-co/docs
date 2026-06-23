@@ -43,9 +43,7 @@ flash chat <run-id> -m "hi"  # talk to it
   <Step title="Point at an environment">
     An [environment](/guides/environments) is the task: the data your model
     sees and the reward it's graded by. Flash uses
-    Freesolo environments, referenced by a GitHub-backed environment ref (for
-    example
-    `github:freesolo-co/environment-hub@main:you/my-task/<publish-id>/environment.py`).
+    Freesolo environments, referenced by id (for example `your-name/your-env`).
   </Step>
   <Step title="Train on a managed GPU">
     `flash train` submits the run to the control plane, which allocates the
