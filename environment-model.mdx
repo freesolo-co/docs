@@ -1,0 +1,154 @@
+---
+title: "Environment model"
+description: "Your task as code: the dataset, interaction, and reward that make up the one part of a run you write."
+---
+
+An **environment** is a small Python module that packages everything Flash needs
+to teach and grade your model: the data it practices on, how it interacts, and
+how its answers are scored. It is the single source of truth for _what the model
+learns_ and _what counts as good_, and it's the one part of a run you write.
+Flash runs everything around it.
+
+## What an environment packages
+
+Every environment bundles three things behind one `load_environment()` entrypoint:
+
+<CardGroup cols={3}>
+  <Card title="A dataset" icon="table">
+    The prompts your model practices on, with optional gold answers. Authored as
+    `input`/`output` records. See [Datasets](/guides/datasets).
+  </Card>
+  <Card title="An interaction model" icon="comments">
+    How the model engages: a single prompt and response, or a multi-turn
+    exchange. This is the environment class you subclass.
+  </Card>
+  <Card title="A reward" icon="trophy">
+    `score_response` looks at an answer and returns a `RewardResult` score. This
+    score is the teacher.
+  </Card>
+</CardGroup>
+
+The same environment drives **SFT, GRPO, and eval**. You don't restate your task
+per algorithm; you swap one line in the config and the environment stays put.
+
+## The one thing you write
+
+Everything else about a run is managed. You write `environment.py`; Flash owns
+the rest of the loop.
+
+| You write                                                | Flash runs                                                                       |
+| -------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| The dataset, interaction, and reward in `environment.py` | The training loop: sampling prompts, generating rollouts, applying the algorithm |
+| (nothing)                                                | The GPU, batching, checkpointing, and auto-retry                                 |
+| (nothing)                                                | A versioned Environments Hub and per-token serving                               |
+
+This is why the environment matters so much: it is the entirety of what makes a
+run _yours_. The quality of its dataset and reward sets the ceiling on what
+training can achieve. For the full split of responsibilities, see
+[How Flash works](/how-flash-works#how-flash-supports-you).
+
+## Where it sits in the training loop
+
+A run is a loop, and the environment supplies two of its steps:
+
+<Steps>
+  <Step title="Flash samples a prompt">
+    The training loop pulls a prompt from your environment's dataset.
+  </Step>
+  <Step title="The model produces a rollout">
+    The current model attempts an answer, following your environment's
+    interaction model (single response, or several turns).
+  </Step>
+  <Step title="Your reward scores it">
+    `score_response` returns a `RewardResult`. That score is the signal the
+    algorithm learns from.
+  </Step>
+</Steps>
+
+See [How Flash works](/how-flash-works#the-training-loop) for the algorithm side
+of the loop.
+
+## Single-turn and multi-turn
+
+The interaction model is set by which base class you subclass:
+
+- **`EnvironmentSingleTurn`:** prompt in, completion out, reward computed. Most
+  tasks start here.
+- **`EnvironmentMultiTurn`:** for conversations or tool use, where the model takes
+  several steps before its trajectory is scored. You implement the turn-step hooks.
+
+A minimal single-turn environment, just for orientation:
+
+```python environment.py
+from freesolo.datasets.types import TaskExample
+from freesolo.environments import EnvironmentSingleTurn, RewardResult
+
+class CustomEnv(EnvironmentSingleTurn):
+    dataset = [{"input": "What is 2 + 2?", "output": "4"}]
+
+    def build_prompt_messages(self, example: TaskExample, prompt_text: str):
+        return [{"role": "user", "content": example.task}]
+
+    def score_response(self, example: TaskExample, response_text: str) -> RewardResult:
+        expected = str(example.expected_output or "").strip()
+        return RewardResult(score=1.0 if expected in response_text else 0.0, threshold=1.0)
+
+def load_environment(**kwargs) -> CustomEnv:
+    return CustomEnv()
+```
+
+See [Environments](/guides/environments) for the full SDK: prompt builders,
+loading dataset files, parameters, and secrets.
+
+## From local file to managed run
+
+An environment is authored locally but has to be reachable by id when training
+runs on a managed GPU. The lifecycle is four steps:
+
+<Steps>
+  <Step title="Author it locally">
+    Write `environment.py` with a `load_environment()` that returns a Freesolo
+    environment.
+  </Step>
+  <Step title="Publish it">
+    `flash env push --name my-env .` packages the folder and uploads it to the
+    managed Environments Hub, which versions it and prints an id
+    (`your-name/my-env`).
+  </Step>
+  <Step title="Reference it by id">
+    Put that id in your config's `[environment] id`. Optional
+    `[environment.params]` are passed to `load_environment(**params)`.
+  </Step>
+  <Step title="Flash loads it at run time">
+    The worker installs your published environment, imports `environment.py`,
+    and calls `load_environment(**params)` to drive the run.
+  </Step>
+</Steps>
+
+<Note>
+  Publishing is fully managed: `flash env push` uploads to Freesolo's
+  Environments Hub (private) under one managed account, using only your Freesolo
+  API key. No external account or extra CLI required. Reference an env you
+  already have by id and skip authoring entirely.
+</Note>
+
+## Next
+
+<CardGroup cols={2}>
+  <Card title="Build an environment" icon="flask" href="/guides/environments">
+    The full SDK: author a dataset and reward, then publish it.
+  </Card>
+  <Card title="Datasets" icon="table" href="/guides/datasets">
+    Package task records and data files inside an environment.
+  </Card>
+  <Card
+    title="Explore the directory"
+    icon="folder-tree"
+    href="/directory-structure"
+  >
+    Where the environment lives on disk and what Flash reads.
+  </Card>
+  <Card title="How Flash works" icon="diagram-project" href="/how-flash-works">
+    The full run loop the environment plugs into.
+  </Card>
+</CardGroup>

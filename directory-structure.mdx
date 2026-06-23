@@ -1,0 +1,141 @@
+---
+title: "Explore the directory"
+description: "Every file flash env setup creates, what it's for, and when Flash reads it."
+---
+
+A Flash project is just a folder. `flash env setup` scaffolds it, and from then
+on a run is fully described by two things on disk: an **environment** (your task
+and how it's scored) and a **config** (how to train on it). Nothing is hidden,
+so you can read, diff, and version-control every file Flash touches.
+
+```
+my-project/
+├── environment.py        # the task + reward (a Freesolo environment)
+└── configs/
+    ├── grpo.toml         # a GRPO (RL) training config
+    └── sft.toml          # an SFT (supervised) training config
+```
+
+Click into each entry below for what it is, when Flash reads it, and an example.
+
+<AccordionGroup>
+  <Accordion title="environment.py" icon="python">
+    **What it is:** your [environment](/environment-model), the single source of
+    truth for what the model practices on and how it's graded. It defines
+    `load_environment()`, which returns a Freesolo `EnvironmentSingleTurn` (or
+    `EnvironmentMultiTurn`) carrying a dataset and a `score_response` reward. This
+    is the file you edit first.
+
+    **When Flash reads it:** `flash env push` packages and uploads it; a
+    `flash train --dry-run` imports it locally to validate; and on every run the
+    worker imports it and calls `load_environment(**params)`.
+
+    ```python environment.py
+    from freesolo.datasets.types import TaskExample
+    from freesolo.environments import EnvironmentSingleTurn, RewardResult
+
+    class CustomEnv(EnvironmentSingleTurn):
+        dataset = [{"input": "What is 2 + 2?", "output": "4"}]
+
+        def build_prompt_messages(self, example: TaskExample, prompt_text: str):
+            return [{"role": "user", "content": example.task}]
+
+        def score_response(self, example: TaskExample, response_text: str) -> RewardResult:
+            expected = str(example.expected_output or "").strip()
+            return RewardResult(score=1.0 if expected in response_text else 0.0, threshold=1.0)
+
+    def load_environment(**kwargs) -> CustomEnv:
+        return CustomEnv()
+    ```
+
+  </Accordion>
+
+  <Accordion title="configs/grpo.toml" icon="gear">
+    **What it is:** a [GRPO training config](/guides/training#choose-sft-or-grpo).
+    The only fields that are yours to set are `model` and `[environment] id`; the
+    GPU and artifact storage are [managed for you](/reference/configuration). Copy
+    it per experiment.
+
+    **When Flash reads it:** every `flash train`, `--dry-run`, and `--cost` parses
+    this file into the resolved job spec.
+
+    ```toml configs/grpo.toml
+    model = "Qwen/Qwen3.5-4B"
+    algorithm = "grpo"
+
+    [environment]
+    id = "your-name/starter"   # from `flash env push`
+
+    [train]
+    steps = 150
+    lora_rank = 32
+    seeds = [0]
+    ```
+
+  </Accordion>
+
+  <Accordion title="configs/sft.toml" icon="copy">
+    **What it is:** the same config shape with `algorithm = "sft"`, for supervised
+    fine-tuning on the `input`/`output` pairs in your environment's dataset. Keep
+    both and pick one at train time.
+
+    **When Flash reads it:** same as `grpo.toml`; pass it to `flash train` to run
+    SFT instead of GRPO.
+
+    ```bash
+    flash train configs/sft.toml
+    ```
+
+  </Accordion>
+</AccordionGroup>
+
+## Packaging an environment as a folder
+
+The scaffolded `environment.py` is enough to publish on its own. Once your task
+grows its own data files or helper modules, move it into a folder with
+`environment.py` at the root and publish the whole folder, so everything it needs
+travels with it.
+
+```
+math/
+├── environment.py        # defines load_environment()
+├── helpers.py            # optional sibling modules, imported by environment.py
+└── datasets/
+    ├── train.jsonl       # input/output records
+    └── eval.jsonl
+```
+
+<AccordionGroup>
+  <Accordion title="helpers.py" icon="python">
+    **What it is:** any sibling Python modules your `environment.py` imports. Keep
+    imports either from installed packages or from files in the folder you publish.
+
+    **When Flash reads it:** uploaded with the folder by `flash env push` and
+    importable on the worker.
+
+  </Accordion>
+
+  <Accordion title="datasets/" icon="table">
+    **What it is:** sidecar data files (`.jsonl`, `.json`, `.csv`, `.txt`,
+    `.parquet`, and more) that your environment loads. See [Datasets](/guides/datasets).
+
+    **When Flash reads it:** your environment code reads it (for example via
+    `load_task_examples(...)`); `flash env push` includes the `datasets/` folder
+    in the uploaded artifact.
+
+    ```jsonl datasets/train.jsonl
+    {"input":"What is 2 + 2?","output":"4"}
+    {"input":"What is 3 + 5?","output":"8"}
+    ```
+
+  </Accordion>
+</AccordionGroup>
+
+<Note>
+  That's the whole surface. There's no project state or lockfile to manage: runs
+  live server-side and are addressed by run id (see [`flash
+  ps`](/reference/cli#run-management)). Pull a published environment back down
+  with [`flash env install
+  your-name/name`](/guides/environments#use-an-existing-environment) when you
+  want to edit it locally.
+</Note>
