@@ -74,7 +74,11 @@ The interaction model is set by which base class you subclass:
   tasks start here.
 - **`EnvironmentMultiTurn`:** for conversations or tool use, where the model takes
   several steps before the whole sequence (its trajectory) is scored. You
-  implement the turn-step hooks.
+  implement the episode hooks — `start_episode` (opening messages),
+  `step_episode` (react to each action and decide whether the episode continues),
+  `max_episode_turns` (the bound), and `score_episode` (reward the trajectory).
+  See [Multi-turn environments](/guides/environments#multi-turn-environments) for
+  the full loop, an action protocol, and the stateless-step pattern.
 
 A minimal single-turn environment:
 

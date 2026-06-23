@@ -57,7 +57,8 @@ Replace the dataset and reward with your task:
   score; SFT trains directly on your dataset answers instead. See [how Flash
   works](/how-flash-works).
 
-For multi-turn tasks, use `EnvironmentMultiTurn` and implement turn-step hooks.
+For multi-turn tasks (conversations, tool use, agents), use `EnvironmentMultiTurn`
+and implement the episode hooks — see [Multi-turn environments](#multi-turn-environments) below.
 
 ## Structure the package
 
@@ -138,6 +139,130 @@ At runtime, read the same values from `example.record["input"]` and
 `example.record["output"]` if you need the raw row. For the common case,
 `load_task_examples(...)` maps `input` to `example.task` and `output` to
 `example.expected_output`.
+
+## Multi-turn environments
+
+Some tasks aren't resolved in a single response: a conversation, a tool-using
+agent, anything where the **environment reacts to what the model just did** and
+the model acts again. For these, subclass `EnvironmentMultiTurn` and implement the
+**episode hooks**. GRPO rolls out the whole episode, then scores the finished
+trajectory.
+
+| Single-turn (`EnvironmentSingleTurn`) | Multi-turn (`EnvironmentMultiTurn`) |
+| ------------------------------------- | ----------------------------------- |
+| `build_prompt_messages` → one prompt  | `start_episode` → opening messages  |
+| `score_response` → reward one reply   | `step_episode` → react to each action; `max_episode_turns` → bound the episode; `score_episode` → reward the trajectory |
+
+### The episode loop
+
+During training the trainer drives your hooks in a loop and scores the result:
+
+```text
+messages = env.start_episode(example, prompt_text)      # opening system/user messages
+for _ in range(env.max_episode_turns(example)):
+    action = policy.sample(messages)                    # one assistant message
+    messages.append({"role": "assistant", "content": action})
+    result = env.step_episode(example, messages, action)
+    messages.extend(result.messages)                    # the env's response (tool result, next user turn)
+    if result.done:
+        break
+reward = env.score_episode(example, EnvironmentEpisode(messages=..., response_text=...))
+```
+
+- **`start_episode(example, prompt_text)`** returns the initial messages (e.g. a
+  system prompt plus the first user message).
+- **`step_episode(example, messages, assistant_response)`** is the core. `messages`
+  already includes the assistant action being stepped as its last element. Return
+  an `EnvironmentStepResult`:
+  - `done=False, messages=(...)` keeps the episode open and injects the
+    environment's response (a tool result, the next user turn);
+  - `done=True, final_response_text=...` ends it.
+- **`max_episode_turns(example)`** caps how many assistant actions the trainer
+  samples before forcing the episode terminal.
+- **`score_episode(example, episode)`** grades the completed transcript
+  (`episode.messages`) and returns a `RewardResult`, exactly like `score_response`
+  but over the whole trajectory.
+
+### An action protocol the model can emit as text
+
+The trained policy is an open model, not a tool-use API, so define a plain-text
+protocol it can produce and your `step_episode` can parse — for example, a
+tool-call block versus a final reply:
+
+```python environment.py
+import json, re
+from freesolo.datasets.types import TaskExample
+from freesolo.environments import EnvironmentMultiTurn, RewardResult
+from freesolo.environments.types import EnvironmentEpisode, EnvironmentStepResult
+
+TOOL_CALL = re.compile(r"<tool_call>\s*(.*?)\s*</tool_call>", re.DOTALL)
+
+def run_tool(name: str, args: dict) -> dict:
+    ...  # your stateful backend / API
+
+class AgentEnv(EnvironmentMultiTurn):
+    def __init__(self, *, split: str = "train") -> None:
+        self.dataset = [{"input": "Refund my last order.", "output": "refund_order"}]
+
+    def start_episode(self, example: TaskExample, prompt_text: str):
+        return [
+            {"role": "system", "content": "Call tools with <tool_call>{...}</tool_call>; reply in plain text when done."},
+            {"role": "user", "content": example.task},
+        ]
+
+    def max_episode_turns(self, example: TaskExample) -> int:
+        return 8
+
+    def step_episode(self, example, messages, assistant_response):
+        blocks = TOOL_CALL.findall(assistant_response)
+        if blocks:  # a TOOL turn: run the calls, feed results back, stay open
+            results = [run_tool(**json.loads(b)) for b in blocks]
+            return EnvironmentStepResult(
+                done=False,
+                messages=({"role": "user", "content": f"<tool_result>{json.dumps(results)}</tool_result>"},),
+            )
+        # a REPLY turn: no tool call -> the model is done
+        return EnvironmentStepResult(done=True, final_response_text=assistant_response)
+
+    def score_episode(self, example: TaskExample, episode: EnvironmentEpisode) -> RewardResult:
+        used = [json.loads(b)["name"] for m in episode.messages
+                for b in TOOL_CALL.findall(m["content"]) if m["role"] == "assistant"]
+        hit = str(example.expected_output) in used
+        return RewardResult(score=1.0 if hit else 0.0, threshold=1.0)
+
+def load_environment(split: str = "train", **kwargs) -> AgentEnv:
+    return AgentEnv(split=split)
+```
+
+### Keep `step_episode` stateless
+
+The SDK doesn't hand you a per-episode scratch object, and GRPO runs **many
+rollouts of the same example concurrently** — so don't stash mutable world-state
+on the env keyed by example. If your task has state (a backend that changes as
+tools run), make the **transcript the source of truth** and rebuild state by
+replaying `messages` inside `step_episode` / `score_episode`. Replay is
+reproducible as long as your backend is deterministic given the same calls (seed
+any ids; avoid wall-clock-dependent logic in the reward).
+
+### Score behaviours, not a script
+
+Open-ended tasks rarely have one correct transcript, so don't grade by imitation.
+Score the behaviours you care about — did it take the resolving action, follow
+required ordering (e.g. authenticate before a privileged call), stay within
+limits — and return that blend from `score_episode`. Keeping the reward in a
+plain function (importable without the trainer) makes it unit-testable.
+
+### Configure for multi-turn
+
+There's no "number of turns" knob in the config — the budget comes from
+`max_episode_turns`. What matters in `[train]`:
+
+- **`max_tokens`** is *per assistant action* (one tool call or one reply), not per
+  episode — keep it modest.
+- **`max_length`** must hold the system prompt **plus the whole running transcript**
+  (every turn, every tool result), so set it well above a single-turn task.
+- **`group_size`** is the number of full episodes rolled out per prompt for the
+  GRPO advantage estimate.
 
 ## Publish it
 
