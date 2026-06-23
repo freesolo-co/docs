@@ -26,7 +26,7 @@ seeds = [0]
 | Key | Type | Default | Description |
 | --- | --- | --- | --- |
 | `model` | string | (required) | Base model to train a LoRA adapter on, e.g. `Qwen/Qwen3.5-4B`. See `flash models`. |
-| `algorithm` | string | `grpo` | `grpo` (RL) or `sft` (supervised). |
+| `algorithm` | string | `grpo` | `grpo` (RL): learns from a reward you define. `sft` (supervised): learns by imitating example completions you provide. |
 | `thinking` | bool | `false` | Enable reasoning mode (thinking-capable models only). |
 
 ## `[environment]`
@@ -52,15 +52,14 @@ service_api_key = os.environ["SERVICE_API_KEY"]
 ```
 
 Never put secret values in `[environment.params]` or `[worker_env]`; those are
-part of the run spec. `[environment].secrets` contains names only, and every
-listed value must exist in your shell, `.env`, or `.env.local` when you submit a
-real run.
+part of the run spec. Every name you list under `[environment].secrets` must
+resolve to a value in your shell, `.env`, or `.env.local` when you submit.
 
 ## `[train]`
 
 | Key | Type | Default | Description |
 | --- | --- | --- | --- |
-| `lora_rank` | int | `32` | LoRA rank. |
+| `lora_rank` | int | `32` | LoRA rank; higher means a larger adapter with more capacity and cost. |
 | `lora_alpha` | int | `64` | LoRA alpha. |
 | `seeds` | list[int] | `[0]` | Seeds to run (one adapter per seed). |
 | `learning_rate` | float | recipe default | Optimizer learning rate. |
@@ -77,7 +76,7 @@ real run.
 | `group_size` | int | Completions sampled per prompt. |
 | `temperature` | float | Sampling temperature for rollouts. |
 | `max_tokens` | int | Max tokens per rollout completion. |
-| `kl_penalty_coef` | float | KL penalty coefficient. |
+| `kl_penalty_coef` | float | Strength of the penalty that keeps the trained model from drifting too far from the base model. |
 | `advantage_clip` | float | Centered-advantage clamp. |
 | `thinking_length_penalty_coef` | float | Penalty on reasoning length. |
 | `stop_sequences` | list[string] | Stop sequences for generation. |

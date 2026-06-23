@@ -3,8 +3,9 @@ title: "Environments"
 description: "Define the task your model trains on and is graded by."
 ---
 
-An **environment** is the task: the data your model sees and the reward that
-scores its outputs. Flash loads environments through the Freesolo environment SDK.
+An **environment** is the task: the data your model sees and the reward, a
+numeric score your code assigns to each model output. Flash loads environments
+through the Freesolo environment SDK.
 You author one locally, publish it to Freesolo's managed Environments Hub, and
 reference it in config by its Freesolo environment id.
 
@@ -52,19 +53,19 @@ Replace the dataset and reward with your task:
 
 - **Dataset**: the prompts (and any gold answers) your model trains and is
   evaluated on.
-- **Reward**: `score_response` returns a `RewardResult`; that score is the signal
-  GRPO optimizes and SFT can also use for target scoring behavior.
+- **Reward**: `score_response` returns a `RewardResult`. GRPO optimizes that
+  score; SFT trains directly on your dataset answers instead. See [how Flash
+  works](/how-flash-works).
 
 For multi-turn tasks, use `EnvironmentMultiTurn` and implement turn-step hooks.
 
 ## Structure the package
 
-A published environment is a small folder. Flash packages that folder, imports
-its `environment.py` entrypoint on the worker, and calls
-`load_environment(**params)`. That function must return a Freesolo SDK
-environment. The folder can be named anything; `math/` and
-`environments/math/` are both fine as long as the folder you pass to
-`flash env push` contains `environment.py` at its root.
+A published environment is a small folder. Flash packages it, imports its
+`environment.py` entrypoint on the worker, and calls
+`load_environment(**params)`, which must return a Freesolo SDK environment. The
+folder can be named anything as long as it contains `environment.py` at its
+root.
 
 ```text
 math/
@@ -75,17 +76,14 @@ math/
     eval.jsonl
 ```
 
-The recommended shape is a folder with `environment.py` at the top. Publish the
-folder:
+Publish the folder:
 
 ```bash
 flash env push --name math math
 ```
 
-Folder upload is important because it carries everything the environment needs:
-helper modules, `datasets/`, and common data files. Single `.py` file upload is
-still supported for tiny smoke tests, but real environments should be pushed as
-folders.
+Single `.py` upload still works for tiny smoke tests, but push real environments
+as folders.
 
 Keep all imports either from installed packages or from sibling files in the
 folder you publish.
@@ -155,8 +153,8 @@ It prints the published id
 
 ## Use an existing environment
 
-If you already have a published env id (yours or one shared with you), you don't
-need to author anything. Just reference it:
+If you already have a published env id (yours or one shared with you), reference
+it:
 
 ```toml
 [environment]
@@ -194,7 +192,7 @@ num_examples = 500
 ## Use API keys
 
 If your environment needs an external service, read the key from `os.environ` in
-`environment.py`. This is the only code path your environment needs:
+`environment.py`:
 
 ```python environment.py
 import os
@@ -202,8 +200,7 @@ import os
 SERVICE_API_KEY = os.environ["SERVICE_API_KEY"]
 ```
 
-Then declare the environment variable names in your training config. The config
-contains names only, never values:
+Then declare the environment variable names in your training config:
 
 ```toml
 [environment]

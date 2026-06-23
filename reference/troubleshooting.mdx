@@ -3,7 +3,6 @@ title: "Troubleshooting"
 description: "Common Flash errors, why they happen, and how to fix them."
 ---
 
-Fixes for the issues you're most likely to hit, grouped by where they show up.
 Most `flash` errors print one clean line; add `--debug` to any command for the
 full traceback.
 
@@ -69,10 +68,10 @@ full traceback.
   </Accordion>
 
   <Accordion title="ModuleNotFoundError: No module named 'freesolo' (local authoring)">
-    Training runs managed, so the env's dependencies live server-side. But
-    authoring locally, and any `--dry-run`/`--cost` that **loads** the
-    environment (for example, to count examples for SFT cost), needs the
-    env's libraries installed locally:
+    Training is managed, so the env's dependencies live server-side. But local
+    authoring needs them installed locally, as does any `--dry-run`/`--cost`
+    that **loads** the environment (for example, to count examples for SFT
+    cost):
 
     ```bash
     uv pip install freesolo
@@ -114,10 +113,9 @@ full traceback.
   </Accordion>
 
   <Accordion title="Unknown config key or section rejected">
-    Flash rejects unknown config sections and `[train]` keys **at parse time**, so
-    a typo fails fast instead of silently training against defaults. Check the key
-    against the [configuration reference](/reference/configuration) and validate
-    locally:
+    Flash rejects unknown config sections and `[train]` keys **at parse time**.
+    Check the key against the
+    [configuration reference](/reference/configuration) and validate locally:
 
     ```bash
     flash train config.toml --dry-run
@@ -143,10 +141,11 @@ full traceback.
 
 <AccordionGroup>
   <Accordion title="GRPO needs a bigger GPU than SFT for the same model">
-    Expected. GRPO co-locates a rollout engine that holds a second copy of the
-    weights plus a KV cache, so it needs more VRAM than SFT. The 9B model, for
-    instance, fits a 48 GB card for SFT but needs an 80 GB-class card for GRPO.
-    Pick a smaller model or use `sft`. See [Supported models](/reference/models).
+    Expected. As it trains, GRPO also generates [rollouts](/how-flash-works), so
+    it runs a generation engine that holds a second copy of the weights plus a
+    KV cache. That needs more VRAM than SFT. The 9B model, for instance, fits a
+    48 GB card for SFT but needs an 80 GB-class card for GRPO. Pick a smaller
+    model or use `sft`. See [Supported models](/reference/models).
   </Accordion>
 </AccordionGroup>
 
@@ -166,15 +165,15 @@ full traceback.
 
 <Accordion title="GRPO reward is stuck at 0">
   The task is too hard for the model at its current ability: if no rollout ever
-  scores, there's no signal to learn from. Try a stronger/larger base model,
-  make the task easier to get started, or double-check your reward actually
-  returns a positive reward for good answers.
+  scores, there's nothing for GRPO to reinforce. Try a stronger/larger base
+  model, make the task easier to get started, or double-check your reward
+  actually returns a positive reward for good answers.
 </Accordion>
 
 <Accordion title="Reward is stuck at 1 (or never moves)">
   Usually the reward is not discriminative: it scores almost everything the
   same. Make the reward function separate better answers from worse ones so GRPO
-  has a gradient to follow. See [Environments](/guides/environments).
+  has a spread of scores to learn from. See [Environments](/guides/environments).
 </Accordion>
 
   <Accordion title="Did pressing Ctrl-C kill my run?">

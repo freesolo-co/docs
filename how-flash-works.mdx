@@ -4,11 +4,10 @@ description: "Post-training in plain terms: the few concepts that matter, and ho
 ---
 
 If you've heard of "post-training" or "fine-tuning" but never shipped one, this
-page is for you. It builds the intuition: what these systems actually do, the
-handful of concepts that matter, and how Flash runs the whole thing so there's no
-infrastructure for you to manage.
+page builds the intuition: the few concepts that matter, and how Flash runs the
+whole thing so there's no infrastructure for you to manage.
 
-## The big idea
+## What post-training does
 
 A base model like Qwen3.5 arrives from **pre-training** already fluent, but
 generic: it has read a lot of the internet and is good at everything in general,
@@ -47,8 +46,6 @@ algorithm** that improves the model from that score.
     a small **adapter** you can deploy.
   </Step>
 </Steps>
-
-Everything below is just the vocabulary for those four steps.
 
 ## Core concepts
 
@@ -100,9 +97,9 @@ between them with one line of config.
   </Card>
 </CardGroup>
 
-A useful test: if you can hand the model a stack of ideal answers, start with
-**SFT**. If you can't write the answers but you _can_ tell a good one from a bad
-one, that scoring function is exactly what **GRPO** needs. See
+If you can hand the model a stack of ideal answers, start with **SFT**. If you
+can't write the answers but you _can_ tell a good one from a bad one, that
+scoring function is exactly what **GRPO** needs. See
 [Training](/guides/training#choose-sft-or-grpo).
 
 ### Rewards and rollouts (GRPO)
@@ -112,10 +109,10 @@ prompt, GRPO samples a _group_ of rollouts (the `group_size`), scores each one
 with your environment, and reinforces the rollouts that beat the group's
 average. The **reward** is the score your environment returns.
 
-This is why the reward matters so much: it is the teacher. If your reward
-function can reliably separate good answers from bad ones, GRPO can optimize
-toward it. If the task is so hard that every rollout scores zero, there's no
-signal to learn from, so start with a model and task where some attempts succeed.
+The reward is the teacher. If it reliably separates good answers from bad ones,
+GRPO can optimize toward it; if the task is so hard that every rollout scores
+zero, there's no signal to learn from, so start with a model and task where some
+attempts succeed.
 
 ### Serving the result
 
@@ -127,8 +124,8 @@ with no per-day idle charge. See
 
 ## How Flash supports you
 
-The concepts above are the same for any post-training stack. What Flash adds is
-that you only bring a config and an environment, and the platform owns the hard
+The concepts above are the same for any post-training stack. With Flash you
+bring only a config and an environment, and the platform owns the hard
 infrastructure:
 
 | You provide                     | Flash manages                                                                 |
@@ -147,7 +144,7 @@ config.toml --cost`. See [Cost and billing](/guides/training#cost-and-billing).
 
 ## The end-to-end flow
 
-Putting it together, a full loop is five commands:
+A full loop is five commands:
 
 <Steps>
   <Step title="Pick a base model">

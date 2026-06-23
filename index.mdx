@@ -6,9 +6,8 @@ description: "Train, deploy, and chat with custom LoRA models on managed GPUs, f
 
 Flash is Freesolo's managed post-training service. You write a short config, run
 one command, and Flash fine-tunes a model on a managed GPU, then serves the
-result behind an OpenAI-compatible endpoint. There's nothing to host: every
-command is a thin call to the hosted control plane, authenticated with your
-Freesolo API key.
+result behind an OpenAI-compatible endpoint. There's nothing to host, and every
+command is authenticated with your Freesolo API key.
 
 ```bash
 flash train config.toml      # fine-tune on a managed GPU
@@ -20,9 +19,10 @@ flash chat <run-id> -m "hi"  # talk to it
 
 <AccordionGroup>
   <Accordion title="Fine-tune a model on your own task" icon="dumbbell">
-    Write a TOML config, run one command, and Flash trains a LoRA adapter on top
-    of a supported base model. You pick the model and the task; the platform
-    picks and runs the GPU. See [Training](/guides/training).
+    Write a TOML config, run one command, and Flash trains a LoRA adapter (a
+    small set of add-on weights) on top of a supported base model. You pick the
+    model and the task; the platform picks and runs the GPU. See
+    [Training](/guides/training).
 
     ```bash
     flash train config.toml
@@ -30,10 +30,10 @@ flash chat <run-id> -m "hi"  # talk to it
 
   </Accordion>
   <Accordion title="Reward the behavior you want with GRPO" icon="trophy">
-    Reinforcement learning has the model generate completions, scores them with
-    your [environment's](/guides/environments) reward, and updates toward higher
-    reward. Use it when you can score an output but can't hand-write the perfect
-    one.
+    Reinforcement learning scores the model's own completions with your
+    [environment's](/guides/environments) reward and updates toward higher
+    reward (see [How Flash works](/how-flash-works)). Use it when you can score
+    an output but can't hand-write the perfect one.
 
     ```toml
     algorithm = "grpo"

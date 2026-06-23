@@ -49,12 +49,11 @@ tokens** and mirror the Flash source of truth:
 ### Notes per model
 
 - **`Qwen/Qwen3.5-0.8B`**: the smallest Qwen3.5. Cheapest for smoke tests and
-  fast iteration on the modern stack.
+  fast iteration.
 - **`openbmb/MiniCPM5-1B`**: an on-device-class small model (131k context) on a
   standard Llama architecture.
 - **`Qwen/Qwen3.5-2B`**: a small, capable step up when 0.8B underfits.
-- **`Qwen/Qwen3.5-4B`**: the **default**. A current-gen dense 4B and the safe
-  out-of-the-box choice for most tasks.
+- **`Qwen/Qwen3.5-4B`**: the **default** and the safe choice for most tasks.
 - **`Qwen/Qwen3.5-9B`**: the largest catalog model. Use it when quality matters
   more than the run cost.
 
@@ -65,9 +64,9 @@ tokens** and mirror the Flash source of truth:
 
 ## Reasoning ("thinking") models
 
-Every catalog model is **hybrid-reasoning**: its chat template honors an
-`enable_thinking` switch, so it can run with or without an explicit reasoning
-step. Turn reasoning on for a run with one line in your config:
+Every catalog model is **hybrid-reasoning**: it can run with or without an
+explicit reasoning step. Turn reasoning on for a run with one line in your
+config:
 
 ```toml
 thinking = true
@@ -77,8 +76,6 @@ See the [`thinking` field](/reference/configuration#top-level) in the
 configuration reference.
 
 ## Choosing a model
-
-A simple rule of thumb:
 
 <CardGroup cols={2}>
   <Card title="Start small" icon="feather">
@@ -93,10 +90,8 @@ A simple rule of thumb:
 
 ## Models not in the catalog
 
-The catalog is the full set of base models available for managed runs: `model`
-must be one of the ids above (or left unset for the default). If your task needs
-a model that isn't listed, [let us know](https://freesolo.co/contact) so we can
-look at adding it.
+`model` must be one of the ids above. If your task needs a model that isn't
+listed, [let us know](https://freesolo.co/contact) so we can look at adding it.
 
 <Card
   title="Pick a model, then train"

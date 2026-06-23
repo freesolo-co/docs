@@ -10,8 +10,8 @@ the [configuration reference](/reference/configuration) for every field.
 
 ## Pick a base model
 
-Flash trains a **LoRA adapter** on top of a supported base model. List the
-catalog of base model ids and their parameter sizes (see
+Flash trains a [LoRA adapter](/how-flash-works) on top of a supported base
+model. List the catalog of base model ids and their parameter sizes (see
 [Supported models](/reference/models) for algorithms, reasoning, and pricing):
 
 ```bash
@@ -26,8 +26,6 @@ model = "Qwen/Qwen3.5-4B"
 
 ## Choose SFT or GRPO
 
-One line selects the training algorithm:
-
 <CodeGroup>
 
 ```toml GRPO (RL)
@@ -40,13 +38,13 @@ algorithm = "sft"
 
 </CodeGroup>
 
-- **`grpo`**: reinforcement learning. The model generates completions, your
-  environment's reward scores them, and the policy is updated toward
-  higher-reward behavior.
-- **`sft`**: supervised fine-tuning on the prompts/answers in your environment's
-  dataset.
+- **`grpo`**: reinforcement learning, for when there's no fixed answer to copy.
+  Your environment's reward scores each completion.
+- **`sft`**: supervised fine-tuning, for when you already have the answers. The
+  model imitates the prompt/answer pairs in your environment's dataset.
 
-Both are driven by the same [environment](/guides/environments).
+Both are driven by the same [environment](/guides/environments). See
+[how Flash works](/how-flash-works) for the difference.
 
 ## Anatomy of a config
 
@@ -116,10 +114,9 @@ flash train config.toml --set train.steps=300 --set train.lora_rank=16
 
 A run is **billed when it finishes successfully**, for the actual GPU time it
 used. Once the run reaches `done`, Flash measures the real cost (GPU $/hr ×
-wall-clock) and debits it from your org's prepaid balance; nothing is charged at
-submit, and a run that never completes isn't billed. Preview the cost before you
-submit with `flash train --cost`, which prints a deterministic pre-flight
-estimate (the final charge is the measured actual, which can differ):
+wall-clock) and debits it from your org's prepaid balance. Preview the cost
+before you submit with `flash train --cost`, which prints a pre-flight estimate,
+not the final charge:
 
 ```bash
 flash train config.toml --cost
