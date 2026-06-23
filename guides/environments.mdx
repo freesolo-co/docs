@@ -16,14 +16,13 @@ id = "your-name/your-env"
 ## Scaffold one
 
 ```bash
-flash env init my-task
+flash env setup
 ```
 
-This creates `environments/my_task/environment.py` with a working starter:
-`load_environment()` returns a Freesolo `EnvironmentSingleTurn` with a sample dataset
-and reward.
+This creates `environment.py` with a working starter. `load_environment()`
+returns a Freesolo `EnvironmentSingleTurn` with a sample dataset and reward.
 
-```python environments/my_task/environment.py
+```python environment.py
 from freesolo.datasets.types import TaskExample
 from freesolo.environments import EnvironmentSingleTurn, RewardResult
 
@@ -63,10 +62,12 @@ For multi-turn tasks, use `EnvironmentMultiTurn` and implement turn-step hooks.
 A published environment is a small folder. Flash packages that folder, imports
 its `environment.py` entrypoint on the worker, and calls
 `load_environment(**params)`. That function must return a Freesolo SDK
-environment.
+environment. The folder can be named anything; `math/` and
+`environments/math/` are both fine as long as the folder you pass to
+`flash env push` contains `environment.py` at its root.
 
 ```text
-environments/math/
+math/
   environment.py          # defines load_environment()
   helpers.py              # optional Python helpers
   datasets/
@@ -80,7 +81,7 @@ The recommended shape is a folder with `environment.py` at the top. Publish the
 folder:
 
 ```bash
-flash env push --name math environments/math
+flash env push --name math math
 ```
 
 Folder upload is important because it carries everything the environment needs:
@@ -145,14 +146,14 @@ At runtime, read the same values from `example.record["input"]` and
 ## Publish it
 
 Training runs on managed GPUs, so the environment has to be reachable by id.
-Publish your local environment to the managed Environments Hub:
+Publish your local environment folder to the managed Environments Hub:
 
 ```bash
-flash env push --name my-task environments/my_task
+flash env push --name math math
 ```
 
 It prints the published id
-(`your-name/my-task`). Put that in your config's `[environment] id`.
+(`your-name/math`). Put that in your config's `[environment] id`.
 
 <Note>
   Publishing is fully managed: `flash env push --name ...` uploads your env to

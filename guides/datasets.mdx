@@ -37,13 +37,14 @@ available as `example.record`.
 Put dataset files beside `environment.py` so they are included when you publish:
 
 ```text
-environments/math/
+math/
   environment.py
   helpers.py
   datasets/
     train.jsonl
     eval.jsonl
-  state.sqlite
+  db/
+    state.sqlite
 ```
 
 Publish the folder with an explicit name. `flash env push` publishes a compact
@@ -51,7 +52,7 @@ environment artifact to the managed Environments Hub and prints the Freesolo id
 you use in configs:
 
 ```bash
-flash env push --name math environments/math
+flash env push --name math math
 ```
 
 ```text Output
@@ -111,8 +112,8 @@ For a local environment directory, `flash env push` includes:
 - Data sidecar directories named `assets`, `data`, `datasets`, `db`, or
   `databases`.
 - Common sibling data files such as `.jsonl`, `.json`, `.csv`, `.txt`,
-  `.parquet`, `.sqlite`, `.sqlite3`, `.db`, `.sql`, `.pkl`, `.yaml`, and
-  `.yml`.
+  `.parquet`, `.sqlite`, `.sqlite3`, `.db`, `.sql`, `.pkl`, `.tsv`, `.yaml`,
+  and `.yml`.
 
 Workspace metadata, cache directories, virtualenvs, and version-control files
 are skipped. Keep the artifact small: environment uploads are capped at 64 MB

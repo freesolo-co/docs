@@ -48,21 +48,17 @@ thin, authenticated call to the hosted control plane. Run `flash --help` or
 ## Environments
 
 <ResponseField name="flash env setup">
-  Scaffold `environments/` and `configs/` in the current directory with a
+  Scaffold `environment.py` and `configs/` in the current directory with a
   starter environment plus `configs/grpo.toml`, `configs/sft.toml`, and
   `configs/endpoints.toml`.
-</ResponseField>
-
-<ResponseField name="flash env init NAME">
-  Scaffold a new local Freesolo environment at `environments/NAME/`.
 </ResponseField>
 
 <ResponseField name="flash env push --name NAME [PATH]">
   Publish a local Freesolo environment to Freesolo's managed Environments Hub
   (private) and print its id (`your-name/NAME`). `--name` is required; `PATH`
-  defaults to the current directory. Prefer passing an environment folder so
-  helper modules and data sidecars are uploaded with `environment.py`. Fully
-  managed with your Freesolo API key.
+  defaults to the current directory. Pass `.` or any folder with
+  `environment.py` at its root so helper modules and data sidecars are uploaded.
+  Fully managed with your Freesolo API key.
 </ResponseField>
 
 <ResponseField name="flash env install ENV_ID">
