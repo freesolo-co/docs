@@ -109,9 +109,9 @@
 /* uppercase, muted column headers like the site. */
 #footer p.font-semibold {
 	text-transform: uppercase;
-	letter-spacing: 0.08em;
-	font-size: 0.75rem;
-	font-weight: 600;
+	letter-spacing: 0.02em;
+	font-size: 0.875rem;
+	font-weight: 500;
 	color: #6b7280;
 }
 
@@ -158,4 +158,14 @@
 }
 .dark #footer::after {
 	background-image: url("/logo/freesolo-wordmark-dark.svg");
+}
+
+/* thick navy bar across the very bottom, like the marketing site footer. */
+#footer {
+	border-bottom: 8px solid #1b1b4b;
+}
+@media (min-width: 768px) {
+	#footer {
+		border-bottom: 16px solid #1b1b4b;
+	}
 }
