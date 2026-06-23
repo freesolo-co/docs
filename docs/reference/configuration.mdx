@@ -64,8 +64,6 @@ difficulty = "hard"
 | `batch_size` | int | recipe default | Training batch size. |
 | `max_length` | int | recipe default | Max sequence length. |
 | `save_every` | int | recipe default | Checkpoint cadence (steps). |
-| `max_steps` | int | — | SFT: cap on optimizer steps (`0` = no cap). |
-| `max_examples` | int | — | SFT: truncate the training dataset to N examples (`0` = no cap). |
 | `init_from_adapter` | string | — | Warm-start from an existing adapter. |
 
 ### GRPO-specific
@@ -86,6 +84,8 @@ difficulty = "hard"
 | Key | Type | Description |
 | --- | --- | --- |
 | `epochs` | int | Number of epochs (alternative to GRPO `steps`). |
+| `max_steps` | int | cap on optimizer steps (`0` = no cap). |
+| `max_examples` | int | Truncate the training dataset to N examples (`0` = no cap). |
 
 ## `[wandb]`
 
