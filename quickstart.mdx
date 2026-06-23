@@ -135,6 +135,15 @@ USD estimate and exits without submitting:
 flash train configs/grpo.toml --cost
 ```
 
+<Note>
+  **Training pricing is GPU-time pricing, not token pricing.** Flash estimates
+  the wall-clock time for your selected model, algorithm, and training settings,
+  multiplies that by the managed GPU price, and shows the exact pre-flight charge
+  with `--cost`. `flash train configs/grpo.toml` charges that estimate to your
+  org balance up front before any GPU starts; serving token charges are separate
+  and only begin after `flash deploy`.
+</Note>
+
 ## 6. Train
 
 ```bash
@@ -156,9 +165,9 @@ The run reaches `done` when training finishes.
 
 ## 7. Deploy
 
-Serve the trained adapter on Freesolo's managed serving service. It
-**scales to zero when idle** (no charge for idle time) and cold-starts on the
-first request; you're billed per token for the requests it serves:
+Serve the trained adapter on Freesolo's managed serving service. There is no
+per-day idle charge: deployment registers the adapter, and serving is billed per
+prompt and completion token for requests you send:
 
 ```bash
 flash deploy <run-id>
@@ -189,7 +198,7 @@ flash undeploy <run-id>
     Package records, files, and split parameters with an environment.
   </Card>
   <Card title="Deploy & chat" icon="comments" href="/guides/deploy-and-chat">
-    Scale-to-zero vs always-on, and the OpenAI-compatible API.
+    Serving billing and the OpenAI-compatible API.
   </Card>
   <Card title="CLI reference" icon="terminal" href="/reference/cli">
     Every `flash` command and flag.

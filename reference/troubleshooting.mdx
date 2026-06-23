@@ -200,18 +200,16 @@ full traceback.
 ## Serving
 
 <AccordionGroup>
-  <Accordion title="The first request after deploy is slow">
-    `dev` mode (the default) scales to zero when idle and cold-starts on the first
-    request. To avoid cold starts, deploy `--mode always-on`, or raise the idle
-    window with `--idle-timeout <seconds>`. See
-    [Deploy & chat](/guides/deploy-and-chat).
+  <Accordion title="Deploy or the first request is slow">
+    Deploy registers and warms the adapter on Freesolo's managed serving
+    service. Large models can take a few minutes before the endpoint is ready.
+    See [Deploy & chat](/guides/deploy-and-chat).
   </Accordion>
 
   <Accordion title="Am I being charged while the deployment is idle?">
     No. Serving is **billed per token** for the requests you actually send; there
-    is no per-day or warm-GPU charge, and the `$/DAY` column in
-    `flash deployments` is always `0`. `flash undeploy <run-id>` deregisters the
-    adapter entirely.
+    is no per-day idle or warm-GPU charge. `flash undeploy <run-id>` deregisters
+    the adapter entirely.
   </Accordion>
 
   <Accordion title="Calling the endpoint from my own code is rejected">

@@ -125,9 +125,9 @@ signal to learn from, so start with a model and task where some attempts succeed
 ### Serving the result
 
 A trained adapter isn't useful until you can call it. `flash deploy` registers
-your adapter with Freesolo's **managed multi-LoRA serving**: adapters for the
-same base model share one GPU that **scales to zero when idle**, and you talk to
-them over an OpenAI-compatible API, billed per token. See
+your adapter with Freesolo's **managed multi-LoRA serving**. You talk to it over
+an OpenAI-compatible API, and serving is billed per prompt and completion token
+with no per-day idle charge. See
 [Deploy & chat](/guides/deploy-and-chat).
 
 ## How Flash supports you
@@ -143,7 +143,7 @@ infrastructure:
 | `flash train config.toml`       | Allocating the cheapest validated GPU that fits, across providers             |
 | (nothing)                       | Supervision: a stall watchdog and bounded auto-retry from the last checkpoint |
 | (nothing)                       | Storage: each run streams its adapter and checkpoints to a private HF repo    |
-| `flash deploy <run-id>`         | Multi-LoRA serving that scales to zero, behind an OpenAI-compatible endpoint  |
+| `flash deploy <run-id>`         | Multi-LoRA serving behind an OpenAI-compatible endpoint                      |
 
 Billing follows the same managed model: every run is charged a **pre-flight
 estimate up front** and gated on your prepaid balance, so a run can't start
@@ -173,7 +173,7 @@ Putting it together, a full loop is five commands:
     and checkpoints back to you.
   </Step>
   <Step title="Deploy">
-    `flash deploy <run-id>` serves the adapter, scale-to-zero by default.
+    `flash deploy <run-id>` serves the adapter behind an OpenAI-compatible API.
   </Step>
   <Step title="Use it">
     `flash chat <run-id>` or any OpenAI client calls your model.
@@ -209,6 +209,6 @@ your environment sets the ceiling on what training can achieve.
     Turn your task into a dataset and a reward.
   </Card>
   <Card title="Supported models" icon="layer-group" href="/reference/models">
-    The base models you can fine-tune, with sizes and GPU needs.
+    The base models you can fine-tune and serve, with sizes and prices.
   </Card>
 </CardGroup>

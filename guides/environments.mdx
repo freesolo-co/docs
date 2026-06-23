@@ -37,10 +37,10 @@ class CustomEnv(EnvironmentSingleTurn):
     dataset = DATASET
 
     def build_prompt_messages(self, example: TaskExample, prompt_text: str):
-        return [{"role": "user", "content": str(example.record["input"])}]
+        return [{"role": "user", "content": example.task}]
 
     def score_response(self, example: TaskExample, response_text: str) -> RewardResult:
-        expected = str(example.record["output"]).strip()
+        expected = str(example.expected_output or "").strip()
         score = 1.0 if expected and expected in response_text else 0.0
         return RewardResult(score=score, threshold=1.0)
 
@@ -118,10 +118,10 @@ class MathEnv(EnvironmentSingleTurn):
         self.dataset = load_task_examples(ROOT / "datasets" / f"{split}.jsonl")
 
     def build_prompt_messages(self, example: TaskExample, prompt_text: str):
-        return [{"role": "user", "content": str(example.record["input"])}]
+        return [{"role": "user", "content": example.task}]
 
     def score_response(self, example: TaskExample, response_text: str) -> RewardResult:
-        expected = str(example.record["output"]).strip()
+        expected = str(example.expected_output or "").strip()
         score = 1.0 if expected and expected in response_text else 0.0
         return RewardResult(score=score, threshold=1.0)
 
@@ -138,7 +138,9 @@ The dataset file uses the user-facing `input`/`output` row shape:
 ```
 
 At runtime, read the same values from `example.record["input"]` and
-`example.record["output"]`.
+`example.record["output"]` if you need the raw row. For the common case,
+`load_task_examples(...)` maps `input` to `example.task` and `output` to
+`example.expected_output`.
 
 ## Publish it
 

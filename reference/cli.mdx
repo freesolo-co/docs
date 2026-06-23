@@ -119,12 +119,11 @@ thin, authenticated call to the hosted control plane. Run `flash --help` or
 
 <ResponseField name="flash deploy RUN_ID [flags]">
   Register a trained adapter with the managed multi-LoRA serving service.
-  Serving scales to zero when idle and is [billed per token](/guides/deploy-and-chat#billing).
+  Serving is [billed per token](/guides/deploy-and-chat#billing); there is no
+  per-day idle charge.
 
   | Flag | Default | Effect |
   | --- | --- | --- |
-  | `--mode` | `dev` | `dev` (scale-to-zero) or `always-on` (kept warm to avoid cold starts) |
-  | `--idle-timeout SECONDS` | `300` | `dev` mode: idle seconds before scaling to zero |
   | `--dry-run` | - | Preview the deploy without creating it |
 </ResponseField>
 
@@ -139,8 +138,7 @@ thin, authenticated call to the hosted control plane. Run `flash --help` or
 </ResponseField>
 
 <ResponseField name="flash deployments">
-  List active serving deployments with mode, GPU, `$/day` (always `0`, serving
-  scales to zero), and endpoint.
+  List active serving deployments with GPU and endpoint.
 </ResponseField>
 
 <ResponseField name="flash undeploy RUN_ID">
