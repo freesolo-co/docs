@@ -66,8 +66,10 @@ configs/
 
 ## 4. Publish your environment
 
-An [environment](/guides/environments) defines what your model trains on and
-how it's graded. Publish the scaffolded one to the managed Environments Hub to get an id:
+An [environment](/guides/environments) defines
+[what your model trains on](/guides/datasets) and how it's graded.
+[Publish](/guides/environments#publish-it) the scaffolded one to the managed
+Environments Hub to get an id:
 
 ```bash
 flash env push --name starter .
@@ -93,15 +95,15 @@ lora_rank = 32
 seeds = [0]
 ```
 
-Validate it locally first. `--dry-run` parses and checks the config with no
-credentials, server, or GPU:
+[Validate it locally](/guides/training#validate-before-you-submit) first.
+`--dry-run` parses and checks the config with no credentials, server, or GPU:
 
 ```bash
 flash train configs/grpo.toml --dry-run
 ```
 
-See what the run will cost before committing. `--cost` prints the pre-flight
-USD cost and exits without submitting:
+See what [the run will cost](/guides/training#cost-and-billing) before
+committing. `--cost` prints the pre-flight USD cost and exits without submitting:
 
 ```bash
 flash train configs/grpo.toml --cost
@@ -116,7 +118,8 @@ flash train configs/grpo.toml
 Submitting charges the pre-flight cost (the `--cost` number) to your org's
 balance up front; if the balance can't cover it, the run is rejected and never
 starts. Flash then follows the logs live. Press `Ctrl-C` to detach. The run
-keeps going on the server, and you can follow it again any time:
+keeps going on the server, and you can
+[follow it again any time](/guides/training#monitor-a-run):
 
 ```bash
 flash ps                  # list your runs and their state/cost
@@ -128,9 +131,11 @@ The run reaches `done` when training finishes.
 
 ## 7. Deploy
 
-Serve the trained adapter on Freesolo's managed serving service. There is no
-per-day idle charge: deployment registers the adapter, and serving is billed per
-prompt and completion token for requests you send:
+Serve the trained adapter on Freesolo's
+[managed serving service](/guides/deploy-and-chat). There is no per-day idle
+charge: deployment registers the adapter, and serving is
+[billed per prompt and completion token](/guides/deploy-and-chat#billing) for
+requests you send:
 
 ```bash
 flash deploy <run-id>
@@ -142,7 +147,8 @@ flash deploy <run-id>
 flash chat <run-id> -m "Hello! What can you do?"
 ```
 
-That's a full loop. When you're done, tear the endpoint down:
+That's a full loop. When you're done,
+[tear the endpoint down](/guides/deploy-and-chat#manage-deployments):
 
 ```bash
 flash undeploy <run-id>
