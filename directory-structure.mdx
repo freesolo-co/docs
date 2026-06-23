@@ -3,10 +3,10 @@ title: "Explore the directory"
 description: "Every file flash env setup creates, what it's for, and when Flash reads it."
 ---
 
-A Flash project is just a folder. `flash env setup` scaffolds it, and from then
-on a run is fully described by two things on disk: an **environment** (your task
-and how it's scored) and a **config** (how to train on it). Nothing is hidden,
-so you can read, diff, and version-control every file Flash touches.
+`flash env setup` scaffolds a project folder. A run is fully described by two
+things on disk: an **environment** (your task and how it's scored) and a
+**config** (how to train on it). Every file is plain text you can read, diff,
+and version-control.
 
 ```
 my-project/
@@ -15,8 +15,6 @@ my-project/
     ├── grpo.toml         # a GRPO (RL) training config
     └── sft.toml          # an SFT (supervised) training config
 ```
-
-Click into each entry below for what it is, when Flash reads it, and an example.
 
 <AccordionGroup>
   <Accordion title="environment.py" icon="python">
@@ -92,9 +90,8 @@ Click into each entry below for what it is, when Flash reads it, and an example.
 ## Packaging an environment as a folder
 
 The scaffolded `environment.py` is enough to publish on its own. Once your task
-grows its own data files or helper modules, move it into a folder with
-`environment.py` at the root and publish the whole folder, so everything it needs
-travels with it.
+grows data files or helper modules, move it into a folder with
+`environment.py` at the root and publish the whole folder.
 
 ```
 math/

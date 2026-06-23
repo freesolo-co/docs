@@ -6,8 +6,7 @@ description: "Your task as code: the dataset, interaction, and reward that make 
 An **environment** is a small Python module that packages everything Flash needs
 to teach and grade your model: the data it practices on, how it interacts, and
 how its answers are scored. It is the single source of truth for _what the model
-learns_ and _what counts as good_, and it's the one part of a run you write.
-Flash runs everything around it.
+learns_ and _what counts as good_.
 
 ## What an environment packages
 
@@ -29,13 +28,12 @@ Every environment bundles three things behind one `load_environment()` entrypoin
 </CardGroup>
 
 The same environment drives **SFT** (learn from gold answers), **GRPO** (learn
-from reward scores), **and eval**. You don't restate your task per algorithm;
-you swap one line in the config and the environment stays put.
+from reward scores), **and eval**: you swap one line in the config and the
+environment stays put.
 
 ## The one thing you write
 
-Everything else about a run is managed. You write `environment.py`; Flash owns
-the rest of the loop.
+You write `environment.py`; Flash owns the rest of the loop.
 
 | You write                                                | Flash runs                                                                       |
 | -------------------------------------------------------- | -------------------------------------------------------------------------------- |
@@ -43,14 +41,13 @@ the rest of the loop.
 | (nothing)                                                | The GPU, batching, checkpointing, and auto-retry                                 |
 | (nothing)                                                | A versioned Environments Hub and per-token serving                               |
 
-The environment is the entirety of what makes a run _yours_. The quality of its
-dataset and reward sets the ceiling on what training can achieve. For the full
-split of responsibilities, see
+The quality of the environment's dataset and reward sets the ceiling on what
+training can achieve. For the full split of responsibilities, see
 [How Flash works](/how-flash-works#how-flash-supports-you).
 
 ## Where it sits in the training loop
 
-A run is a loop, and the environment supplies two of its steps:
+The environment supplies two of the loop's steps:
 
 <Steps>
   <Step title="Flash samples a prompt">
@@ -79,7 +76,7 @@ The interaction model is set by which base class you subclass:
   several steps before the whole sequence (its trajectory) is scored. You
   implement the turn-step hooks.
 
-A minimal single-turn environment, just for orientation:
+A minimal single-turn environment:
 
 ```python environment.py
 from freesolo.datasets.types import TaskExample

@@ -3,10 +3,8 @@ title: "Quickstart"
 description: "Install the CLI, log in, and train, deploy, and chat with your first model."
 ---
 
-This quickstart takes you from an empty directory to a deployed model you can
-chat with. It takes a few minutes of your time plus the training run itself. By
-the end you will have trained a LoRA adapter on a managed GPU, served it, and
-called it from the CLI.
+This quickstart takes you from an empty directory to a deployed model: you'll
+train a LoRA adapter on a managed GPU, serve it, and chat with it from the CLI.
 
 ## Prerequisites
 
@@ -63,9 +61,8 @@ configs/
 
 ## Step 4: Publish your environment
 
-An [environment](/guides/environments) defines
-[what your model trains on](/guides/datasets) and how it's graded.
-[Publish](/guides/environments#publish-it) the scaffolded one to the managed
+An [environment](/guides/environments) is the task and reward your model trains
+on. [Publish](/guides/environments#publish-it) the scaffolded one to the managed
 Environments Hub to get an id:
 
 ```bash
@@ -133,8 +130,8 @@ The run reaches `done` when training finishes.
 ## Step 7: Deploy
 
 Serve the trained adapter on Freesolo's
-[managed serving service](/guides/deploy-and-chat). There is no per-day idle
-charge: deployment registers the adapter, and serving is
+[managed serving service](/guides/deploy-and-chat). There's no per-day idle
+charge: serving is
 [billed per prompt and completion token](/guides/deploy-and-chat#billing) for
 requests you send:
 
@@ -194,8 +191,7 @@ The commands you used above, plus the ones you'll reach for next. Run
   </Accordion>
   <Accordion title="Start small, then scale only the steps" icon="gauge-simple">
     Finish one short run end to end before you scale up. When you do, raise
-    `train.steps` and change little else, so a longer run reproduces a shape you
-    have already seen.
+    `train.steps` and change little else.
   </Accordion>
 </AccordionGroup>
 

@@ -52,9 +52,8 @@ service_api_key = os.environ["SERVICE_API_KEY"]
 ```
 
 Never put secret values in `[environment.params]` or `[worker_env]`; those are
-part of the run spec. `[environment].secrets` contains names only, and every
-listed value must exist in your shell, `.env`, or `.env.local` when you submit a
-real run.
+part of the run spec. Every name you list under `[environment].secrets` must
+resolve to a value in your shell, `.env`, or `.env.local` when you submit.
 
 ## `[train]`
 

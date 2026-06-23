@@ -3,8 +3,7 @@ title: "CLI reference"
 description: "Every flash command and flag."
 ---
 
-The CLI is `flash`. Every run-lifecycle command is a thin, authenticated call to
-the hosted control plane. Run `flash --help` or `flash <command> --help` for
+The CLI is `flash`. Run `flash --help` or `flash <command> --help` for
 inline help.
 
 ## Global flags
@@ -131,8 +130,8 @@ inline help.
 
 ## MCP server (for coding agents)
 
-Flash also ships a stdio [MCP](https://modelcontextprotocol.io) bridge so coding
-agents can drive the platform. It isn't a `flash` subcommand; launch it with:
+Flash also ships a stdio [MCP](https://modelcontextprotocol.io) bridge. It isn't
+a `flash` subcommand; launch it with:
 
 ```bash
 python -m flash.mcp.server
