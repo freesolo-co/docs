@@ -31,9 +31,9 @@ Author dataset rows with `input` and `output`:
 </Note>
 
 `load_task_examples(...)` accepts a local file path or an iterable of records.
-For files, use `.jsonl`, `.json`, `.csv`, or `.txt`. It maps `input` to
-`example.task` and `output` to `example.expected_output`; the original row stays
-available as `example.record`.
+For files, use `.jsonl`, `.json`, `.csv`, or `.txt`. It exposes each record's
+`input` as `example.input` and `output` as `example.output`; the original row
+stays available as `example.record`.
 
 ```jsonl datasets/train.jsonl
 {"input":"What is 2 + 2?","output":"4"}
@@ -85,10 +85,10 @@ class MathEnv(EnvironmentSingleTurn):
         self.dataset = load_task_examples(ROOT / "datasets" / f"{split}.jsonl")
 
     def build_prompt_messages(self, example: TaskExample, prompt_text: str):
-        return [{"role": "user", "content": example.task}]
+        return [{"role": "user", "content": example.input}]
 
     def score_response(self, example: TaskExample, response_text: str) -> RewardResult:
-        expected = str(example.expected_output or "").strip()
+        expected = str(example.output or "").strip()
         score = 1.0 if expected and expected in response_text else 0.0
         return RewardResult(score=score, threshold=1.0)
 

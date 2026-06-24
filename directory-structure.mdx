@@ -36,10 +36,10 @@ my-project/
         dataset = [{"input": "What is 2 + 2?", "output": "4"}]
 
         def build_prompt_messages(self, example: TaskExample, prompt_text: str):
-            return [{"role": "user", "content": example.task}]
+            return [{"role": "user", "content": example.input}]
 
         def score_response(self, example: TaskExample, response_text: str) -> RewardResult:
-            expected = str(example.expected_output or "").strip()
+            expected = str(example.output or "").strip()
             return RewardResult(score=1.0 if expected in response_text else 0.0, threshold=1.0)
 
     def load_environment(**kwargs) -> CustomEnv:
