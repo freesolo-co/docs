@@ -176,6 +176,29 @@ full traceback.
   has a spread of scores to learn from. See [Environments](/guides/environments).
 </Accordion>
 
+<Accordion title="Reward collapses to ~0 with `thinking = true`">
+  When `thinking = true`, the model emits a reasoning trace **before** its answer,
+  and that trace counts against the **same `max_tokens` budget** as the answer. A
+  `max_tokens` tuned for a non-thinking run is usually too small once reasoning is
+  added: the reasoning eats the budget and the actual answer is truncated or never
+  emitted. If your reward parses the answer (e.g. extracts a JSON object), it then
+  sees nothing and scores ~0 across the board — even though the model is "working".
+
+  Fixes:
+  - **Raise `max_tokens`** so the reasoning *and* the answer both fit (e.g. a task
+    that needs ~200 answer tokens may need `max_tokens = 2048` with thinking on),
+    and make sure `max_length` is large enough to hold the prompt plus that budget.
+  - Optionally set `thinking_length_penalty_coef` to nudge the model toward shorter
+    reasoning so the answer reliably lands inside the budget.
+  - Make your reward's parser **thinking-aware**: strip a leading
+    `<think>…</think>` block (and tolerate reasoning prose) before extracting the
+    answer, so an answer that *did* fit still scores.
+
+  The same trap applies to any **reasoning model you call as an LLM judge** from a
+  reward: give the judge call enough `max_tokens` or it returns empty content and
+  the judge silently scores 0.
+</Accordion>
+
   <Accordion title="Did pressing Ctrl-C kill my run?">
     No. `Ctrl-C` during `flash train` just **detaches** you; the run keeps going
     server-side. Re-follow it any time, and cancel explicitly if you mean to:
