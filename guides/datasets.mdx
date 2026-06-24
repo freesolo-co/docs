@@ -31,9 +31,9 @@ Author dataset rows with `input` and `output`:
 </Note>
 
 `load_task_examples(...)` accepts a local file path or an iterable of records.
-For files, use `.jsonl`, `.json`, `.csv`, or `.txt`. It exposes each record's
-`input` as `example.input` and `output` as `example.output`; the original row
-stays available as `example.record`.
+For files, use `.jsonl`, `.json`, `.csv`, `.txt`, or `.bson`. It exposes each
+record's `input` as `example.input` and `output` as `example.output`; the
+original row stays available as `example.record`.
 
 ```jsonl datasets/train.jsonl
 {"input":"What is 2 + 2?","output":"4"}
