@@ -107,7 +107,14 @@ inline help.
 
   | Flag | Default | Effect |
   | --- | --- | --- |
+  | `--step` | (final adapter) | Deploy a specific [checkpoint step](/guides/deploy-and-chat#deploy-a-specific-checkpoint) instead of the run's final adapter |
   | `--dry-run` | - | Preview the deploy without creating it |
+</ResponseField>
+
+<ResponseField name="flash checkpoints RUN_ID">
+  List a run's per-step checkpoints that are available to deploy — including
+  intermediate checkpoints from a run that stopped mid-RL. Serve one with
+  `flash deploy RUN_ID --step N`.
 </ResponseField>
 
 <ResponseField name="flash chat RUN_ID -m MESSAGE [flags]">

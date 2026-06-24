@@ -46,6 +46,14 @@ tokens** and mirror the Flash source of truth:
 | `Qwen/Qwen3.5-4B` | $0.24 | $0.48 |
 | `Qwen/Qwen3.5-9B` | $0.60 | $1.20 |
 
+Prompt tokens served from the **prefix cache** are billed at **25% of the input
+rate** — a 75% discount — because the serving engine reuses a cached prefix
+instead of recomputing it. For example, cached input on `Qwen/Qwen3.5-0.8B` is
+$0.015 / 1M instead of $0.06. Caching is automatic whenever a request's prompt
+shares a leading prefix with a recent one (a shared system prompt, or a
+multi-turn chat); only input is cacheable, so completion tokens always bill at
+the full output rate. See [Billing](/guides/deploy-and-chat#billing).
+
 ### Notes per model
 
 - **`Qwen/Qwen3.5-0.8B`**: the smallest Qwen3.5. Cheapest for smoke tests and
