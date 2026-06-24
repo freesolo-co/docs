@@ -55,7 +55,7 @@ per-day idle or warm-GPU charge.
 on: when a request's prompt shares a leading prefix with a recent one — a shared
 system prompt, or the growing context of a multi-turn chat — the serving engine
 reuses that prefix from cache instead of recomputing it, so those tokens bill at
-**25% of the input rate**. This is automatic; there is nothing to deploy or
+**25% of the token rate**. This is automatic; there is nothing to deploy or
 configure. Only the input prefix can be cached, so completion tokens always bill
 at the full rate. Each response reports how many prompt tokens were served from
 cache in `usage.prompt_tokens_details.cached_tokens`.

@@ -39,15 +39,15 @@ inline help.
 </ResponseField>
 
 <ResponseField name="flash gpus">
-  List managed GPU classes with VRAM and live per-provider `$/hr` (runpod
-  and vast).
+  List managed GPU classes with VRAM and live RunPod `$/hr`.
 </ResponseField>
 
 ## Environments
 
 <ResponseField name="flash env setup">
-  Scaffold `environment.py` and `configs/` in the current directory with a
-  starter environment plus `configs/grpo.toml` and `configs/sft.toml`.
+  Scaffold a starter project into the current directory: `environment.py`, a tiny
+  `datasets/train.jsonl`, and `configs/rl.toml` (GRPO) plus `configs/sft.toml`
+  (SFT). Files that already exist are left untouched, so it is safe to rerun.
 </ResponseField>
 
 <ResponseField name="flash env push --name NAME [PATH]">
@@ -148,4 +148,5 @@ python -m flash.mcp.server
 
 It authenticates with the same stored credentials as the CLI (`flash login`) and
 exposes tools to list models, submit and monitor training runs, and deploy
-adapters.
+adapters: `list_models`, `create_training_run`, `get_run_status`,
+`get_run_logs`, and `deploy_adapter`.
