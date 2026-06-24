@@ -27,7 +27,7 @@ seeds = [0]
 | --- | --- | --- | --- |
 | `model` | string | (required) | Base model to train a LoRA adapter on, e.g. `Qwen/Qwen3.5-4B`. See `flash models`. |
 | `algorithm` | string | `grpo` | `grpo` (RL): learns from a reward you define. `sft` (supervised): learns by imitating example completions you provide. |
-| `thinking` | bool | `false` | Enable reasoning mode (thinking-capable models only). |
+| `thinking` | bool | `false` | Enable reasoning mode (thinking-capable models only). The reasoning trace shares the `max_tokens` budget with the answer, so raise `max_tokens` (and `max_length`) when enabling it — see [Troubleshooting](/reference/troubleshooting). |
 
 ## `[environment]`
 
