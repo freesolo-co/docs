@@ -39,10 +39,10 @@ class CustomEnv(EnvironmentSingleTurn):
     dataset = DATASET
 
     def build_prompt_messages(self, example: TaskExample, prompt_text: str):
-        return [{"role": "user", "content": example.task}]
+        return [{"role": "user", "content": example.input}]
 
     def score_response(self, example: TaskExample, response_text: str) -> RewardResult:
-        expected = str(example.expected_output or "").strip()
+        expected = str(example.output or "").strip()
         score = 1.0 if expected and expected in response_text else 0.0
         return RewardResult(score=score, threshold=1.0)
 
@@ -118,10 +118,10 @@ class MathEnv(EnvironmentSingleTurn):
         self.dataset = load_task_examples(ROOT / "datasets" / f"{split}.jsonl")
 
     def build_prompt_messages(self, example: TaskExample, prompt_text: str):
-        return [{"role": "user", "content": example.task}]
+        return [{"role": "user", "content": example.input}]
 
     def score_response(self, example: TaskExample, response_text: str) -> RewardResult:
-        expected = str(example.expected_output or "").strip()
+        expected = str(example.output or "").strip()
         score = 1.0 if expected and expected in response_text else 0.0
         return RewardResult(score=score, threshold=1.0)
 
@@ -139,8 +139,8 @@ The dataset file uses the user-facing `input`/`output` row shape:
 
 At runtime, read the same values from `example.record["input"]` and
 `example.record["output"]` if you need the raw row. For the common case,
-`load_task_examples(...)` maps `input` to `example.task` and `output` to
-`example.expected_output`.
+`load_task_examples(...)` exposes each record's `input` as `example.input` and
+`output` as `example.output`.
 
 ## Multi-turn environments
 
@@ -209,7 +209,7 @@ class AgentEnv(EnvironmentMultiTurn):
     def start_episode(self, example: TaskExample, prompt_text: str):
         return [
             {"role": "system", "content": "Call tools with <tool_call>{...}</tool_call>; reply in plain text when done."},
-            {"role": "user", "content": example.task},
+            {"role": "user", "content": example.input},
         ]
 
     def max_episode_turns(self, example: TaskExample) -> int:
@@ -229,7 +229,7 @@ class AgentEnv(EnvironmentMultiTurn):
     def score_episode(self, example: TaskExample, episode: EnvironmentEpisode) -> RewardResult:
         used = [json.loads(b)["name"] for m in episode.messages
                 for b in TOOL_CALL.findall(m["content"]) if m["role"] == "assistant"]
-        hit = str(example.expected_output) in used
+        hit = str(example.output) in used
         return RewardResult(score=1.0 if hit else 0.0, threshold=1.0)
 
 def load_environment(split: str = "train", **kwargs) -> AgentEnv:
