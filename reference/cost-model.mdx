@@ -1,0 +1,298 @@
+---
+title: "How cost is computed"
+description: "Reconstruct the flash train --cost estimate by hand: wall-clock hours times GPU $/hr, line by line."
+---
+
+`flash train --cost` prints a pre-flight estimate of what a run will cost before
+you submit it. At its core the number is simple:
+
+```text
+total = wall-clock hours x GPU $/hr
+```
+
+There is no markup. The estimate is computed locally and deterministically from a
+static catalog (model sizes, GPU compute, and representative GPU pricing), so the
+same config always prices the same. This page unpacks every term so you can
+reproduce the breakdown yourself and predict your bill. Every dollar amount and
+time here is an illustrative example; your run's real numbers come from
+`flash train --cost`, and live GPU pricing from
+[`flash gpus`](/reference/cli#discovery).
+
+<Note>
+  The estimate is a preview, not the charge. A run is [billed when it
+  finishes](/guides/training#cost-and-billing), for the actual GPU time it used;
+  the estimate predicts that bill from a deterministic model. [Why your bill can
+  differ](#why-your-bill-can-differ-from-the-estimate) lists the gaps between
+  the two.
+</Note>
+
+## What drives your cost
+
+Two things set the price: how long the run holds a GPU (wall clock), and how
+expensive that GPU is per hour. Wall clock is a fixed cold start plus the
+training loop. In rough order of what usually dominates:
+
+- **Cold start.** Every run (and every seed) pays a fixed setup before the first
+  step: container boot, dependency install, and model load. On short jobs this
+  dominates the bill.
+- **The training loop.** For GRPO each step samples completions (a vLLM
+  rollout), grades them with your reward, then updates the policy; cost scales
+  with the number and length of completions. For SFT each step is one
+  forward/backward pass over a batch; cost scales with batch size and sequence
+  length.
+- **GPU class.** A faster card costs more per hour but finishes sooner. The
+  estimator picks the cheapest card that fits (see below).
+- **Seeds.** Each seed is a separate job with its own cold start, so two seeds is
+  roughly twice the cost.
+
+## The master equation
+
+Everything below is an expansion of these four lines (shown for a single seed;
+seeds multiply the whole thing):
+
+```text
+total       = wall_clock_hours x gpu_hourly_usd
+
+wall_clock  = setup + train
+setup       = cold start (boot + deps + model load, + vLLM init for GRPO)
+train       = steps x per_step_seconds
+per_step    = step FLOPs / (gpu_peak_flops x MFU)
+```
+
+`MFU` is model-FLOPs utilization, the fraction of a GPU's peak compute a real run
+sustains. It is below 1 because LoRA on small batches never saturates the card;
+the values are calibrated against real run wall clock (see the tables below).
+
+## GPU class and price
+
+You do not pin a GPU. The estimator sizes the run's VRAM, then prices the
+**cheapest class whose VRAM fits**, ranked by hourly rate. The `gpu_peak_flops`
+term in the per-step formula is the card's peak bf16 throughput; a few example
+classes:
+
+| GPU class    | VRAM  | Peak bf16 TFLOPS |
+| ------------ | ----- | ---------------: |
+| RTX 3090     | 24 GB |               71 |
+| RTX 4090     | 24 GB |              165 |
+| RTX 5090     | 32 GB |              210 |
+| A40          | 48 GB |              150 |
+| RTX A6000    | 48 GB |              155 |
+| RTX 6000 Ada | 48 GB |              182 |
+| A100 (80 GB) | 80 GB |              312 |
+| H100         | 80 GB |              990 |
+
+Run [`flash gpus`](/reference/cli#discovery) for the full class list with live
+per-provider `$/hr` (that live rate, not any figure on this page, is what a run
+is billed at).
+
+<Warning>
+  **The estimator is gate-free.** It prices the cheapest fitting class whether or
+  not that class is live-validated, so the estimate reflects the cheapest card
+  that could run the job. The submit-time allocator restricts to the validated
+  pool, so the card actually provisioned (and billed) can be pricier than the
+  estimate assumed.
+
+**This page does not quote prices.** The estimator multiplies wall clock by a
+static representative `$/hr`; [`flash gpus`](/reference/cli#discovery) shows the
+live per-provider pricing your run is actually billed at.
+
+</Warning>
+
+## Setup (cold start)
+
+Setup is the wall time billed before the first optimizer step. It is fixed per
+job, so it does not shrink as you add steps:
+
+```text
+setup = boot(120s) + deps(90s) + model_load   (+ vLLM init for GRPO)
+
+  model_load = 235s + download_gb / 0.4 GB/s   # fixed init, then the download
+  download_gb = params_b x 2                    # bf16 weights, 2 bytes/param
+  vLLM init  = 120s                             # GRPO only
+```
+
+| Component          | Value                  | Covers                                           |
+| ------------------ | ---------------------- | ------------------------------------------------ |
+| Container boot     | 120 s                  | image pull + start                               |
+| Dependency install | 90 s                   | resolving and installing the worker deps         |
+| Model load (base)  | 235 s                  | checkpoint deserialize, GPU placement, CUDA init |
+| Model download     | `params_b x 2 / 0.4` s | pulling the bf16 checkpoint from the hub         |
+| vLLM init          | 120 s (GRPO only)      | spinning up the rollout engine                   |
+
+<Tip>
+  Model load is the largest cold-start term and dominates short jobs. The
+  cheapest lever for a quick run is fewer cold starts (fewer seeds) and a
+  smaller base model (a smaller download). A 9B model downloads ~19 GB; a 0.8B
+  model ~1.8 GB.
+</Tip>
+
+## Per-step time
+
+One step's wall time is its compute divided by the GPU's effective throughput,
+`per_step = FLOPs / (peak x MFU)`. The FLOPs-per-token-per-parameter factors and
+the MFU each phase sustains:
+
+| Phase                  | FLOPs / token / param |  MFU |
+| ---------------------- | --------------------: | ---: |
+| SFT forward + backward |                     6 | 0.25 |
+| GRPO rollout (decode)  |                     2 | 0.12 |
+| GRPO policy update     |                     8 | 0.35 |
+
+Decode has the lowest MFU because autoregressive generation is
+memory-bandwidth-bound, not compute-bound. The factors come from counting passes:
+a forward is 2, a backward is 4, and the GRPO update is a policy forward+backward
+(6) plus a frozen-reference forward (2).
+
+<CodeGroup>
+
+```text SFT
+per_step = (6 x P x batch_size x seq_len) / (peak x 0.25)
+
+  P    = model parameters
+  peak = GPU peak bf16 FLOP/s
+```
+
+```text GRPO
+per_step = gen + reward + update
+
+  N    = batch_size x group_size      # completions sampled this step
+  D    = N x completion_len           # total generated tokens (max_tokens each)
+
+  gen     = (2 x P x D) / (peak x 0.12)   # vLLM rollout
+  update  = (8 x P x D) / (peak x 0.35)   # policy + frozen-reference update
+  reward  = ceil(N / 16) x latency        # grading, 16 concurrent slots
+```
+
+</CodeGroup>
+
+<Tip>
+  Reward grading runs concurrently in 16 slots, so its wall time is the number
+  of waves, `ceil(N / 16)`, not the completion count `N`. A partial final wave
+  still costs one full latency, hence the ceiling. `latency` is the reward
+  seconds per completion (default 1.0 s; graders range from ~0.01 s for
+  regex/math to ~3 s for an LLM judge, and a run can override it).
+</Tip>
+
+## Steps, seeds, and the wall cap
+
+Steps and seeds turn per-step time into the training total, and a wall cap bounds
+it:
+
+- **Steps (GRPO).** `train = steps x per_step` for one seed, where `steps` is
+  your `train.steps`.
+- **Steps (SFT).** SFT has no `train.steps`. The estimator derives the step count
+  from the dataset as `epochs x ceil(num_examples / batch_size)`, capped by
+  `max_steps`. `num_examples` is `max_examples` if you pin it, otherwise the real
+  environment size, which the estimator loads your environment locally to count.
+- **Seeds.** Each seed in `seeds = [...]` is its own job with its own cold start
+  and its own wall cap, so both `setup` and `train` are multiplied by the seed
+  count. Seeds are not amortized.
+- **Wall cap.** A run is bounded by a 24h wall-clock cap (a platform default, not
+  a config field; see
+  [GPU & infrastructure](/reference/configuration#gpu-infrastructure-managed)).
+  Setup is billed first, so training is clamped to whatever fits under the cap
+  after setup. The cap rarely binds for normal runs.
+
+## Worked example
+
+Take a GRPO run on the smallest catalog model with explicit knobs, so every input
+is on the table:
+
+```toml
+model = "Qwen/Qwen3.5-0.8B"   # ~0.9B params (from flash models)
+algorithm = "grpo"
+
+[train]
+steps = 100
+seeds = [0]
+batch_size = 8                 # prompts per step
+group_size = 8                 # completions per prompt
+max_tokens = 512               # tokens per completion
+```
+
+We fix the card here to show the arithmetic: an **RTX 4090** (24 GB, peak
+165 TFLOPS) at an example `$0.69/hr`. The estimator picks the card for you, so
+`flash train --cost` reports the class it actually chose and
+[`flash gpus`](/reference/cli#discovery) its live rate. Then `P = 0.9e9`,
+`peak = 165e12`, `N = 8 x 8 = 64` completions, and `D = 64 x 512 = 32,768`
+generated tokens.
+
+**Per step:**
+
+```text
+gen      = (2 x 0.9e9 x 32768) / (165e12 x 0.12) = 2.979 s
+update   = (8 x 0.9e9 x 32768) / (165e12 x 0.35) = 4.085 s
+reward   = ceil(64 / 16) x 1.0 = 4 x 1.0         = 4.000 s
+per_step = 2.979 + 4.085 + 4.000                 = 11.06 s
+```
+
+**Setup** (GRPO, so vLLM init applies; download = 0.9 x 2 = 1.8 GB):
+
+```text
+model_load = 235 + 1.8 / 0.4 = 239.5 s
+setup      = 120 + 90 + 239.5 + 120 = 569.5 s = 9.5 min
+```
+
+**Total** (1 seed):
+
+```text
+train  = 100 x 11.06 s = 1106 s = 18.4 min
+wall   = 569.5 + 1106  = 1675.5 s = 0.47 h
+total  = 0.47 h x $0.69/hr = $0.32
+```
+
+These totals are what `flash train --cost` prints for the run (its GPU line also
+names the provider and the run's required VRAM):
+
+```text
+Run        : Qwen/Qwen3.5-0.8B  [GRPO, 100 steps]
+GPU        : RTX 4090 (24 GB) @ $0.69/hr
+Setup      : 9.5 min  (cold start: boot + deps + model load + vLLM init)
+Per step   : 11.06 s
+Train      : 18.4 min
+Wall clock : 0.47 h
+TOTAL      : $0.32
+```
+
+## How to make a run cheaper
+
+Each lever maps back to a term above:
+
+- **Fewer seeds.** Each seed re-pays the full cold start; on short jobs that is
+  the single biggest line.
+- **A smaller base model.** Smaller `P` cuts every per-step term and shrinks the
+  cold-start download. See [Supported models](/reference/models).
+- **Fewer or shorter completions (GRPO).** `group_size` and `max_tokens` both
+  scale generation and the policy update linearly through `D`.
+- **Fewer steps.** `train` is linear in `steps`.
+- **A faster card** can be cheaper overall when it finishes enough sooner to
+  offset a higher `$/hr`, but you do not choose this; the allocator picks the
+  cheapest fitting class.
+
+## Why your bill can differ from the estimate
+
+The estimate is a deterministic forecast; the final charge is measured. They can
+diverge because:
+
+- **The bill is measured, not estimated.** You are charged for the actual
+  wall-clock the run used, not this projection.
+- **A pricier card may be provisioned.** The estimate prices the cheapest fitting
+  class; the allocator provisions from the validated pool, which can be more
+  expensive.
+- **Live pricing moves.** The bill uses live per-provider `$/hr`
+  ([`flash gpus`](/reference/cli#discovery)); this page uses static representative
+  rates.
+- **MFU and cold start are calibrated approximations.** Real utilization and boot
+  time vary with the model, environment, and provider.
+- **Reward latency is an estimate.** GRPO uses a default per-completion grading
+  latency unless your run overrides it; a slow [reward](/guides/environments)
+  costs more wall time than the default assumes.
+
+<Card
+  title="Preview a run's cost"
+  icon="calculator"
+  href="/reference/cli#training"
+>
+  Run `flash train config.toml --cost` to print this breakdown for your own
+  config without submitting.
+</Card>
