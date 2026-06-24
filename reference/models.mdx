@@ -38,13 +38,21 @@ tokens plus **output** (completion) tokens. The prices below are **per 1M
 tokens** and mirror the Flash source of truth:
 [`flash/serve/pricing.py`](https://github.com/freesolo-co/flash/blob/dev/flash/serve/pricing.py).
 
-| Model | Input | Output |
-| --- | ---: | ---: |
-| `Qwen/Qwen3.5-0.8B` | $0.06 | $0.12 |
-| `openbmb/MiniCPM5-1B` | $0.06 | $0.12 |
-| `Qwen/Qwen3.5-2B` | $0.12 | $0.24 |
-| `Qwen/Qwen3.5-4B` | $0.24 | $0.48 |
-| `Qwen/Qwen3.5-9B` | $0.60 | $1.20 |
+| Model | Input | Cache read | Output |
+| --- | ---: | ---: | ---: |
+| `Qwen/Qwen3.5-0.8B` | $0.06 | $0.015 | $0.12 |
+| `openbmb/MiniCPM5-1B` | $0.06 | $0.015 | $0.12 |
+| `Qwen/Qwen3.5-2B` | $0.12 | $0.03 | $0.24 |
+| `Qwen/Qwen3.5-4B` | $0.24 | $0.06 | $0.48 |
+| `Qwen/Qwen3.5-9B` | $0.60 | $0.15 | $1.20 |
+
+The **Cache read** column is the rate for prompt tokens served from the
+**prefix cache** — **25% of the input rate** (a 75% discount) — because the
+serving engine reuses a cached prefix instead of recomputing it. Caching is
+automatic whenever a request's prompt shares a leading prefix with a recent one
+(a shared system prompt, or a multi-turn chat); only input is cacheable, so
+completion tokens always bill at the full output rate. See
+[Billing](/guides/deploy-and-chat#billing).
 
 ### Notes per model
 
