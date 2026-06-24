@@ -24,12 +24,12 @@
 				"pages": ["index", "quickstart"]
 			},
 			{
-				"group": "Core concepts",
-				"pages": ["how-flash-works", "environment-model", "directory-structure"]
-			},
-			{
-				"group": "Guides",
+				"group": "Flash",
 				"pages": [
+					{
+						"group": "Core concepts",
+						"pages": ["how-flash-works", "environment-model", "directory-structure"]
+					},
 					"guides/training",
 					"guides/environments",
 					"guides/datasets",
