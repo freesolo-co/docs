@@ -122,52 +122,6 @@ an OpenAI-compatible API, and serving is billed per prompt and completion token
 with no per-day idle charge. See
 [Deploy & chat](/guides/deploy-and-chat).
 
-## How Flash supports you
-
-The concepts above are the same for any post-training stack. With Flash you
-bring only a config and an environment, and the platform owns the hard
-infrastructure:
-
-| You provide                     | Flash manages                                                                 |
-| ------------------------------- | ----------------------------------------------------------------------------- |
-| A base model and an `algorithm` | The training framework and recipe for SFT and GRPO                            |
-| An environment id               | A hosted Environments Hub you publish to with just your Freesolo API key      |
-| `flash train config.toml`       | Allocating the cheapest validated GPU that fits, across providers             |
-| (nothing)                       | Supervision: a stall watchdog and bounded auto-retry from the last checkpoint |
-| (nothing)                       | Storage: each run streams its adapter and checkpoints to a private HF repo    |
-| `flash deploy <run-id>`         | Multi-LoRA serving behind an OpenAI-compatible endpoint                       |
-
-Billing follows the same managed model: a run is billed **when it finishes
-successfully**, for the actual GPU time it used, from your prepaid balance.
-Nothing is charged at submit. Preview the cost any time with `flash train
-config.toml --cost`. See [Cost and billing](/guides/training#cost-and-billing).
-
-## The end-to-end flow
-
-A full loop is five commands:
-
-<Steps>
-  <Step title="Pick a base model">
-    Choose from the [catalog](/reference/models) and set `model` in your config.
-  </Step>
-  <Step title="Define an environment">
-    Write (or reuse) a dataset and reward, then publish the environment folder
-    with `flash env push --name <name> <folder>`.
-  </Step>
-  <Step title="Train">
-    `flash train config.toml` allocates a GPU, runs the loop, and streams logs
-    and checkpoints back to you.
-  </Step>
-  <Step title="Deploy">
-    `flash deploy <run-id>` serves the adapter behind an OpenAI-compatible API.
-  </Step>
-  <Step title="Use it">
-    `flash chat <run-id>` or any OpenAI client calls your model.
-  </Step>
-</Steps>
-
-The [Quickstart](/quickstart) walks through exactly this, end to end.
-
 ## Is post-training right for your task?
 
 Post-training shines when the task is narrow and you can define success. Good
