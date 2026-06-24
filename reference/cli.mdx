@@ -71,7 +71,9 @@ inline help.
 <ResponseField name="flash train CONFIG [flags]">
   Submit a managed training run from a TOML config and follow its logs.
   A run is billed only when it finishes successfully, for the GPU time it
-  used (see [Cost & billing](/guides/training#cost-and-billing)).
+  used (see [Cost & billing](/guides/training#cost-and-billing)); the
+  pre-flight `--cost` estimate is derived in
+  [How cost is computed](/reference/cost-model).
 
   | Flag | Effect |
   | --- | --- |

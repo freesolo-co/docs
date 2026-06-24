@@ -38,7 +38,7 @@
 			},
 			{
 				"group": "Reference",
-				"pages": ["reference/models", "reference/cli", "reference/configuration", "reference/troubleshooting"]
+				"pages": ["reference/models", "reference/cli", "reference/configuration", "reference/cost-model", "reference/troubleshooting"]
 			}
 		]
 	},
