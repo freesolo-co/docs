@@ -3,16 +3,19 @@ title: "Explore the directory"
 description: "Every file flash env setup creates, what it's for, and when Flash reads it."
 ---
 
-`flash env setup` scaffolds a project folder. A run is fully described by two
-things on disk: an **environment** (your task and how it's scored) and a
-**config** (how to train on it). Every file is plain text you can read, diff,
-and version-control.
+`flash env setup` scaffolds a starter project into the **current directory**. A
+run is fully described by what lands on disk: an **environment** (your task and
+how it's scored) and a **config** (how to train on it). Every file is plain text
+you can read, diff, and version-control. Rerunning is safe: any file that already
+exists is left untouched.
 
 ```
-my-project/
+./
 ├── environment.py        # the task + reward (a Freesolo environment)
+├── datasets/
+│   └── train.jsonl       # a tiny starter dataset (input/output rows)
 └── configs/
-    ├── grpo.toml         # a GRPO (RL) training config
+    ├── rl.toml           # a GRPO (RL) training config
     └── sft.toml          # an SFT (supervised) training config
 ```
 
@@ -26,29 +29,58 @@ my-project/
 
     **When Flash reads it:** `flash env push` packages and uploads it; a
     `flash train --dry-run` imports it locally to validate; and on every run the
-    worker imports it and calls `load_environment(**params)`.
+    worker imports it and calls `load_environment(**params)`. The scaffolded
+    starter loads its rows from `datasets/train.jsonl`.
 
     ```python environment.py
+    import json
+    from pathlib import Path
+
     from freesolo.datasets.types import TaskExample
     from freesolo.environments import EnvironmentSingleTurn, RewardResult
 
-    class CustomEnv(EnvironmentSingleTurn):
-        dataset = [{"input": "What is 2 + 2?", "output": "4"}]
+    DEFAULT_DATASET_PATH = Path(__file__).parent / "datasets" / "train.jsonl"
+
+    def load_jsonl(path):
+        with Path(path).open() as f:
+            return [json.loads(line) for line in f if line.strip()]
+
+    class StarterEnv(EnvironmentSingleTurn):
+        dataset = load_jsonl(DEFAULT_DATASET_PATH)
 
         def build_prompt_messages(self, example: TaskExample, prompt_text: str):
             return [{"role": "user", "content": example.task}]
 
         def score_response(self, example: TaskExample, response_text: str) -> RewardResult:
             expected = str(example.expected_output or "").strip()
-            return RewardResult(score=1.0 if expected in response_text else 0.0, threshold=1.0)
+            return RewardResult(score=1.0 if expected and expected in response_text else 0.0, threshold=1.0)
 
-    def load_environment(**kwargs) -> CustomEnv:
-        return CustomEnv()
+    def load_environment(dataset_path: str | None = None, **kwargs) -> StarterEnv:
+        env = StarterEnv()
+        if dataset_path:
+            env.dataset = load_jsonl(dataset_path)
+        return env
     ```
 
   </Accordion>
 
-  <Accordion title="configs/grpo.toml" icon="gear">
+  <Accordion title="datasets/train.jsonl" icon="table">
+    **What it is:** a tiny starter dataset of `input`/`output` rows that the
+    scaffolded `environment.py` loads. Replace it with your real training rows
+    before a real run. See [Datasets](/guides/datasets).
+
+    **When Flash reads it:** your `environment.py` reads it at load time (locally
+    for `--dry-run`/`--cost`, and on the worker at run time); `flash env push`
+    uploads the `datasets/` folder with the environment.
+
+    ```jsonl datasets/train.jsonl
+    {"input":"What is 2 + 2?","output":"4"}
+    {"input":"What is 3 + 5?","output":"8"}
+    ```
+
+  </Accordion>
+
+  <Accordion title="configs/rl.toml" icon="gear">
     **What it is:** a [GRPO training config](/guides/training#choose-sft-or-grpo).
     The only fields that are yours to set are `model` and `[environment] id`; the
     GPU and artifact storage are [managed for you](/reference/configuration). Copy
@@ -57,7 +89,7 @@ my-project/
     **When Flash reads it:** every `flash train`, `--dry-run`, and `--cost` parses
     this file into the resolved job spec.
 
-    ```toml configs/grpo.toml
+    ```toml configs/rl.toml
     model = "Qwen/Qwen3.5-4B"
     algorithm = "grpo"
 
@@ -77,7 +109,7 @@ my-project/
     fine-tuning on the `input`/`output` pairs in your environment's dataset. Keep
     both and pick one at train time.
 
-    **When Flash reads it:** same as `grpo.toml`; pass it to `flash train` to run
+    **When Flash reads it:** same as `rl.toml`; pass it to `flash train` to run
     SFT instead of GRPO.
 
     ```bash

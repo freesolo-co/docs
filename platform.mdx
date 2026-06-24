@@ -1,0 +1,48 @@
+---
+title: "Platform dashboard"
+sidebarTitle: "Dashboard"
+description: "What you can see and manage in the Freesolo web app when you sign in."
+---
+
+Flash runs from the `flash` CLI, but the same account has a web dashboard at
+[freesolo.co](https://freesolo.co/platform). Sign in with your Freesolo account
+to manage keys and billing and to see your runs in the browser. Everything here
+mirrors a CLI command, so you can use whichever you prefer.
+
+## API keys
+
+Every `flash` command authenticates with a Freesolo API key. Create and revoke
+keys in the **API Keys** section of the dashboard. A new key is shown once, so
+copy it then. Use it with `flash login --api-key <key>` or the
+`FREESOLO_API_KEY` environment variable. See
+[Quickstart](/quickstart#step-2-log-in).
+
+## Training runs
+
+The **Training Runs** section lists the runs you submit with
+[`flash train`](/guides/training), showing each run's state, base model, and
+environment. Open a run for its full detail, including the GPU it used and its
+artifacts. This is the browser view of `flash runs` and `flash status`.
+
+## Checkpoints
+
+A run's detail page lists its **deployable checkpoints**: the per-step adapters
+you can serve, including intermediate checkpoints from a run that stopped
+mid-training. This is the same set you get from
+[`flash checkpoints <run-id>`](/reference/cli#serving); deploy one with
+`flash deploy <run-id> --step <N>`. See
+[Deploy a specific checkpoint](/guides/deploy-and-chat#deploy-a-specific-checkpoint).
+
+## Environments
+
+The **Environments** section lists the environments you have published with
+[`flash env push`](/guides/environments#publish-it) to the managed Environments
+Hub, the browser view of `flash env list`. Reference one from a config by its id.
+
+## Billing
+
+Flash is prepaid. The **Billing** settings show your balance, let you add a card,
+and let you top up manually or automatically when the balance runs low; new orgs
+start with a credit. The activity log itemizes your charges: training runs
+([billed on success for the GPU time used](/guides/training#cost-and-billing))
+and serving ([billed per token](/guides/deploy-and-chat#billing)).
