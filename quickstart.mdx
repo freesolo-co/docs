@@ -63,6 +63,24 @@ configs/
   sft.toml                # an SFT training config to start from
 ```
 
+<Tip>
+  **Already have a training loop?** Skip the hand-editing. Point your coding
+  agent (Claude Code, Cursor, etc.) at the [environment
+  guide](/guides/environments) and have it port your existing reward and
+  dataset into `environment.py`. A prompt to start from:
+
+  ```text
+  I already have a training loop with a reward function and a dataset, and I
+  want to run it on Freesolo Flash. Read
+  https://freesolo.mintlify.app/guides/environments, then create an
+  environment.py whose load_environment() returns an EnvironmentSingleTurn (use
+  EnvironmentMultiTurn for multi-step tasks), port my reward into
+  score_response, wire my data in as input/output records, and fill in
+  configs/grpo.toml with the base model and [train] settings. My reward is in
+  <file> and my dataset is in <file>.
+  ```
+</Tip>
+
 ## Step 4: Publish your environment
 
 An [environment](/guides/environments) is the task and reward your model trains
