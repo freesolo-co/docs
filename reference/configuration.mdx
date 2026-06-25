@@ -36,6 +36,7 @@ seeds = [0]
 | `id` | string | (required) | Published Freesolo environment id, `your-name/your-env`. |
 | `params` | table | `{}` | Keyword arguments passed to the env's `load_environment(**kwargs)`. |
 | `secrets` | list[string] | `[]` | Environment variable names to forward to the worker as runtime secrets. Values are read from your shell, `.env`, or `.env.local` at submit time. |
+| `pip` | list[string] | `[]` | Extra third-party pip requirements the worker installs before importing your environment (an escape hatch for deps your `environment.py` imports). |
 
 ```toml
 [environment]
@@ -66,7 +67,7 @@ resolve to a value in your shell, `.env`, or `.env.local` when you submit.
 | `batch_size` | int | recipe default | Training batch size. |
 | `max_length` | int | recipe default | Max sequence length. |
 | `save_every` | int | recipe default | Checkpoint cadence (steps). |
-| `init_from_adapter` | string | - | Warm-start from an existing adapter. |
+| `init_from_adapter` | string | - | Warm-start from an existing adapter. Must be the full adapter ref `flash status` prints, `<owner>/<repo>:<phase>/<run-id>/seed<N>` (phase is `sft` or `rl`) — a bare run id is rejected. |
 
 ### GRPO-specific
 
@@ -92,9 +93,9 @@ resolve to a value in your shell, `.env`, or `.env.local` when you submit.
 ## GPU & infrastructure (managed)
 
 GPU class selection is automatic. At submit time the allocator picks the
-cheapest live-validated GPU class that fits your run across providers, and a
-retry walks to the next-cheapest class if one is unavailable. Disk, the
-wall-clock cap, and the auto-retry budget are platform defaults.
+cheapest validated RunPod class that fits your run, and a retry walks to the
+next-cheapest class if one is unavailable. Disk, the wall-clock cap, and the
+auto-retry budget are platform defaults.
 
 ## `[wandb]`
 

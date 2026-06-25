@@ -15,7 +15,7 @@ static catalog (model sizes, GPU compute, and representative GPU pricing), so th
 same config always prices the same. This page unpacks every term so you can
 reproduce the breakdown yourself and predict your bill. Every dollar amount and
 time here is an illustrative example; your run's real numbers come from
-`flash train --cost`, and live GPU pricing from
+`flash train --cost`, and the static RunPod `$/hr` snapshot from
 [`flash gpus`](/reference/cli#discovery).
 
 <Note>
@@ -81,9 +81,9 @@ classes:
 | A100 (80 GB) | 80 GB |              312 |
 | H100         | 80 GB |              990 |
 
-Run [`flash gpus`](/reference/cli#discovery) for the full class list with live
-per-provider `$/hr` (that live rate, not any figure on this page, is what a run
-is billed at).
+Run [`flash gpus`](/reference/cli#discovery) for the full class list with the
+static RunPod `$/hr` snapshot the estimator prices against (the same table this
+page uses).
 
 <Warning>
   **The estimator is gate-free.** It prices the cheapest fitting class whether or
@@ -93,8 +93,9 @@ is billed at).
   estimate assumed.
 
 **This page does not quote prices.** The estimator multiplies wall clock by a
-static representative `$/hr`; [`flash gpus`](/reference/cli#discovery) shows the
-live per-provider pricing your run is actually billed at.
+static RunPod `$/hr` snapshot; [`flash gpus`](/reference/cli#discovery) shows
+that same snapshot. A run is billed for the actual GPU time it used at the rate
+in effect when it ran, which can drift from the snapshot.
 
 </Warning>
 
@@ -181,9 +182,11 @@ it:
 - **Steps (GRPO).** `train = steps x per_step` for one seed, where `steps` is
   your `train.steps`.
 - **Steps (SFT).** SFT has no `train.steps`. The estimator derives the step count
-  from the dataset as `epochs x ceil(num_examples / batch_size)`, capped by
-  `max_steps`. `num_examples` is `max_examples` if you pin it, otherwise the real
-  environment size, which the estimator loads your environment locally to count.
+  from the dataset as `epochs x ceil(num_examples / batch)`, capped by
+  `max_steps`, where `batch` is the run's realized effective batch (32 by default,
+  unless you set `batch_size`). `num_examples` is `max_examples` if you pin it,
+  otherwise the real environment size, which the estimator loads your environment
+  locally to count.
 - **Seeds.** Each seed in `seeds = [...]` is its own job with its own cold start
   and its own wall cap, so both `setup` and `train` are multiplied by the seed
   count. Seeds are not amortized.
@@ -213,7 +216,7 @@ max_tokens = 512               # tokens per completion
 We fix the card here to show the arithmetic: an **RTX 4090** (24 GB, peak
 165 TFLOPS) at an example `$0.69/hr`. The estimator picks the card for you, so
 `flash train --cost` reports the class it actually chose and
-[`flash gpus`](/reference/cli#discovery) its live rate. Then `P = 0.9e9`,
+[`flash gpus`](/reference/cli#discovery) lists each class's `$/hr`. Then `P = 0.9e9`,
 `peak = 165e12`, `N = 8 x 8 = 64` completions, and `D = 64 x 512 = 32,768`
 generated tokens.
 
@@ -279,9 +282,9 @@ diverge because:
 - **A pricier card may be provisioned.** The estimate prices the cheapest fitting
   class; the allocator provisions from the validated pool, which can be more
   expensive.
-- **Live pricing moves.** The bill uses live per-provider `$/hr`
-  ([`flash gpus`](/reference/cli#discovery)); this page uses static representative
-  rates.
+- **Pricing can drift.** [`flash gpus`](/reference/cli#discovery) and this page
+  both quote a static RunPod `$/hr` snapshot; the bill is the actual GPU time at
+  the rate in effect when the run ran, which can differ from the snapshot.
 - **MFU and cold start are calibrated approximations.** Real utilization and boot
   time vary with the model, environment, and provider.
 - **Reward latency is an estimate.** GRPO uses a default per-completion grading

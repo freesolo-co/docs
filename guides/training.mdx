@@ -72,9 +72,9 @@ seeds = [0]
 ## GPU selection is automatic
 
 You don't pin a GPU. At submit time the allocator always picks the cheapest
-live-validated GPU class that fits your run across providers, and a retry walks
-to the next-cheapest class if one is unavailable. To see the live GPU classes,
-VRAM, and per-provider hourly pricing the allocator chooses from:
+validated RunPod GPU class that fits your run, and a retry walks to the
+next-cheapest class if one is unavailable. To see the GPU classes, VRAM, and the
+RunPod `$/hr` snapshot the allocator chooses from:
 
 ```bash
 flash gpus
@@ -136,7 +136,7 @@ TOTAL      : $0.32
   The cost is catalog-deterministic and runs locally; for an uncapped SFT run
   it loads the environment to count its training examples. Once a run starts,
   `flash status <run-id>` includes the cost accrued so far. The numbers above
-  are an example for one config; live GPU pricing comes from `flash gpus`.
+  are an example for one config; the RunPod `$/hr` snapshot comes from `flash gpus`.
 </Note>
 
 For how each line of the pre-flight estimate is computed, see

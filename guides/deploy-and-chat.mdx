@@ -55,9 +55,9 @@ per-day idle or warm-GPU charge.
 on: when a request's prompt shares a leading prefix with a recent one — a shared
 system prompt, or the growing context of a multi-turn chat — the serving engine
 reuses that prefix from cache instead of recomputing it, so those tokens bill at
-**25% of the token rate**. This is automatic; there is nothing to deploy or
+**25% of the input rate**. This is automatic; there is nothing to deploy or
 configure. Only the input prefix can be cached, so completion tokens always bill
-at the full rate. Each response reports how many prompt tokens were served from
+at the full output rate. Each response reports how many prompt tokens were served from
 cache in `usage.prompt_tokens_details.cached_tokens`.
 
 ## Chat from the CLI
@@ -88,14 +88,14 @@ flash undeploy <run-id>  # deregister the adapter from serving
 ## Use it from your own code
 
 Deployments are OpenAI-compatible, so you can point any OpenAI SDK at the
-endpoint and use your Freesolo API key:
+endpoint from `flash deployments`. The `model` is your run id:
 
 ```python
 from openai import OpenAI
 
 client = OpenAI(
     base_url="https://<your-endpoint>/v1",   # from `flash deployments`
-    api_key="<your-freesolo-key>",
+    api_key="unused",                        # required by the SDK; the serving endpoint doesn't check it
 )
 
 resp = client.chat.completions.create(
