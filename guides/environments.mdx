@@ -88,8 +88,21 @@ flash env push --name math math
 Single `.py` upload still works for tiny smoke tests, but push real environments
 as folders.
 
-Keep all imports either from installed packages or from sibling files in the
-folder you publish.
+Keep all imports either from sibling files in the folder you publish, from the
+`freesolo` SDK, or from third-party packages you declare under
+`[environment].pip` (see below).
+
+### Declare third-party dependencies
+
+If your `environment.py` imports a package that isn't part of the `freesolo` SDK,
+list it under `[environment].pip` so the worker installs it before importing your
+environment:
+
+```toml
+[environment]
+id = "your-name/your-env"
+pip = ["rapidfuzz>=3.0", "pydantic"]
+```
 
 ## Use the SDK
 

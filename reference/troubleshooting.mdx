@@ -236,8 +236,9 @@ full traceback.
 
   <Accordion title="Calling the endpoint from my own code is rejected">
     Deployments are OpenAI-compatible. Use the endpoint from `flash deployments`
-    as the `base_url`, your **Freesolo API key** as the `api_key`, and the
-    `<run-id>` as the `model`. See
+    as the `base_url` and the `<run-id>` as the `model`. The OpenAI SDK requires
+    an `api_key`, but the serving endpoint doesn't check it — pass any non-empty
+    placeholder. See
     [Use it from your own code](/guides/deploy-and-chat#use-it-from-your-own-code).
   </Accordion>
 </AccordionGroup>
