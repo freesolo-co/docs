@@ -28,10 +28,9 @@
 				"pages": [
 					{
 						"group": "Core concepts",
-						"pages": ["how-flash-works", "environment-model", "directory-structure"]
+						"pages": ["how-flash-works", "environment-model", "directory-structure", "conventions"]
 					},
 					"guides/training",
-					"guides/conventions",
 					"guides/environments",
 					"guides/datasets",
 					"guides/deploy-and-chat"
@@ -43,6 +42,12 @@
 			}
 		]
 	},
+	"redirects": [
+		{
+			"source": "/guides/conventions",
+			"destination": "/conventions"
+		}
+	],
 	"navbar": {
 		"primary": {
 			"type": "button",
