@@ -14,9 +14,10 @@ exists is left untouched.
 ├── environment.py        # the task + reward (a Freesolo environment)
 ├── datasets/
 │   └── train.jsonl       # a tiny starter dataset (input/output rows)
-└── configs/
-    ├── rl.toml           # a GRPO (RL) training config
-    └── sft.toml          # an SFT (supervised) training config
+├── configs/
+│   ├── rl.toml           # a GRPO (RL) training config
+│   └── sft.toml          # an SFT (supervised) training config
+└── TRAINING.md           # a playbook for the AI agent driving your runs
 ```
 
 <AccordionGroup>
@@ -115,6 +116,17 @@ exists is left untouched.
     ```bash
     flash train configs/sft.toml
     ```
+
+  </Accordion>
+
+  <Accordion title="TRAINING.md" icon="book">
+    **What it is:** a playbook for the AI coding agent you point at this project —
+    how to design the reward, what to read in a run's output, and how to decide a
+    run actually improved the model (not just finished). It's reference for you and
+    your agent.
+
+    **When Flash reads it:** never. It's local documentation only; nothing in the
+    train, deploy, or chat path depends on it.
 
   </Accordion>
 </AccordionGroup>

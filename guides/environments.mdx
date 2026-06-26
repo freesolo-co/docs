@@ -21,8 +21,9 @@ flash env setup
 ```
 
 This scaffolds a starter project in the current directory: `environment.py`, a
-tiny `datasets/train.jsonl`, and two configs (`configs/rl.toml` for GRPO and
-`configs/sft.toml` for SFT). The starter `load_environment()` returns a Freesolo
+tiny `datasets/train.jsonl`, two configs (`configs/rl.toml` for GRPO and
+`configs/sft.toml` for SFT), and a `TRAINING.md` playbook for the coding agent you
+point at the project. The starter `load_environment()` returns a Freesolo
 `EnvironmentSingleTurn` with a sample dataset and reward.
 
 ```python environment.py
