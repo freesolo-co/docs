@@ -43,7 +43,7 @@ You write `environment.py`; Flash owns the rest of the loop.
 
 The quality of the environment's dataset and reward sets the ceiling on what
 training can achieve. For the full split of responsibilities, see
-[How Flash works](/how-flash-works#how-flash-supports-you).
+[How Flash works](/how-flash-works).
 
 ## Where it sits in the training loop
 
@@ -94,7 +94,7 @@ class CustomEnv(EnvironmentSingleTurn):
 
     def score_response(self, example: TaskExample, response_text: str) -> RewardResult:
         expected = str(example.output or "").strip()
-        return RewardResult(score=1.0 if expected in response_text else 0.0, threshold=1.0)
+        return RewardResult(score=1.0 if expected and expected in response_text else 0.0, threshold=1.0)
 
 def load_environment(**kwargs) -> CustomEnv:
     return CustomEnv()

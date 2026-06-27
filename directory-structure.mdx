@@ -28,9 +28,9 @@ exists is left untouched.
     `EnvironmentMultiTurn`) carrying a dataset and a `score_response` reward. This
     is the file you edit first.
 
-    **When Flash reads it:** `flash env push` packages and uploads it; a
-    `flash train --dry-run` imports it locally to validate; and on every run the
-    worker imports it and calls `load_environment(**params)`. The scaffolded
+    **When Flash reads it:** `flash env push` packages and uploads it;
+    `flash train --cost` may import it locally to count training examples; and on
+    every run the worker imports it and calls `load_environment(**params)`. The scaffolded
     starter loads its rows from `datasets/train.jsonl`.
 
     ```python environment.py
@@ -70,8 +70,9 @@ exists is left untouched.
     scaffolded `environment.py` loads. Replace it with your real training rows
     before a real run. See [Datasets](/guides/datasets).
 
-    **When Flash reads it:** your `environment.py` reads it at load time (locally
-    for `--dry-run`/`--cost`, and on the worker at run time); `flash env push`
+    **When Flash reads it:** your `environment.py` reads it on the worker at run
+    time (and locally when `flash train --cost` counts its rows; `--dry-run`
+    validates only the config and does not read it); `flash env push`
     uploads the `datasets/` folder with the environment.
 
     ```jsonl datasets/train.jsonl
@@ -83,7 +84,8 @@ exists is left untouched.
 
   <Accordion title="configs/rl.toml" icon="gear">
     **What it is:** a [GRPO training config](/guides/training#choose-sft-or-grpo).
-    The only fields that are yours to set are `model` and `[environment] id`; the
+    You set `model`, the `[environment] id`, and the `[train]` knobs (steps,
+    lora_rank, seeds); the
     GPU and artifact storage are [managed for you](/reference/configuration). Copy
     it per experiment.
 
@@ -95,7 +97,7 @@ exists is left untouched.
     algorithm = "grpo"
 
     [environment]
-    id = "your-name/starter"   # from `flash env push`
+    id = ""   # paste the id returned by `flash env push --name my-env .`
 
     [train]
     steps = 150

@@ -52,8 +52,8 @@ import os
 service_api_key = os.environ["SERVICE_API_KEY"]
 ```
 
-Never put secret values in `[environment.params]` or `[worker_env]`; those are
-part of the run spec. Every name you list under `[environment].secrets` must
+Never put secret values in `[environment.params]`; it becomes part of the run
+spec. Every name you list under `[environment].secrets` must
 resolve to a value in your shell, `.env`, or `.env.local` when you submit.
 
 ## `[train]`
@@ -78,7 +78,7 @@ resolve to a value in your shell, `.env`, or `.env.local` when you submit.
 | `temperature` | float | Sampling temperature for rollouts. |
 | `max_tokens` | int | Max tokens per rollout completion. |
 | `kl_penalty_coef` | float | Strength of the penalty that keeps the trained model from drifting too far from the base model. |
-| `advantage_clip` | float | Centered-advantage clamp. |
+| `advantage_clip` | float | Recorded for recipe parity but currently a no-op (TRL clips the importance ratio, not the advantage value). |
 | `thinking_length_penalty_coef` | float | Penalty on reasoning length. |
 | `stop_sequences` | list[string] | Stop sequences for generation. |
 
@@ -93,7 +93,7 @@ resolve to a value in your shell, `.env`, or `.env.local` when you submit.
 ## GPU & infrastructure (managed)
 
 GPU class selection is automatic. At submit time the allocator picks the
-cheapest validated RunPod class that fits your run, and a retry walks to the
+cheapest validated managed GPU class that fits your run, and a retry walks to the
 next-cheapest class if one is unavailable. Disk, the wall-clock cap, and the
 auto-retry budget are platform defaults.
 

@@ -72,14 +72,14 @@ classes:
 
 | GPU class    | VRAM  | Peak bf16 TFLOPS |
 | ------------ | ----- | ---------------: |
-| RTX 3090     | 24 GB |               71 |
 | RTX 4090     | 24 GB |              165 |
 | RTX 5090     | 32 GB |              210 |
-| A40          | 48 GB |              150 |
 | RTX A6000    | 48 GB |              155 |
-| RTX 6000 Ada | 48 GB |              182 |
 | A100 (80 GB) | 80 GB |              312 |
 | H100         | 80 GB |              990 |
+| RTX Pro 6000 | 96 GB |              250 |
+| H200         | 141 GB |             990 |
+| B200         | 180 GB |            2250 |
 
 Run [`flash gpus`](/reference/cli#discovery) for the full class list with the
 static RunPod `$/hr` snapshot the estimator prices against (the same table this
@@ -190,8 +190,7 @@ it:
 - **Seeds.** Each seed in `seeds = [...]` is its own job with its own cold start
   and its own wall cap, so both `setup` and `train` are multiplied by the seed
   count. Seeds are not amortized.
-- **Wall cap.** A run is bounded by a 24h wall-clock cap (a platform default, not
-  a config field; see
+- **Wall cap.** A run is bounded by a 24h wall-clock cap (a platform default; see
   [GPU & infrastructure](/reference/configuration#gpu-infrastructure-managed)).
   Setup is billed first, so training is clamped to whatever fits under the cap
   after setup. The cap rarely binds for normal runs.

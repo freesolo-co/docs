@@ -6,8 +6,9 @@ description: "What you can see and manage in the Freesolo web app when you sign 
 
 Flash runs from the `flash` CLI, but the same account has a web dashboard at
 [freesolo.co](https://freesolo.co/platform). Sign in with your Freesolo account
-to manage keys and billing and to see your runs in the browser. Everything here
-mirrors a CLI command, so you can use whichever you prefer.
+to manage keys and billing and to see your runs in the browser. Most things here
+mirror a CLI command, so you can use whichever you prefer; creating and revoking
+API keys and managing billing are dashboard-only.
 
 ## API keys
 
@@ -43,6 +44,6 @@ Hub, the browser view of `flash env list`. Reference one from a config by its id
 
 Flash is prepaid. The **Billing** settings show your balance, let you add a card,
 and let you top up manually or automatically when the balance runs low; new orgs
-start with a credit. The activity log itemizes your charges: training runs
+can claim a one-time $50 starter credit once a card is on file. The activity log itemizes your charges: training runs
 ([billed on success for the GPU time used](/guides/training#cost-and-billing))
 and serving ([billed per token](/guides/deploy-and-chat#billing)).
