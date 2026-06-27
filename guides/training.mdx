@@ -57,7 +57,7 @@ algorithm = "grpo"
 id = "your-name/your-env"
 
 [train]
-steps = 150
+steps = 150                          # GRPO is step-driven; SFT is epoch-driven (set epochs = N instead)
 lora_rank = 32
 lora_alpha = 64
 seeds = [0]
@@ -72,7 +72,7 @@ seeds = [0]
 ## GPU selection is automatic
 
 You don't pin a GPU. At submit time the allocator always picks the cheapest
-validated RunPod GPU class that fits your run, and a retry walks to the
+validated managed GPU class that fits your run, and a retry walks to the
 next-cheapest class if one is unavailable. To see the GPU classes, VRAM, and the
 RunPod `$/hr` snapshot the allocator chooses from:
 

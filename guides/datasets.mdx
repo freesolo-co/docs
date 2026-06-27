@@ -21,6 +21,8 @@ Author dataset rows with `input` and `output`:
 | --- | --- |
 | `input` | Prompt text for the model. |
 | `output` | Target answer or gold output. |
+| `id` | Optional stable identifier for the row, exposed as `example.id`. |
+| `metadata` | Optional dict preserved on `example.metadata` and available to scoring. |
 
 <Note>
   Which column the model learns from depends on the algorithm. **SFT** trains
@@ -32,8 +34,9 @@ Author dataset rows with `input` and `output`:
 
 `load_task_examples(...)` accepts a local file path or an iterable of records.
 For files, use `.jsonl`, `.json`, `.csv`, `.txt`, or `.bson`. It exposes each
-record's `input` as `example.input` and `output` as `example.output`; the
-original row stays available as `example.record`.
+record's `input` as `example.input`, `output` as `example.output`, and any
+`id`/`metadata` as `example.id`/`example.metadata`; the original row stays
+available as `example.record`.
 
 ```jsonl datasets/train.jsonl
 {"input":"What is 2 + 2?","output":"4"}
@@ -106,6 +109,15 @@ id = "your-name/math"
 [environment.params]
 split = "eval"
 ```
+
+<Warning>
+  This `split` pattern only takes effect if your package does **not** also ship a
+  file Flash auto-discovers as the default dataset (`datasets/train.jsonl`,
+  `datasets/train.json`, `train.jsonl`, or `train.json`). When one of those is
+  present, Flash uses it and ignores the dataset your `load_environment` built, so
+  the `split` param has no effect. Point `[environment.params].dataset_path` at the
+  split file instead, or avoid those default filenames.
+</Warning>
 
 ## What gets uploaded
 

@@ -55,9 +55,9 @@ per-day idle or warm-GPU charge.
 on: when a request's prompt shares a leading prefix with a recent one — a shared
 system prompt, or the growing context of a multi-turn chat — the serving engine
 reuses that prefix from cache instead of recomputing it, so those tokens bill at
-**25% of the input rate**. This is automatic; there is nothing to deploy or
+**25% of the per-token rate**. This is automatic; there is nothing to deploy or
 configure. Only the input prefix can be cached, so completion tokens always bill
-at the full output rate. Each response reports how many prompt tokens were served from
+at the full rate. When a request hits the prefix cache, the response reports how many prompt tokens were served from
 cache in `usage.prompt_tokens_details.cached_tokens`.
 
 ## Chat from the CLI
@@ -95,7 +95,7 @@ from openai import OpenAI
 
 client = OpenAI(
     base_url="https://<your-endpoint>/v1",   # from `flash deployments`
-    api_key="unused",                        # required by the SDK; the serving endpoint doesn't check it
+    api_key="<your-freesolo-api-key>",       # your Freesolo API key (the same one `flash login` uses); the endpoint checks that your org owns the adapter
 )
 
 resp = client.chat.completions.create(
@@ -104,3 +104,20 @@ resp = client.chat.completions.create(
 )
 print(resp.choices[0].message.content)
 ```
+
+## Export to your own HuggingFace repo
+
+To take a trained adapter out of Freesolo's managed storage, copy it into a
+HuggingFace repo you own:
+
+```bash
+flash export --adapter-id <run-id> --repository <owner>/<name>
+```
+
+| Flag | Default | Effect |
+| --- | --- | --- |
+| `--adapter-id` | (required) | The Freesolo adapter id (the run id) to export |
+| `--repository` | (required) | Destination HuggingFace repo `owner/name` (created if it doesn't exist) |
+| `--api-key` | `HF_TOKEN` | HuggingFace token with write access to `--repository` (read from your shell or a local `.env` / `.env.local`) |
+| `--step` | (final adapter) | Export a specific intermediate checkpoint (see `flash checkpoints <run-id>`) instead of the final adapter; works even for a run cancelled mid-RL |
+| `--public` | private | Create the destination repo as public |

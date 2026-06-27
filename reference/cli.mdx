@@ -34,7 +34,7 @@ inline help.
 ## Discovery
 
 <ResponseField name="flash models">
-  List the supported base model ids and their parameter sizes. See
+  List the supported base model ids. See
   [Supported models](/reference/models) for algorithms, reasoning, and pricing.
 </ResponseField>
 
@@ -60,7 +60,9 @@ inline help.
 </ResponseField>
 
 <ResponseField name="flash env install ENV_ID">
-  Install a published Freesolo environment locally for authoring and `--dry-run`.
+  Record a published Freesolo environment id locally so it appears in
+  `flash env list`. It does not download the environment source — the worker
+  fetches it from the Hub by id at run time.
 </ResponseField>
 
 <ResponseField name="flash env list">
@@ -138,16 +140,15 @@ inline help.
   Deregister a run's adapter from serving so it no longer accepts requests.
 </ResponseField>
 
-## MCP server (for coding agents)
+## Export
 
-Flash also ships a stdio [MCP](https://modelcontextprotocol.io) bridge. It isn't
-a `flash` subcommand; launch it with:
+<ResponseField name="flash export --adapter-id ID --repository OWNER/NAME [flags]">
+  Export a trained adapter to a HuggingFace repo you own (created if it doesn't
+  exist). `--adapter-id` (the run id) and `--repository` are both required.
 
-```bash
-python -m flash.mcp.server
-```
-
-It authenticates with the same stored credentials as the CLI (`flash login`) and
-exposes tools to list models, submit and monitor training runs, and deploy
-adapters: `list_models`, `create_training_run`, `get_run_status`,
-`get_run_logs`, and `deploy_adapter`.
+  | Flag | Default | Effect |
+  | --- | --- | --- |
+  | `--api-key` | `HF_TOKEN` | HuggingFace token with write access to `--repository` (read from your shell or a local `.env` / `.env.local`) |
+  | `--step` | (final adapter) | Export a specific intermediate checkpoint (see `flash checkpoints`) instead of the run's final adapter; works even for a run cancelled mid-RL |
+  | `--public` | private | Create the destination repo as public |
+</ResponseField>

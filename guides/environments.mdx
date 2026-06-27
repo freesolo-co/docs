@@ -107,8 +107,9 @@ pip = ["rapidfuzz>=3.0", "pydantic"]
 
 ## Use the SDK
 
-Your environment code imports from the `freesolo` package. For local authoring
-or `--dry-run` checks that import the environment, install it in the same Python
+Your environment code imports from the `freesolo` package. For local authoring —
+running or testing your `environment.py` directly, or `flash train --cost`, which
+imports it to count training rows — install it in the same Python
 environment you use for Flash:
 
 ```bash
@@ -302,7 +303,7 @@ it:
 id = "your-name/your-env"
 ```
 
-To pull it into your local project for authoring and `--dry-run`:
+To record it locally so it appears in `flash env list`:
 
 ```bash
 flash env install your-name/your-env
@@ -364,6 +365,6 @@ SERVICE_API_KEY=...
 
 Flash sends declared secret values to the worker out-of-band. Secret values are
 not stored in the TOML config, run spec, status JSON, logs, or environment
-artifact. Do not put API keys in `[environment.params]` or `[worker_env]`.
+artifact. Do not put API keys in `[environment.params]`.
 If a declared secret is missing when you submit, `flash train` fails before the
 run starts.
