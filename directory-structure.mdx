@@ -85,7 +85,7 @@ exists is left untouched.
   <Accordion title="configs/rl.toml" icon="gear">
     **What it is:** a [GRPO training config](/guides/training#choose-sft-or-grpo).
     You set `model`, the `[environment] id`, and the `[train]` knobs (steps,
-    lora_rank, seeds); the
+    lora_rank); the
     GPU and artifact storage are [managed for you](/reference/configuration). Copy
     it per experiment.
 
@@ -102,7 +102,6 @@ exists is left untouched.
     [train]
     steps = 150
     lora_rank = 32
-    seeds = [0]
     ```
 
   </Accordion>

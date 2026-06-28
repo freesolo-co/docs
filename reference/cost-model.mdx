@@ -32,7 +32,7 @@ Two things set the price: how long the run holds a GPU (wall clock), and how
 expensive that GPU is per hour. Wall clock is a fixed cold start plus the
 training loop. In rough order of what usually dominates:
 
-- **Cold start.** Every run (and every seed) pays a fixed setup before the first
+- **Cold start.** Every run pays a fixed setup before the first
   step: container boot, dependency install, and model load. On short jobs this
   dominates the bill.
 - **The training loop.** For GRPO each step samples completions (a vLLM
@@ -42,13 +42,10 @@ training loop. In rough order of what usually dominates:
   length.
 - **GPU class.** A faster card costs more per hour but finishes sooner. The
   estimator picks the cheapest card that fits (see below).
-- **Seeds.** Each seed is a separate job with its own cold start, so two seeds is
-  roughly twice the cost.
 
 ## The master equation
 
-Everything below is an expansion of these four lines (shown for a single seed;
-seeds multiply the whole thing):
+Everything below is an expansion of these four lines:
 
 ```text
 total       = wall_clock_hours x gpu_hourly_usd
@@ -122,8 +119,8 @@ setup = boot(120s) + deps(90s) + model_load   (+ vLLM init for GRPO)
 
 <Tip>
   Model load is the largest cold-start term and dominates short jobs. The
-  cheapest lever for a quick run is fewer cold starts (fewer seeds) and a
-  smaller base model (a smaller download). A 9B model downloads ~19 GB; a 0.8B
+  cheapest lever for a quick run is a smaller base model (a smaller
+  download). A 9B model downloads ~19 GB; a 0.8B
   model ~1.8 GB.
 </Tip>
 
@@ -174,12 +171,12 @@ per_step = gen + reward + update
   regex/math to ~3 s for an LLM judge, and a run can override it).
 </Tip>
 
-## Steps, seeds, and the wall cap
+## Steps and the wall cap
 
-Steps and seeds turn per-step time into the training total, and a wall cap bounds
+Steps turn per-step time into the training total, and a wall cap bounds
 it:
 
-- **Steps (GRPO).** `train = steps x per_step` for one seed, where `steps` is
+- **Steps (GRPO).** `train = steps x per_step`, where `steps` is
   your `train.steps`.
 - **Steps (SFT).** SFT has no `train.steps`. The estimator derives the step count
   from the dataset as `epochs x ceil(num_examples / batch)`, capped by
@@ -187,9 +184,6 @@ it:
   unless you set `batch_size`). `num_examples` is `max_examples` if you pin it,
   otherwise the real environment size, which the estimator loads your environment
   locally to count.
-- **Seeds.** Each seed in `seeds = [...]` is its own job with its own cold start
-  and its own wall cap, so both `setup` and `train` are multiplied by the seed
-  count. Seeds are not amortized.
 - **Wall cap.** A run is bounded by a 24h wall-clock cap (a platform default; see
   [GPU & infrastructure](/reference/configuration#gpu-infrastructure-managed)).
   Setup is billed first, so training is clamped to whatever fits under the cap
@@ -206,7 +200,6 @@ algorithm = "grpo"
 
 [train]
 steps = 100
-seeds = [0]
 batch_size = 8                 # prompts per step
 group_size = 8                 # completions per prompt
 max_tokens = 512               # tokens per completion
@@ -235,7 +228,7 @@ model_load = 235 + 1.8 / 0.4 = 239.5 s
 setup      = 120 + 90 + 239.5 + 120 = 569.5 s = 9.5 min
 ```
 
-**Total** (1 seed):
+**Total:**
 
 ```text
 train  = 100 x 11.06 s = 1106 s = 18.4 min
@@ -260,8 +253,6 @@ TOTAL      : $0.32
 
 Each lever maps back to a term above:
 
-- **Fewer seeds.** Each seed re-pays the full cold start; on short jobs that is
-  the single biggest line.
 - **A smaller base model.** Smaller `P` cuts every per-step term and shrinks the
   cold-start download. See [Supported models](/reference/models).
 - **Fewer or shorter completions (GRPO).** `group_size` and `max_tokens` both
