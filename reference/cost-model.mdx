@@ -15,7 +15,7 @@ static catalog (model sizes, GPU compute, and representative GPU pricing), so th
 same config always prices the same. This page unpacks every term so you can
 reproduce the breakdown yourself and predict your bill. Every dollar amount and
 time here is an illustrative example; your run's real numbers come from
-`flash train --cost`, and the static RunPod `$/hr` snapshot from
+`flash train --cost`, and the static GPU `$/hr` snapshot from
 [`flash gpus`](/reference/cli#discovery).
 
 <Note>
@@ -78,21 +78,19 @@ classes:
 | H200         | 141 GB |             990 |
 | B200         | 180 GB |            2250 |
 
-Run [`flash gpus`](/reference/cli#discovery) for the full class list with the
-static RunPod `$/hr` snapshot the estimator prices against (the same table this
-page uses).
+Run [`flash gpus`](/reference/cli#discovery) for the RunPod-backed class list
+with the static `$/hr` snapshot shown by the CLI. The allocator records the
+realized `gpu@provider` on submitted runs.
 
 <Warning>
-  **The estimator is gate-free.** It prices the cheapest fitting class whether or
-  not that class is live-validated, so the estimate reflects the cheapest card
-  that could run the job. The submit-time allocator restricts to the validated
-  pool, so the card actually provisioned (and billed) can be pricier than the
-  estimate assumed.
+  **The estimate is a local forecast.** It prices the cheapest fitting class
+  from the static table. The submit-time allocator uses the validated, available
+  provider pool, so the card actually provisioned (and billed) can be pricier
+  than the estimate assumed.
 
 **This page does not quote prices.** The estimator multiplies wall clock by a
-static RunPod `$/hr` snapshot; [`flash gpus`](/reference/cli#discovery) shows
-that same snapshot. A run is billed for the actual GPU time it used at the rate
-in effect when it ran, which can drift from the snapshot.
+static GPU `$/hr` snapshot. A run is billed for the actual GPU time it used at
+the rate in effect when it ran, which can drift from the snapshot.
 
 </Warning>
 
@@ -205,20 +203,20 @@ group_size = 8                 # completions per prompt
 max_tokens = 512               # tokens per completion
 ```
 
-We fix the card here to show the arithmetic: an **RTX 4090** (24 GB, peak
-165 TFLOPS) at an example `$0.69/hr`. The estimator picks the card for you, so
+We fix the card here to show the arithmetic: an **RTX A6000** (48 GB, peak
+155 TFLOPS) at an example `$0.49/hr`. The estimator picks the card for you, so
 `flash train --cost` reports the class it actually chose and
 [`flash gpus`](/reference/cli#discovery) lists each class's `$/hr`. Then `P = 0.9e9`,
-`peak = 165e12`, `N = 8 x 8 = 64` completions, and `D = 64 x 512 = 32,768`
+`peak = 155e12`, `N = 8 x 8 = 64` completions, and `D = 64 x 512 = 32,768`
 generated tokens.
 
 **Per step:**
 
 ```text
-gen      = (2 x 0.9e9 x 32768) / (165e12 x 0.12) = 2.979 s
-update   = (8 x 0.9e9 x 32768) / (165e12 x 0.35) = 4.085 s
+gen      = (2 x 0.9e9 x 32768) / (155e12 x 0.12) = 3.171 s
+update   = (8 x 0.9e9 x 32768) / (155e12 x 0.35) = 4.349 s
 reward   = ceil(64 / 16) x 1.0 = 4 x 1.0         = 4.000 s
-per_step = 2.979 + 4.085 + 4.000                 = 11.06 s
+per_step = 3.171 + 4.349 + 4.000                 = 11.52 s
 ```
 
 **Setup** (GRPO, so vLLM init applies; download = 0.9 x 2 = 1.8 GB):
@@ -231,9 +229,9 @@ setup      = 120 + 90 + 239.5 + 120 = 569.5 s = 9.5 min
 **Total:**
 
 ```text
-train  = 100 x 11.06 s = 1106 s = 18.4 min
-wall   = 569.5 + 1106  = 1675.5 s = 0.47 h
-total  = 0.47 h x $0.69/hr = $0.32
+train  = 100 x 11.52 s = 1152 s = 19.2 min
+wall   = 569.5 + 1152  = 1721.5 s = 0.48 h
+total  = 0.48 h x $0.49/hr = $0.23
 ```
 
 These totals are what `flash train --cost` prints for the run (its GPU line also
@@ -241,12 +239,12 @@ names the provider and the run's required VRAM):
 
 ```text
 Run        : Qwen/Qwen3.5-0.8B  [GRPO, 100 steps]
-GPU        : RTX 4090 (24 GB) @ $0.69/hr
+GPU        : RTX A6000 on auto (48 GB; run needs >= 24 GB) @ $0.49/hr
 Setup      : 9.5 min  (cold start: boot + deps + model load + vLLM init)
-Per step   : 11.06 s
-Train      : 18.4 min
-Wall clock : 0.47 h
-TOTAL      : $0.32
+Per step   : 11.52 s
+Train      : 19.2 min
+Wall clock : 0.48 h
+TOTAL      : $0.23
 ```
 
 ## How to make a run cheaper
@@ -272,9 +270,9 @@ diverge because:
 - **A pricier card may be provisioned.** The estimate prices the cheapest fitting
   class; the allocator provisions from the validated pool, which can be more
   expensive.
-- **Pricing can drift.** [`flash gpus`](/reference/cli#discovery) and this page
-  both quote a static RunPod `$/hr` snapshot; the bill is the actual GPU time at
-  the rate in effect when the run ran, which can differ from the snapshot.
+- **Pricing can drift.** The estimate uses a static GPU `$/hr` snapshot; the
+  bill is the actual GPU time at the rate in effect when the run ran, which can
+  differ from the snapshot.
 - **MFU and cold start are calibrated approximations.** Real utilization and boot
   time vary with the model, environment, and provider.
 - **Reward latency is an estimate.** GRPO uses a default per-completion grading
