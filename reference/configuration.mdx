@@ -91,9 +91,10 @@ resolve to a value in your shell, `.env`, or `.env.local` when you submit.
 ## GPU & infrastructure (managed)
 
 GPU class selection is automatic. At submit time the allocator picks the
-cheapest validated managed GPU class that fits your run, and a retry walks to the
-next-cheapest class if one is unavailable. Disk, the wall-clock cap, and the
-auto-retry budget are platform defaults.
+cheapest validated managed GPU class that fits your run from the platform's
+available providers, and a retry walks to the next-cheapest class if one is
+unavailable. Disk, the wall-clock cap, and the auto-retry budget are platform
+defaults.
 
 ## `[wandb]`
 

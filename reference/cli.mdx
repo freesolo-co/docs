@@ -39,7 +39,9 @@ inline help.
 </ResponseField>
 
 <ResponseField name="flash gpus">
-  List managed RunPod GPU classes with VRAM and a static `$/hr` snapshot.
+  List RunPod-backed managed GPU classes with VRAM and a static `$/hr` snapshot.
+  Submitted runs report the realized GPU and provider in `flash runs` and
+  `flash status`.
 </ResponseField>
 
 ## Environments
@@ -59,14 +61,22 @@ inline help.
   sibling data files are uploaded.
 </ResponseField>
 
-<ResponseField name="flash env install ENV_ID">
-  Record a published Freesolo environment id locally so it appears in
-  `flash env list`. It does not download the environment source — the worker
-  fetches it from the Hub by id at run time.
+<ResponseField name="flash env pull ENV_ID [PATH] [-o OUTPUT] [-f]">
+  Download a published environment, or one file from it, to local disk. `ENV_ID`
+  can be a managed slug such as `your-name/your-env`, a
+  `github:owner/repo@ref:path` ref, or a GitHub URL. Without `PATH`, the whole
+  environment is written to a directory. With `PATH`, only that file is fetched.
+  `-o` chooses the output path and `-f` allows overwriting an existing output.
 </ResponseField>
 
 <ResponseField name="flash env list">
-  List installed Hub environments and local environments you can publish.
+  List local environment sources you can publish.
+</ResponseField>
+
+<ResponseField name="flash env delete ENV_ID [-y]">
+  Delete a managed Freesolo Hub environment. `ENV_ID` must be a lowercase
+  `namespace/name` Hub id; GitHub refs and local paths cannot be deleted from
+  the Hub. Pass `-y`/`--yes` to skip the confirmation prompt.
 </ResponseField>
 
 ## Training

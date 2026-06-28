@@ -78,7 +78,7 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
     ```
 
     To pull a published env into your project for local work, use
-    `flash env install your-name/your-env`.
+    `flash env pull your-name/your-env`.
 
   </Accordion>
 
@@ -91,8 +91,9 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
   <Accordion title="What id do I reference in my config?">
     The `[environment] id` must be a published Freesolo environment id, produced
     by `flash env push`, for example `your-name/your-env`.
-    A local file path is not a valid id, so publish it first or install an
-    existing one.
+    A local file path is not a valid id, so publish it first or reference an
+    existing published id. Use `flash env pull your-name/your-env` only when you
+    want a local copy to edit or inspect.
   </Accordion>
 </AccordionGroup>
 

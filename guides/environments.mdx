@@ -296,17 +296,25 @@ It prints the published id
 ## Use an existing environment
 
 If you already have a published env id (yours or one shared with you), reference
-it:
+it directly:
 
 ```toml
 [environment]
 id = "your-name/your-env"
 ```
 
-To record it locally so it appears in `flash env list`:
+If you want the source locally for editing or inspection, pull the whole
+environment into a directory:
 
 ```bash
-flash env install your-name/your-env
+flash env pull your-name/your-env
+```
+
+Pull one file by adding its path inside the environment. Use `-o` to choose the
+destination and `-f` to overwrite an existing output:
+
+```bash
+flash env pull your-name/your-env datasets/train.jsonl -o train.jsonl
 ```
 
 ## List what you have
@@ -315,7 +323,18 @@ flash env install your-name/your-env
 flash env list
 ```
 
-Shows installed Hub environments and local environments you can still publish.
+Shows local environment sources you can publish, such as `./environment.py` or
+folders under `environments/`.
+
+## Delete a Hub environment
+
+Delete only targets managed Hub ids of the form `namespace/name`; GitHub refs
+and local paths are not Hub records and cannot be deleted this way.
+
+```bash
+flash env delete your-name/your-env
+flash env delete your-name/your-env -y   # skip the confirmation prompt
+```
 
 ## Pass parameters
 
