@@ -1,16 +1,17 @@
 {
 	"$schema": "https://mintlify.com/docs.json",
 	"theme": "mint",
-	"name": "Freesolo",
+	"name": "Freesolo Docs",
 	"description": "Train, deploy, and chat with custom LoRA models on managed GPUs.",
+	"favicon": "/favicon.ico",
 	"colors": {
 		"primary": "#5f72ff",
 		"light": "#8b98ff",
 		"dark": "#1b1b4b"
 	},
 	"logo": {
-		"light": "/logo/freesolo-mark-light.svg",
-		"dark": "/logo/freesolo-mark-dark.svg",
+		"light": "/logo/freesolo-wordmark-light.svg",
+		"dark": "/logo/freesolo-wordmark-dark.svg",
 		"href": "https://freesolo.co"
 	},
 	"fonts": {
@@ -20,22 +21,37 @@
 		"groups": [
 			{
 				"group": "Get started",
-				"pages": ["index", "quickstart"]
+				"pages": ["index", "quickstart", "platform"]
 			},
 			{
-				"group": "Guides",
+				"group": "Flash",
 				"pages": [
+					{
+						"group": "Core concepts",
+						"pages": ["how-flash-works", "environment-model", "directory-structure"]
+					},
 					"guides/training",
 					"guides/environments",
+					"guides/datasets",
 					"guides/deploy-and-chat"
 				]
 			},
 			{
 				"group": "Reference",
-				"pages": ["reference/cli", "reference/configuration"]
+				"pages": ["reference/models", "reference/cli", "reference/configuration", "reference/cost-model", "reference/troubleshooting"]
 			}
 		]
 	},
+	"redirects": [
+		{
+			"source": "/conventions",
+			"destination": "/guides/training"
+		},
+		{
+			"source": "/guides/conventions",
+			"destination": "/guides/training"
+		}
+	],
 	"navbar": {
 		"primary": {
 			"type": "button",
@@ -50,15 +66,6 @@
 			"x": "https://twitter.com/freesolo"
 		},
 		"links": [
-			{
-				"header": "Product",
-				"items": [
-					{
-						"label": "Blog",
-						"href": "https://freesolo.co/blog"
-					}
-				]
-			},
 			{
 				"header": "Company",
 				"items": [

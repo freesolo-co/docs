@@ -1,0 +1,116 @@
+---
+title: "Supported models"
+description: "The base models Flash can fine-tune and serve, with sizes, reasoning, and token prices."
+---
+
+Flash trains a **LoRA adapter** on top of a curated catalog of base models. You
+set the base model with one line in your config, and list the live catalog from
+the CLI:
+
+```bash
+flash models
+```
+
+```toml
+model = "Qwen/Qwen3.5-4B"   # required — see `flash models` for the options
+```
+
+`flash models` is always the source of truth. The table below mirrors the
+current catalog.
+
+## Catalog
+
+Every catalog model supports **both SFT and GRPO**, and all are
+reasoning ("thinking") capable.
+
+| Model (`model =`)     | Reasoning |
+| --------------------- | --------- |
+| `Qwen/Qwen3.5-0.8B`   | Hybrid    |
+| `openbmb/MiniCPM5-1B` | Hybrid    |
+| `Qwen/Qwen3.5-2B`     | Hybrid    |
+| `Qwen/Qwen3.5-4B`     | Hybrid    |
+| `Qwen/Qwen3.5-9B`     | Hybrid    |
+| `Qwen/Qwen3.6-35B-A3B` | Hybrid   |
+
+## Serving prices
+
+Serving is billed per token after deployment. Every token — prompt and
+completion alike — bills at a **single per-model rate**: the base model's
+serverless list price plus a fixed 20% markup. There is no separate, higher
+output rate. The prices below are **per 1M tokens**; your Freesolo billing
+dashboard shows the charges you actually accrue.
+
+| Model | Per 1M tokens | Cached prompt / 1M |
+| --- | ---: | ---: |
+| `Qwen/Qwen3.5-0.8B` | $0.12 | $0.03 |
+| `openbmb/MiniCPM5-1B` | $0.12 | $0.03 |
+| `Qwen/Qwen3.5-2B` | $0.12 | $0.03 |
+| `Qwen/Qwen3.5-4B` | $0.24 | $0.06 |
+| `Qwen/Qwen3.5-9B` | $0.24 | $0.06 |
+
+The **Cached prompt** column is the rate for prompt tokens served from the
+**prefix cache** — **25% of the per-token rate** (a 75% discount) — because the
+serving engine reuses a cached prefix instead of recomputing it. Caching is
+automatic whenever a request's prompt shares a leading prefix with a recent one
+(a shared system prompt, or a multi-turn chat); only prompt tokens are
+cacheable, so completion tokens always bill at the full rate. See
+[Billing](/guides/deploy-and-chat#billing).
+
+### Notes per model
+
+- **`Qwen/Qwen3.5-0.8B`**: the smallest Qwen3.5. Cheapest for smoke tests and
+  fast iteration.
+- **`openbmb/MiniCPM5-1B`**: an on-device-class small model (131k context) on a
+  standard Llama architecture.
+- **`Qwen/Qwen3.5-2B`**: a small, capable step up when 0.8B underfits.
+- **`Qwen/Qwen3.5-4B`**: the **default** and the safe choice for most tasks.
+- **`Qwen/Qwen3.5-9B`**: the largest dense catalog model. Use it when quality
+  matters more than the run cost.
+- **`Qwen/Qwen3.6-35B-A3B`**: a Mixture-of-Experts checkpoint (35B total, ~3B
+  active per token) and the largest model in the catalog — the big-checkpoint
+  tier (SFT runs on an H200, GRPO on a B200), so it costs the most per run. It is
+  training-only for now and is not in the per-token serving price list above.
+
+<Note>
+  The Qwen3.5 entries are **text-only** fine-tunes: the checkpoints are natively
+  multimodal, but Flash trains and serves the language model only.
+</Note>
+
+## Reasoning ("thinking") models
+
+Every catalog model is **hybrid-reasoning**: it can run with or without an
+explicit reasoning step. Turn reasoning on for a run with one line in your
+config:
+
+```toml
+thinking = true
+```
+
+See the [`thinking` field](/reference/configuration#top-level) in the
+configuration reference.
+
+## Choosing a model
+
+<CardGroup cols={2}>
+  <Card title="Start small" icon="feather">
+    Use `Qwen/Qwen3.5-0.8B` or `2B` to validate your environment and reward
+    cheaply. Get the loop working before you scale.
+  </Card>
+  <Card title="Scale up for quality" icon="arrow-up-right-dots">
+    Move to `Qwen/Qwen3.5-4B` (the default) or `9B` once the task is wired up
+    and you want stronger results. Larger models cost more per run.
+  </Card>
+</CardGroup>
+
+## Models not in the catalog
+
+`model` must be one of the ids above. If your task needs a model that isn't
+listed, [let us know](https://freesolo.co/contact) so we can look at adding it.
+
+<Card
+  title="Pick a model, then train"
+  icon="dumbbell"
+  href="/guides/training#pick-a-base-model"
+>
+  Set `model` in your config and submit a run.
+</Card>

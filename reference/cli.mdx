@@ -3,31 +3,24 @@ title: "CLI reference"
 description: "Every flash command and flag."
 ---
 
-The CLI is `flash` (installed from the **`freesolo-flash`** package — see the
-[Quickstart](/quickstart#1-install-the-cli)). Every run-lifecycle command is a
-thin, authenticated call to the hosted control plane. Run `flash --help` or
-`flash <command> --help` for inline help.
+The CLI is `flash`. Run `flash --help` or `flash <command> --help` for
+inline help.
 
 ## Global flags
 
-| Flag              | Effect                                                                |
-| ----------------- | --------------------------------------------------------------------- |
-| `-h`, `--help`    | Show help and exit (works on any subcommand too)                      |
-| `-V`, `--version` | Print the Flash version and exit                                      |
-| `--debug`         | Show full tracebacks on error (otherwise errors print one clean line) |
-| `-v`, `--verbose` | Increase log verbosity (`-v` info, `-vv` debug)                       |
+| Flag | Effect |
+| --- | --- |
+| `-V`, `--version` | Print the Flash version and exit |
+| `--debug` | Show full tracebacks on error (otherwise errors print one clean line) |
+| `-v`, `-vv` | Increase log verbosity (`-v` info, `-vv` debug) |
 
 ## Auth & identity
 
-<ResponseField
-  name="flash login"
-  type="[--api-key KEY] [--freesolo-url URL] [--api-url URL]"
->
+<ResponseField name="flash login" type="[--api-key KEY] [--freesolo-url URL] [--api-url URL]">
   Log in with your Freesolo API key. The key is verified against Freesolo and
-  saved locally. Create a key at
-  [freesolo.co/sign-in](https://freesolo.co/sign-in). Defaults: `--api-key` from
-  `FREESOLO_API_KEY`; `--freesolo-url` from `FREESOLO_BASE_URL` (else
-  `https://api.freesolo.co`); `--api-url` from `FLASH_API_URL`.
+  saved locally, and the resolved identity is printed on success. Defaults:
+  `--api-key` from `FREESOLO_API_KEY`; `--freesolo-url` from `FREESOLO_BASE_URL`
+  (else `https://api.freesolo.co`); `--api-url` from `FLASH_API_URL`.
 </ResponseField>
 
 <ResponseField name="flash whoami">
@@ -35,56 +28,63 @@ thin, authenticated call to the hosted control plane. Run `flash --help` or
 </ResponseField>
 
 <ResponseField name="flash version">
-  Print the Flash version (same as `-V` / `--version`).
+  Print the Flash version.
 </ResponseField>
 
 ## Discovery
 
 <ResponseField name="flash models">
-  List the supported base model ids (the per-model algorithms, quantization, and
-  reasoning capability live in the catalog but aren't printed by this command).
+  List the supported base model ids. See
+  [Supported models](/reference/models) for algorithms, reasoning, and pricing.
 </ResponseField>
 
 <ResponseField name="flash gpus">
-  List managed GPU classes with VRAM and RunPod `$/hr`. GPU selection is
-  automatic — there is no GPU pin (see [GPU
-  selection](/guides/training#gpu-selection-is-automatic)).
+  List managed RunPod GPU classes with VRAM and a static `$/hr` snapshot.
 </ResponseField>
 
 ## Environments
 
 <ResponseField name="flash env setup">
-  Scaffold a starter environment project in the current directory:
-  `environment.py`, a `datasets/` folder, `configs/rl.toml`, `configs/sft.toml`,
-  and `TRAINING.md`.
-</ResponseField>
-
-<ResponseField name="flash env list">
-  List the local environment sources in the current project that you can
-  publish.
+  Scaffold a starter project into the current directory: `environment.py`, a tiny
+  `datasets/train.jsonl`, `configs/rl.toml` (GRPO) plus `configs/sft.toml` (SFT),
+  and a `TRAINING.md` playbook for coding agents. Files that already exist are left
+  untouched, so it is safe to rerun.
 </ResponseField>
 
 <ResponseField name="flash env push --name NAME [PATH]">
-  Publish a local environment project to Freesolo's managed Environments Hub
-  (private) and print its id (`owner/name`). `PATH` defaults to the current
-  directory. Fully managed — no separate account or other CLI needed.
+  Publish a local Freesolo environment to Freesolo's managed Environments Hub
+  (private) and print its id (`your-name/NAME`). `--name` is required; `PATH`
+  defaults to the current directory. Pass `.` or any folder with
+  `environment.py` at its root so helper modules, `datasets/`, and common
+  sibling data files are uploaded.
+</ResponseField>
+
+<ResponseField name="flash env install ENV_ID">
+  Record a published Freesolo environment id locally so it appears in
+  `flash env list`. It does not download the environment source — the worker
+  fetches it from the Hub by id at run time.
+</ResponseField>
+
+<ResponseField name="flash env list">
+  List installed Hub environments and local environments you can publish.
 </ResponseField>
 
 ## Training
 
 <ResponseField name="flash train CONFIG [flags]">
   Submit a managed training run from a TOML config and follow its logs.
-  Submitting charges the pre-flight cost estimate to your org and is gated on
-  balance (see [Cost & billing](/guides/training#cost-and-billing)).
+  A run is billed only when it finishes successfully, for the GPU time it
+  used (see [Cost & billing](/guides/training#cost-and-billing)); the
+  pre-flight `--cost` estimate is derived in
+  [How cost is computed](/reference/cost-model).
 
-| Flag              | Effect                                                                     |
-| ----------------- | -------------------------------------------------------------------------- |
-| `--dry-run`       | Validate the config locally and print the resolved job spec; don't submit  |
-| `--cost`          | Print the pre-flight USD cost estimate for the config and exit (no submit) |
-| `--background`    | Submit and return immediately instead of following logs                    |
-| `--set KEY=VALUE` | Override a config value (dotted key, repeatable)                           |
-| `--config FILE`   | Deep-merge additional TOML for config composition (repeatable)             |
-
+  | Flag | Effect |
+  | --- | --- |
+  | `--dry-run` | Validate the config locally and print the resolved job spec; don't submit |
+  | `--cost` | Print the pre-flight USD cost for the config and exit (no submit) |
+  | `--background` | Submit and return immediately instead of following logs |
+  | `--set KEY=VALUE` | Override a config value (dotted key, repeatable) |
+  | `--config FILE` | Deep-merge additional TOML for config composition (repeatable) |
 </ResponseField>
 
 ## Run management
@@ -94,47 +94,46 @@ thin, authenticated call to the hosted control plane. Run `flash --help` or
 </ResponseField>
 
 <ResponseField name="flash status RUN_ID [--logs] [-f]">
-  Print a run's full status. `--logs` also prints the run's logs (the
-  orchestrator log plus the train-subprocess stdout/traceback). `-f`/`--follow`
-  streams logs until the run ends, then prints the final status.
-</ResponseField>
-
-<ResponseField name="flash checkpoints RUN_ID">
-  List a run's deployable per-step RL checkpoints (SFT-only runs have none).
-  Deploy one with `flash deploy RUN_ID --step <STEP>`.
+  Print a run's full status JSON, including accrued cost. `--logs` prints current
+  logs before the status JSON. `-f`/`--follow` streams logs until the run ends,
+  then prints final status.
 </ResponseField>
 
 <ResponseField name="flash cancel RUN_ID">
-  Cancel a run (best-effort).
+  Cancel a run.
 </ResponseField>
 
 ## Serving
 
 <ResponseField name="flash deploy RUN_ID [flags]">
   Register a trained adapter with the managed multi-LoRA serving service.
-  Serving scales to zero when idle and is [billed per
-  token](/guides/deploy-and-chat#billing).
+  Serving is [billed per token](/guides/deploy-and-chat#billing); there is no
+  per-day idle charge.
 
-| Flag        | Default | Effect                                                                              |
-| ----------- | ------- | ----------------------------------------------------------------------------------- |
-| `--step N`  | —       | Deploy a specific checkpoint (see `flash checkpoints`) instead of the final adapter |
-| `--dry-run` | —       | Preview the deploy without creating it                                              |
+  | Flag | Default | Effect |
+  | --- | --- | --- |
+  | `--step` | (final adapter) | Deploy a specific [checkpoint step](/guides/deploy-and-chat#deploy-a-specific-checkpoint) instead of the run's final adapter |
+  | `--dry-run` | - | Preview the deploy without creating it |
+</ResponseField>
 
+<ResponseField name="flash checkpoints RUN_ID">
+  List a run's per-step checkpoints that are available to deploy — including
+  intermediate checkpoints from a run that stopped mid-RL. Serve one with
+  `flash deploy RUN_ID --step N`.
 </ResponseField>
 
 <ResponseField name="flash chat RUN_ID -m MESSAGE [flags]">
-  Send a message to a deployed adapter and print the reply.
+  Send a message to a deployed adapter and stream the reply as it is generated.
 
-| Flag              | Default    | Effect                 |
-| ----------------- | ---------- | ---------------------- |
-| `-m`, `--message` | (required) | The user message       |
-| `--max-tokens`    | `512`      | Max tokens to generate |
-| `--temperature`   | `0.0`      | Sampling temperature   |
-
+  | Flag | Default | Effect |
+  | --- | --- | --- |
+  | `-m`, `--message` | (required) | The user message |
+  | `--max-tokens` | `512` | Max tokens to generate |
+  | `--temperature` | `0.0` | Sampling temperature |
 </ResponseField>
 
 <ResponseField name="flash deployments">
-  List active serving deployments with their run id, GPU, and endpoint.
+  List active serving deployments with GPU and endpoint.
 </ResponseField>
 
 <ResponseField name="flash undeploy RUN_ID">
@@ -143,15 +142,13 @@ thin, authenticated call to the hosted control plane. Run `flash --help` or
 
 ## Export
 
-<ResponseField name="flash export --adapter-id ID --repository REPO [flags]">
-  Export a trained adapter to a Hugging Face repo you own.
+<ResponseField name="flash export --adapter-id ID --repository OWNER/NAME [flags]">
+  Export a trained adapter to a HuggingFace repo you own (created if it doesn't
+  exist). `--adapter-id` (the run id) and `--repository` are both required.
 
-| Flag                      | Default    | Effect                                                                  |
-| ------------------------- | ---------- | ----------------------------------------------------------------------- |
-| `--adapter-id ID`         | (required) | The Freesolo adapter id (the run id) to export                          |
-| `--repository owner/name` | (required) | Destination HuggingFace repo (created if it doesn't exist)              |
-| `--api-key TOKEN`         | `HF_TOKEN` | HuggingFace token with write access (from your shell or a local `.env`) |
-| `--step N`                | —          | Export a specific checkpoint instead of the run's final adapter         |
-| `--public`                | private    | Create the destination repo public                                      |
-
+  | Flag | Default | Effect |
+  | --- | --- | --- |
+  | `--api-key` | `HF_TOKEN` | HuggingFace token with write access to `--repository` (read from your shell or a local `.env` / `.env.local`) |
+  | `--step` | (final adapter) | Export a specific intermediate checkpoint (see `flash checkpoints`) instead of the run's final adapter; works even for a run cancelled mid-RL |
+  | `--public` | private | Create the destination repo as public |
 </ResponseField>

@@ -13,91 +13,87 @@ model = "Qwen/Qwen3.5-4B"
 algorithm = "grpo"
 
 [environment]
-id = "owner/name"
+id = "your-name/your-env"
 
 [train]
 steps = 150
 lora_rank = 32
 ```
 
-<Note>
-  **The GPU and the run's artifact storage are fully managed** — there is no
-  `[gpu]` pin to set and no `hf_repo` to supply. The allocator picks the
-  cheapest validated GPU class that fits across providers, and each run gets its
-  own private Hugging Face repo provisioned server-side. Unknown config sections
-  or `[train]` keys are rejected at parse time, so a typo fails fast rather than
-  silently training against defaults.
-</Note>
-
 ## Top level
 
-| Key         | Type   | Default      | Description                                                                        |
-| ----------- | ------ | ------------ | ---------------------------------------------------------------------------------- |
-| `model`     | string | — (required) | Base model to train a LoRA adapter on, e.g. `Qwen/Qwen3.5-4B`. See `flash models`. |
-| `algorithm` | string | `grpo`       | `grpo` (RL) or `sft` (supervised).                                                 |
-| `thinking`  | bool   | `false`      | Enable reasoning mode (thinking-capable models only).                              |
+| Key | Type | Default | Description |
+| --- | --- | --- | --- |
+| `model` | string | (required) | Base model to train a LoRA adapter on, e.g. `Qwen/Qwen3.5-4B`. See `flash models`. |
+| `algorithm` | string | `grpo` | `grpo` (RL): learns from a reward you define. `sft` (supervised): learns by imitating example completions you provide. |
+| `thinking` | bool | `false` | Enable reasoning mode (thinking-capable models only). The reasoning trace shares the `max_tokens` budget with the answer, so raise `max_tokens` (and `max_length`) when enabling it — see [Troubleshooting](/reference/troubleshooting). |
 
 ## `[environment]`
 
-| Key       | Type         | Default        | Description                                                                                                                                                                  |
-| --------- | ------------ | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `id`      | string       | — (required)   | Freesolo environment id, `owner/name` (from `flash env push`). Also accepts `github:owner/repo` or a `github.com` URL.                                                       |
-| `params`  | table        | `{}`           | Keyword arguments passed to the env's `load_environment(**kwargs)`.                                                                                                          |
-| `pip`     | list[string] | `["freesolo"]` | Extra Python packages the env needs on the worker. Flash always installs `freesolo`; list any other package your `environment.py` imports here (they are not auto-detected). |
-| `secrets` | list[string] | `[]`           | Env-var names the env reads at runtime; values are read from your shell / local `.env` at submit and forwarded securely, never stored in the spec.                           |
+| Key | Type | Default | Description |
+| --- | --- | --- | --- |
+| `id` | string | (required) | Published Freesolo environment id, `your-name/your-env`. |
+| `params` | table | `{}` | Keyword arguments passed to the env's `load_environment(**kwargs)`. |
+| `secrets` | list[string] | `[]` | Environment variable names to forward to the worker as runtime secrets. Values are read from your shell, `.env`, or `.env.local` at submit time. |
+| `pip` | list[string] | `[]` | Extra third-party pip requirements the worker installs before importing your environment (an escape hatch for deps your `environment.py` imports). |
 
 ```toml
 [environment]
-id = "owner/name"
-secrets = ["SERPAPI_API_KEY"]
-
-[environment.params]
-difficulty = "hard"
+id = "your-name/your-env"
+secrets = ["SERVICE_API_KEY"]
 ```
+
+Environment code reads the secret normally:
+
+```python
+import os
+
+service_api_key = os.environ["SERVICE_API_KEY"]
+```
+
+Never put secret values in `[environment.params]`; it becomes part of the run
+spec. Every name you list under `[environment].secrets` must
+resolve to a value in your shell, `.env`, or `.env.local` when you submit.
 
 ## `[train]`
 
-| Key                 | Type   | Default        | Description                                                                                                            |
-| ------------------- | ------ | -------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `steps`             | int    | —              | Number of training steps (GRPO).                                                                                       |
-| `epochs`            | int    | —              | Number of epochs (SFT; alternative to `steps`).                                                                        |
-| `lora_rank`         | int    | `32`           | LoRA rank.                                                                                                             |
-| `lora_alpha`        | int    | `64`           | LoRA alpha.                                                                                                            |
-| `learning_rate`     | float  | recipe default | Optimizer learning rate.                                                                                               |
-| `batch_size`        | int    | recipe default | Training batch size.                                                                                                   |
-| `max_length`        | int    | recipe default | Max sequence length.                                                                                                   |
-| `save_every`        | int    | recipe default | Checkpoint cadence (steps).                                                                                            |
-| `max_steps`         | int    | —              | SFT: cap on optimizer steps (`0` = no cap).                                                                            |
-| `max_examples`      | int    | —              | SFT: truncate the training dataset to N examples (`0` = no cap).                                                       |
-| `init_from_adapter` | string | —              | Warm-start from an existing adapter. Must be the full adapter ref `owner/repo:sft\|rl/run_id` shown by `flash status`. |
-
-<Note>
-  `hf_repo` is **not** a user field. Each run's adapters and checkpoints stream
-  into a private Hugging Face repo that the control plane provisions
-  automatically — any `hf_repo` you set is ignored.
-</Note>
+| Key | Type | Default | Description |
+| --- | --- | --- | --- |
+| `lora_rank` | int | `32` | LoRA rank; higher means a larger adapter with more capacity and cost. |
+| `lora_alpha` | int | `64` | LoRA alpha. |
+| `learning_rate` | float | recipe default | Optimizer learning rate. |
+| `batch_size` | int | recipe default | Training batch size. |
+| `max_length` | int | recipe default | Max sequence length. |
+| `save_every` | int | recipe default | Checkpoint cadence (steps). |
+| `init_from_adapter` | string | - | Warm-start from an existing adapter. Must be the full adapter ref `flash status` prints, `<owner>/<repo>:<phase>/<run-id>/seed<N>` (phase is `sft` or `rl`) — a bare run id is rejected. |
 
 ### GRPO-specific
 
-| Key                            | Type         | Description                        |
-| ------------------------------ | ------------ | ---------------------------------- |
-| `group_size`                   | int          | Completions sampled per prompt.    |
-| `temperature`                  | float        | Sampling temperature for rollouts. |
-| `max_tokens`                   | int          | Max tokens per rollout completion. |
-| `kl_penalty_coef`              | float        | KL penalty coefficient.            |
-| `advantage_clip`               | float        | Centered-advantage clamp.          |
-| `thinking_length_penalty_coef` | float        | Penalty on reasoning length.       |
-| `stop_sequences`               | list[string] | Stop sequences for generation.     |
+| Key | Type | Description |
+| --- | --- | --- |
+| `steps` | int | Number of training steps (default 150). |
+| `group_size` | int | Completions sampled per prompt. |
+| `temperature` | float | Sampling temperature for rollouts. |
+| `max_tokens` | int | Max tokens per rollout completion. |
+| `kl_penalty_coef` | float | Strength of the penalty that keeps the trained model from drifting too far from the base model. |
+| `advantage_clip` | float | Recorded for recipe parity but currently a no-op (TRL clips the importance ratio, not the advantage value). |
+| `thinking_length_penalty_coef` | float | Penalty on reasoning length. |
+| `stop_sequences` | list[string] | Stop sequences for generation. |
+
+### SFT-specific
+
+| Key | Type | Description |
+| --- | --- | --- |
+| `epochs` | int | Number of epochs (alternative to GRPO `steps`). |
+| `max_steps` | int | cap on optimizer steps (`0` = no cap). |
+| `max_examples` | int | Truncate the training dataset to N examples (`0` = no cap). |
 
 ## GPU & infrastructure (managed)
 
-GPU selection is **fully automatic** — there is no GPU pin. At submit time the
-allocator always picks the cheapest live-validated GPU class that fits your run
-(RunPod, with Lambda Labs as a capacity fallback), and a retry walks to the
+GPU class selection is automatic. At submit time the allocator picks the
+cheapest validated managed GPU class that fits your run, and a retry walks to the
 next-cheapest class if one is unavailable. Disk, the wall-clock cap, and the
-auto-retry budget are platform defaults, also chosen for you. A `[gpu]` table in
-your config is **not honored**; to see the classes and live pricing the allocator
-chooses from, run `flash gpus`.
+auto-retry budget are platform defaults.
 
 ## `[wandb]`
 
@@ -105,22 +101,10 @@ Optional [Weights & Biases](https://wandb.ai) logging labels. These values are
 non-secret; set `WANDB_API_KEY` in your local environment when submitting a run
 to enable logging to your own W&B account.
 
-| Key        | Type   | Description       |
-| ---------- | ------ | ----------------- |
-| `project`  | string | W&B project name. |
-| `run_name` | string | W&B run name.     |
-
-## `[worker_env]`
-
-An optional advanced escape hatch: a table of string-valued environment variables
-set on the GPU worker for this run. Secret-bearing keys are rejected (these are
-serialized into run artifacts) — declare runtime secrets under
-`[environment] secrets` instead.
-
-```toml
-[worker_env]
-SOME_TUNING_FLAG = "1"
-```
+| Key | Type | Description |
+| --- | --- | --- |
+| `project` | string | W&B project name. |
+| `run_name` | string | W&B run name. |
 
 ## Overrides & composition
 

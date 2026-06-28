@@ -3,10 +3,11 @@ title: "Environments"
 description: "Define the task your model trains on and is graded by."
 ---
 
-An **environment** is the task: the data your model sees and the rubric that
-scores its outputs. A Flash environment is a small Python project — an
-`environment.py` plus a `datasets/` folder — that you author locally, publish to
-Freesolo's Environments Hub, and reference from your config by its id.
+An **environment** is the task: the data your model sees and the reward, a
+numeric score your code assigns to each model output. Flash loads environments
+through the Freesolo environment SDK.
+You author one locally, publish it to Freesolo's managed Environments Hub, and
+reference it in config by its Freesolo environment id.
 
 ```toml
 [environment]
@@ -19,43 +20,24 @@ id = "your-name/your-env"
 flash env setup
 ```
 
-This writes a ready-to-edit starter project into the current directory:
-
-```
-environment.py            # the task + rubric
-datasets/
-  train.jsonl             # one {"input","output"} record per line
-configs/
-  rl.toml                 # a GRPO config
-  sft.toml                # an SFT config
-TRAINING.md               # a playbook for iterating on the run
-```
-
-`environment.py` subclasses a Freesolo `EnvironmentSingleTurn`: it builds the
-prompt for each example and scores the model's response.
+This scaffolds a starter project in the current directory: `environment.py`, a
+tiny `datasets/train.jsonl`, two configs (`configs/rl.toml` for GRPO and
+`configs/sft.toml` for SFT), and a `TRAINING.md` playbook for the coding agent you
+point at the project. The starter `load_environment()` returns a Freesolo
+`EnvironmentSingleTurn` with a sample dataset and reward.
 
 ```python environment.py
-import json
-from pathlib import Path
-
 from freesolo.datasets.types import TaskExample
 from freesolo.environments import EnvironmentSingleTurn, RewardResult
 
-DEFAULT_DATASET_PATH = Path(__file__).parent / "datasets" / "train.jsonl"
+DATASET = [
+    {"input": "What is 2 + 2?", "output": "4"},
+    {"input": "What is 3 + 5?", "output": "8"},
+]
 
 
-def load_jsonl(path):
-    rows = []
-    with Path(path).open() as f:
-        for line in f:
-            line = line.strip()
-            if line:
-                rows.append(json.loads(line))
-    return rows
-
-
-class StarterEnv(EnvironmentSingleTurn):
-    dataset = load_jsonl(DEFAULT_DATASET_PATH)
+class CustomEnv(EnvironmentSingleTurn):
+    dataset = DATASET
 
     def build_prompt_messages(self, example: TaskExample, prompt_text: str):
         return [{"role": "user", "content": example.input}]
@@ -66,58 +48,266 @@ class StarterEnv(EnvironmentSingleTurn):
         return RewardResult(score=score, threshold=1.0)
 
 
-def load_environment(dataset_path: str | None = None, **kwargs) -> StarterEnv:
-    env = StarterEnv()
-    if dataset_path:
-        env.dataset = load_jsonl(dataset_path)
-    return env
+def load_environment(**kwargs) -> CustomEnv:
+    return CustomEnv()
 ```
 
-Replace the dataset and the scoring with your task:
+Replace the dataset and reward with your task:
 
-- **Dataset** — `datasets/train.jsonl`, one record per line. Each record is a
-  `{"input": ..., "output": ...}` pair: `input` is what the model is prompted
-  with, `output` is the gold answer (SFT trains on it directly, and your rubric
-  can use it for GRPO).
-- **`build_prompt_messages`** — turn one `TaskExample` into the chat messages the
-  model sees. `example.input` is the record's input; `example.output` is its gold
-  answer.
-- **`score_response`** — return a `RewardResult(score=..., threshold=...)`. For
-  GRPO the `score` is the reward the policy is optimized toward; `threshold` is
-  the score at/above which the response counts as a pass.
+- **Dataset**: the prompts (and any gold answers) your model trains and is
+  evaluated on.
+- **Reward**: `score_response` returns a `RewardResult`. GRPO optimizes that
+  score; SFT trains directly on your dataset answers instead. See [how Flash
+  works](/how-flash-works).
+
+For multi-turn tasks (conversations, tool use, agents), use `EnvironmentMultiTurn`
+and implement the episode hooks — see [Multi-turn environments](#multi-turn-environments) below.
+
+## Structure the package
+
+A published environment is a small folder. Flash packages it, imports its
+`environment.py` entrypoint on the worker, and calls
+`load_environment(**params)`, which must return a Freesolo SDK environment. The
+folder can be named anything as long as it contains `environment.py` at its
+root.
+
+```text
+math/
+  environment.py          # defines load_environment()
+  helpers.py              # optional Python helpers
+  datasets/
+    train.jsonl           # input/output records
+    eval.jsonl
+```
+
+Publish the folder:
+
+```bash
+flash env push --name math math
+```
+
+Single `.py` upload still works for tiny smoke tests, but push real environments
+as folders.
+
+Keep all imports either from sibling files in the folder you publish, from the
+`freesolo` SDK, or from third-party packages you declare under
+`[environment].pip` (see below).
+
+### Declare third-party dependencies
+
+If your `environment.py` imports a package that isn't part of the `freesolo` SDK,
+list it under `[environment].pip` so the worker installs it before importing your
+environment:
+
+```toml
+[environment]
+id = "your-name/your-env"
+pip = ["rapidfuzz>=3.0", "pydantic"]
+```
+
+## Use the SDK
+
+Your environment code imports from the `freesolo` package. For local authoring —
+running or testing your `environment.py` directly, or `flash train --cost`, which
+imports it to count training rows — install it in the same Python
+environment you use for Flash:
+
+```bash
+uv pip install freesolo
+```
+
+For a single-turn task, subclass `EnvironmentSingleTurn`:
+
+```python environment.py
+from pathlib import Path
+
+from freesolo.datasets.records import load_task_examples
+from freesolo.datasets.types import TaskExample
+from freesolo.environments import EnvironmentSingleTurn, RewardResult
+
+ROOT = Path(__file__).parent
+
+
+class MathEnv(EnvironmentSingleTurn):
+    def __init__(self, *, split: str = "train") -> None:
+        self.dataset = load_task_examples(ROOT / "datasets" / f"{split}.jsonl")
+
+    def build_prompt_messages(self, example: TaskExample, prompt_text: str):
+        return [{"role": "user", "content": example.input}]
+
+    def score_response(self, example: TaskExample, response_text: str) -> RewardResult:
+        expected = str(example.output or "").strip()
+        score = 1.0 if expected and expected in response_text else 0.0
+        return RewardResult(score=score, threshold=1.0)
+
+
+def load_environment(split: str = "train", **kwargs) -> MathEnv:
+    return MathEnv(split=split)
+```
+
+The dataset file uses the user-facing `input`/`output` row shape:
+
+```jsonl datasets/train.jsonl
+{"input":"What is 2 + 2?","output":"4"}
+{"input":"What is 3 + 5?","output":"8"}
+```
+
+At runtime, read the same values from `example.record["input"]` and
+`example.record["output"]` if you need the raw row. For the common case,
+`load_task_examples(...)` exposes each record's `input` as `example.input` and
+`output` as `example.output`.
+
+## Multi-turn environments
+
+Some tasks aren't resolved in a single response: a conversation, a tool-using
+agent, anything where the **environment reacts to what the model just did** and
+the model acts again. For these, subclass `EnvironmentMultiTurn` and implement the
+**episode hooks**. GRPO rolls out the whole episode, then scores the finished
+trajectory.
+
+| Single-turn (`EnvironmentSingleTurn`) | Multi-turn (`EnvironmentMultiTurn`) |
+| ------------------------------------- | ----------------------------------- |
+| `build_prompt_messages` → one prompt  | `start_episode` → opening messages  |
+| `score_response` → reward one reply   | `step_episode` → react to each action; `max_episode_turns` → bound the episode; `score_episode` → reward the trajectory |
+
+### The episode loop
+
+During training the trainer drives your hooks in a loop and scores the result:
+
+```text
+messages = env.start_episode(example, prompt_text)      # opening system/user messages
+for _ in range(env.max_episode_turns(example)):
+    action = policy.sample(messages)                    # one assistant message
+    messages.append({"role": "assistant", "content": action})
+    result = env.step_episode(example, messages, action)
+    messages.extend(result.messages)                    # the env's response (tool result, next user turn)
+    if result.done:
+        break
+reward = env.score_episode(example, EnvironmentEpisode(messages=..., response_text=...))
+```
+
+- **`start_episode(example, prompt_text)`** returns the initial messages (e.g. a
+  system prompt plus the first user message).
+- **`step_episode(example, messages, assistant_response)`** is the core. `messages`
+  already includes the assistant action being stepped as its last element. Return
+  an `EnvironmentStepResult`:
+  - `done=False, messages=(...)` keeps the episode open and injects the
+    environment's response (a tool result, the next user turn);
+  - `done=True, final_response_text=...` ends it.
+- **`max_episode_turns(example)`** caps how many assistant actions the trainer
+  samples before forcing the episode terminal.
+- **`score_episode(example, episode)`** grades the completed transcript
+  (`episode.messages`) and returns a `RewardResult`, exactly like `score_response`
+  but over the whole trajectory.
+
+### An action protocol the model can emit as text
+
+The trained policy is an open model, not a tool-use API, so define a plain-text
+protocol it can produce and your `step_episode` can parse — for example, a
+tool-call block versus a final reply:
+
+```python environment.py
+import json, re
+from freesolo.datasets.types import TaskExample
+from freesolo.environments import EnvironmentMultiTurn, RewardResult
+from freesolo.environments.types import EnvironmentEpisode, EnvironmentStepResult
+
+TOOL_CALL = re.compile(r"<tool_call>\s*(.*?)\s*</tool_call>", re.DOTALL)
+
+def run_tool(name: str, args: dict) -> dict:
+    ...  # your stateful backend / API
+
+class AgentEnv(EnvironmentMultiTurn):
+    def __init__(self, *, split: str = "train") -> None:
+        self.dataset = [{"input": "Refund my last order.", "output": "refund_order"}]
+
+    def start_episode(self, example: TaskExample, prompt_text: str):
+        return [
+            {"role": "system", "content": "Call tools with <tool_call>{...}</tool_call>; reply in plain text when done."},
+            {"role": "user", "content": example.input},
+        ]
+
+    def max_episode_turns(self, example: TaskExample) -> int:
+        return 8
+
+    def step_episode(self, example, messages, assistant_response):
+        blocks = TOOL_CALL.findall(assistant_response)
+        if blocks:  # a TOOL turn: run the calls, feed results back, stay open
+            results = [run_tool(**json.loads(b)) for b in blocks]
+            return EnvironmentStepResult(
+                done=False,
+                messages=({"role": "user", "content": f"<tool_result>{json.dumps(results)}</tool_result>"},),
+            )
+        # a REPLY turn: no tool call -> the model is done
+        return EnvironmentStepResult(done=True, final_response_text=assistant_response)
+
+    def score_episode(self, example: TaskExample, episode: EnvironmentEpisode) -> RewardResult:
+        used = [json.loads(b)["name"] for m in episode.messages
+                for b in TOOL_CALL.findall(m["content"]) if m["role"] == "assistant"]
+        hit = str(example.output) in used
+        return RewardResult(score=1.0 if hit else 0.0, threshold=1.0)
+
+def load_environment(split: str = "train", **kwargs) -> AgentEnv:
+    return AgentEnv(split=split)
+```
+
+### Keep `step_episode` stateless
+
+The SDK doesn't hand you a per-episode scratch object, and GRPO runs **many
+rollouts of the same example concurrently** — so don't stash mutable world-state
+on the env keyed by example. If your task has state (a backend that changes as
+tools run), make the **transcript the source of truth** and rebuild state by
+replaying `messages` inside `step_episode` / `score_episode`. Replay is
+reproducible as long as your backend is deterministic given the same calls (seed
+any ids; avoid wall-clock-dependent logic in the reward).
+
+### Score behaviours, not a script
+
+Open-ended tasks rarely have one correct transcript, so don't grade by imitation.
+Score the behaviours you care about — did it take the resolving action, follow
+required ordering (e.g. authenticate before a privileged call), stay within
+limits — and return that blend from `score_episode`. Keeping the reward in a
+plain function (importable without the trainer) makes it unit-testable.
+
+### Configure for multi-turn
+
+There's no "number of turns" knob in the config — the budget comes from
+`max_episode_turns`. What matters in `[train]`:
+
+- **`max_tokens`** is *per assistant action* (one tool call or one reply), not per
+  episode — keep it modest.
+- **`max_length`** must hold the system prompt **plus the whole running transcript**
+  (every turn, every tool result), so set it well above a single-turn task.
+- **`group_size`** is the number of full episodes rolled out per prompt for the
+  GRPO advantage estimate.
 
 ## Publish it
 
 Training runs on managed GPUs, so the environment has to be reachable by id.
-Publish your project folder to Freesolo's Environments Hub:
+Publish your local environment folder to the managed Environments Hub:
 
 ```bash
-flash env push --name my-env .
+flash env push --name math math
 ```
 
-It prints the published id (`owner/name`). Put that in your config's
-`[environment] id`. The path defaults to the current directory, so running
-`flash env push --name my-env` from inside the project does the same thing.
-
-<Note>
-  Publishing is fully managed: `flash env push` packages your project
-  (`environment.py` plus its `datasets/` and any data files) and uploads it to
-  Freesolo's hosted Environments Hub (published **private**) using only your
-  Freesolo API key. You don't need a separate account or any other CLI.
-</Note>
+It prints the published id
+(`your-name/math`). Put that in your config's `[environment] id`.
 
 ## Use an existing environment
 
-If you already have a published env id (yours or one shared with you), just
-reference it — there's nothing to author:
+If you already have a published env id (yours or one shared with you), reference
+it:
 
 ```toml
 [environment]
-id = "owner/name"
+id = "your-name/your-env"
 ```
 
-You can also point `id` at a public GitHub repo holding an environment, either
-as `github:owner/repo` or a full `https://github.com/owner/repo` URL.
+To record it locally so it appears in `flash env list`:
+
+```bash
+flash env install your-name/your-env
+```
 
 ## List what you have
 
@@ -125,13 +315,12 @@ as `github:owner/repo` or a full `https://github.com/owner/repo` URL.
 flash env list
 ```
 
-Shows the local environment sources in the current project that you can publish
-with `flash env push`.
+Shows installed Hub environments and local environments you can still publish.
 
 ## Pass parameters
 
 If your `load_environment(**kwargs)` accepts arguments, set them under
-`[environment.params]` — they're passed straight through as keyword arguments:
+`[environment.params]`:
 
 ```toml
 [environment]
@@ -142,32 +331,40 @@ difficulty = "hard"
 num_examples = 500
 ```
 
-## Secrets and extra dependencies
+## Use API keys
 
-If your environment reads secrets at runtime (say an API key for a tool it
-calls), declare the env-var **names** under `[environment] secrets`. Their values
-are read from your shell or a local `.env` at submit time and forwarded to the
-run securely — they're never written into the stored spec:
+If your environment needs an external service, read the key from `os.environ` in
+`environment.py`:
+
+```python environment.py
+import os
+
+SERVICE_API_KEY = os.environ["SERVICE_API_KEY"]
+```
+
+Then declare the environment variable names in your training config:
 
 ```toml
 [environment]
 id = "your-name/your-env"
-secrets = ["SERPAPI_API_KEY"]
+secrets = ["SERVICE_API_KEY"]
 ```
 
-Flash installs `freesolo` itself on the worker, but it does **not** infer your
-environment's other dependencies. List every extra Python package your
-`environment.py` imports under `[environment] pip` — anything you omit will be
-missing at runtime:
+Set the value in your shell before submitting:
 
-```toml
-[environment]
-id = "your-name/your-env"
-pip = ["beautifulsoup4", "httpx"]
+```bash
+export SERVICE_API_KEY="..."
+flash train configs/rl.toml
 ```
 
-<Tip>
-  Single-turn environments (one prompt → one response, graded by a rubric) are
-  the place to start; they're fully supported for SFT, GRPO, and eval. Grow the
-  rubric from there.
-</Tip>
+You can also put local development values in `.env` or `.env.local`:
+
+```bash
+SERVICE_API_KEY=...
+```
+
+Flash sends declared secret values to the worker out-of-band. Secret values are
+not stored in the TOML config, run spec, status JSON, logs, or environment
+artifact. Do not put API keys in `[environment.params]`.
+If a declared secret is missing when you submit, `flash train` fails before the
+run starts.

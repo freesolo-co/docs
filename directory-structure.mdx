@@ -1,0 +1,175 @@
+---
+title: "Explore the directory"
+description: "Every file flash env setup creates, what it's for, and when Flash reads it."
+---
+
+`flash env setup` scaffolds a starter project into the **current directory**. A
+run is fully described by what lands on disk: an **environment** (your task and
+how it's scored) and a **config** (how to train on it). Every file is plain text
+you can read, diff, and version-control. Rerunning is safe: any file that already
+exists is left untouched.
+
+```
+./
+├── environment.py        # the task + reward (a Freesolo environment)
+├── datasets/
+│   └── train.jsonl       # a tiny starter dataset (input/output rows)
+├── configs/
+│   ├── rl.toml           # a GRPO (RL) training config
+│   └── sft.toml          # an SFT (supervised) training config
+└── TRAINING.md           # a playbook for the AI agent driving your runs
+```
+
+<AccordionGroup>
+  <Accordion title="environment.py" icon="python">
+    **What it is:** your [environment](/environment-model), the single source of
+    truth for what the model practices on and how it's graded. It defines
+    `load_environment()`, which returns a Freesolo `EnvironmentSingleTurn` (or
+    `EnvironmentMultiTurn`) carrying a dataset and a `score_response` reward. This
+    is the file you edit first.
+
+    **When Flash reads it:** `flash env push` packages and uploads it;
+    `flash train --cost` may import it locally to count training examples; and on
+    every run the worker imports it and calls `load_environment(**params)`. The scaffolded
+    starter loads its rows from `datasets/train.jsonl`.
+
+    ```python environment.py
+    import json
+    from pathlib import Path
+
+    from freesolo.datasets.types import TaskExample
+    from freesolo.environments import EnvironmentSingleTurn, RewardResult
+
+    DEFAULT_DATASET_PATH = Path(__file__).parent / "datasets" / "train.jsonl"
+
+    def load_jsonl(path):
+        with Path(path).open() as f:
+            return [json.loads(line) for line in f if line.strip()]
+
+    class StarterEnv(EnvironmentSingleTurn):
+        dataset = load_jsonl(DEFAULT_DATASET_PATH)
+
+        def build_prompt_messages(self, example: TaskExample, prompt_text: str):
+            return [{"role": "user", "content": example.input}]
+
+        def score_response(self, example: TaskExample, response_text: str) -> RewardResult:
+            expected = str(example.output or "").strip()
+            return RewardResult(score=1.0 if expected and expected in response_text else 0.0, threshold=1.0)
+
+    def load_environment(dataset_path: str | None = None, **kwargs) -> StarterEnv:
+        env = StarterEnv()
+        if dataset_path:
+            env.dataset = load_jsonl(dataset_path)
+        return env
+    ```
+
+  </Accordion>
+
+  <Accordion title="datasets/train.jsonl" icon="table">
+    **What it is:** a tiny starter dataset of `input`/`output` rows that the
+    scaffolded `environment.py` loads. Replace it with your real training rows
+    before a real run. See [Datasets](/guides/datasets).
+
+    **When Flash reads it:** your `environment.py` reads it on the worker at run
+    time (and locally when `flash train --cost` counts its rows; `--dry-run`
+    validates only the config and does not read it); `flash env push`
+    uploads the `datasets/` folder with the environment.
+
+    ```jsonl datasets/train.jsonl
+    {"input":"What is 2 + 2?","output":"4"}
+    {"input":"What is 3 + 5?","output":"8"}
+    ```
+
+  </Accordion>
+
+  <Accordion title="configs/rl.toml" icon="gear">
+    **What it is:** a [GRPO training config](/guides/training#choose-sft-or-grpo).
+    You set `model`, the `[environment] id`, and the `[train]` knobs (steps,
+    lora_rank, seeds); the
+    GPU and artifact storage are [managed for you](/reference/configuration). Copy
+    it per experiment.
+
+    **When Flash reads it:** every `flash train`, `--dry-run`, and `--cost` parses
+    this file into the resolved job spec.
+
+    ```toml configs/rl.toml
+    model = "Qwen/Qwen3.5-4B"
+    algorithm = "grpo"
+
+    [environment]
+    id = ""   # paste the id returned by `flash env push --name my-env .`
+
+    [train]
+    steps = 150
+    lora_rank = 32
+    seeds = [0]
+    ```
+
+  </Accordion>
+
+  <Accordion title="configs/sft.toml" icon="copy">
+    **What it is:** the same config shape with `algorithm = "sft"`, for supervised
+    fine-tuning on the `input`/`output` pairs in your environment's dataset. Keep
+    both and pick one at train time.
+
+    **When Flash reads it:** same as `rl.toml`; pass it to `flash train` to run
+    SFT instead of GRPO.
+
+    ```bash
+    flash train configs/sft.toml
+    ```
+
+  </Accordion>
+
+  <Accordion title="TRAINING.md" icon="book">
+    **What it is:** a playbook for the AI coding agent you point at this project —
+    how to design the reward, what to read in a run's output, and how to decide a
+    run actually improved the model (not just finished). It's reference for you and
+    your agent.
+
+    **When Flash reads it:** never. It's local documentation only; nothing in the
+    train, deploy, or chat path depends on it.
+
+  </Accordion>
+</AccordionGroup>
+
+## Packaging an environment as a folder
+
+The scaffolded `environment.py` is enough to publish on its own. Once your task
+grows data files or helper modules, move it into a folder with
+`environment.py` at the root and publish the whole folder.
+
+```
+math/
+├── environment.py        # defines load_environment()
+├── helpers.py            # optional sibling modules, imported by environment.py
+└── datasets/
+    ├── train.jsonl       # input/output records
+    └── eval.jsonl
+```
+
+<AccordionGroup>
+  <Accordion title="helpers.py" icon="python">
+    **What it is:** any sibling Python modules your `environment.py` imports. Keep
+    imports either from installed packages or from files in the folder you publish.
+
+    **When Flash reads it:** uploaded with the folder by `flash env push` and
+    importable on the worker.
+
+  </Accordion>
+
+  <Accordion title="datasets/" icon="table">
+    **What it is:** sidecar data files (`.jsonl`, `.json`, `.csv`, `.txt`,
+    `.parquet`, and more) that your environment loads. See [Datasets](/guides/datasets).
+
+    **When Flash reads it:** your environment code reads it (for example via
+    `load_task_examples(...)`); `flash env push` includes the `datasets/` folder
+    in the uploaded artifact.
+
+    ```jsonl datasets/train.jsonl
+    {"input":"What is 2 + 2?","output":"4"}
+    {"input":"What is 3 + 5?","output":"8"}
+    ```
+
+  </Accordion>
+</AccordionGroup>

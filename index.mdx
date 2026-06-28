@@ -1,84 +1,98 @@
 ---
 title: "Flash"
-description: "Train, deploy, and chat with custom LoRA models on managed GPUs — from one CLI."
+sidebarTitle: "Overview"
+description: "Train, deploy, and chat with custom LoRA models on managed GPUs, from one CLI."
 ---
 
-Flash is Freesolo's managed post-training service. You write a short config,
-run one command, and Flash fine-tunes a model on a managed GPU — then serves the
-result behind an OpenAI-compatible endpoint. There's nothing to host: every
-command is a thin call to the hosted control plane, authenticated with your
-Freesolo API key.
+Flash is Freesolo's managed post-training service. You write a short config, run
+one command, and Flash fine-tunes a model on a managed GPU, then serves the
+result behind an OpenAI-compatible endpoint. There's nothing to host, and every
+command that talks to the platform is authenticated with your Freesolo API key.
 
-```bash
-flash train config.toml      # fine-tune on a managed GPU
-flash deploy <run-id>        # serve the trained adapter
-flash chat <run-id> -m "hi"  # talk to it
-```
+<Card title="Get started in minutes" icon="rocket" href="/quickstart" horizontal>
+  Install the CLI and go from an empty directory to a deployed model in a few
+  minutes.
+</Card>
+
+## What you can do
+
+<AccordionGroup>
+  <Accordion title="Fine-tune a model on your own task" icon="dumbbell">
+    Write a TOML config, run one command, and Flash trains a LoRA adapter (a
+    small set of add-on weights) on top of a supported base model. You pick the
+    model and the task; the platform picks and runs the GPU. See
+    [Training](/guides/training).
+
+    ```bash
+    flash train config.toml
+    ```
+
+  </Accordion>
+  <Accordion title="Reward the behavior you want with GRPO" icon="trophy">
+    Reinforcement learning scores the model's own completions with your
+    [environment's](/guides/environments) reward and updates toward higher
+    reward (see [How Flash works](/how-flash-works)). Use it when you can score
+    an output but can't hand-write the perfect one.
+
+    ```toml
+    algorithm = "grpo"
+    ```
+
+  </Accordion>
+  <Accordion title="Teach a format from examples with SFT" icon="copy">
+    Supervised fine-tuning learns from the prompt/answer pairs in your dataset.
+    Use it when you already have examples of the output you want.
+
+    ```toml
+    algorithm = "sft"
+    ```
+
+  </Accordion>
+  <Accordion title="Serve it behind an OpenAI-compatible API" icon="comments">
+    `flash deploy` registers the adapter with managed multi-LoRA serving, then
+    `flash chat` or any OpenAI client can call it with your Freesolo key. See
+    [Deploy & chat](/guides/deploy-and-chat).
+
+    ```bash
+    flash deploy <run-id>
+    ```
+
+  </Accordion>
+  <Accordion title="See the cost before you spend" icon="dollar-sign">
+    `--cost` prints the pre-flight estimate without submitting. You pay for the
+    GPU time you train and the tokens you serve; serving has no per-day idle
+    charge.
+
+    ```bash
+    flash train config.toml --cost
+    ```
+
+  </Accordion>
+</AccordionGroup>
+
+## Where Flash fits
+
+| I want to...                                     | Start here                                                                                     |
+| ------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
+| Fine-tune from examples I already have           | [Training: SFT](/guides/training#choose-sft-or-grpo)                                           |
+| Improve outputs I can score but can't hand-write | [Training: GRPO](/guides/training#choose-sft-or-grpo) and [Environments](/guides/environments) |
+| Define the task and reward my model learns on    | [Environments](/guides/environments)                                                           |
+| Call my model from my existing OpenAI code       | [Deploy & chat](/guides/deploy-and-chat#use-it-from-your-own-code)                             |
+| Understand how a run actually works              | [How Flash works](/how-flash-works)                                                            |
+
+## Next steps
 
 <CardGroup cols={2}>
   <Card title="Quickstart" icon="rocket" href="/quickstart">
     Install the CLI, log in, and ship your first run in a few minutes.
   </Card>
+  <Card title="How Flash works" icon="diagram-project" href="/how-flash-works">
+    The loop behind a run: base models, environments, algorithms, serving.
+  </Card>
   <Card title="Training" icon="dumbbell" href="/guides/training">
     Write a config, submit a run, and follow it to completion.
   </Card>
-  <Card title="Environments" icon="flask" href="/guides/environments">
-    Define the task your model trains and is graded on.
-  </Card>
   <Card title="Deploy & chat" icon="comments" href="/guides/deploy-and-chat">
-    Serve an adapter scale-to-zero, billed per token, then chat with it.
+    Serve an adapter, then chat with it over an OpenAI-compatible API.
   </Card>
 </CardGroup>
-
-## How it works
-
-<Steps>
-  <Step title="Pick a base model">
-    Choose from the supported catalog (`flash models`). Flash trains a LoRA
-    adapter on top — small, cheap, and fast to serve.
-  </Step>
-  <Step title="Point at an environment">
-    An [environment](/guides/environments) is the task: the data your model sees
-    and the rubric it's graded on. You author it as a small Python class (a
-    Freesolo `EnvironmentSingleTurn`), publish it with `flash env push`, and
-    reference it from your config by id.
-  </Step>
-  <Step title="Train on a managed GPU">
-    `flash train` submits the run to the control plane, which allocates the
-    cheapest GPU that fits (RunPod, with Lambda Labs as a capacity fallback),
-    supervises the job (stall watchdog, bounded auto-retry from the last
-    checkpoint), and streams logs back to you.
-  </Step>
-  <Step title="Deploy and use it">
-    `flash deploy` serves the adapter. `flash chat` (or any OpenAI-compatible
-    client) talks to it. Serving scales to zero (no charge while idle) and is
-    billed per token.
-  </Step>
-</Steps>
-
-## What you get
-
-<CardGroup cols={2}>
-  <Card title="SFT and GRPO" icon="brain">
-    Supervised fine-tuning or reinforcement learning (GRPO), selected with one
-    line in your config.
-  </Card>
-  <Card title="One GPU per run" icon="microchip">
-    Each run gets a dedicated managed GPU, supervised server-side with bounded
-    auto-retry that resumes from the last streamed checkpoint.
-  </Card>
-  <Card title="Cheapest GPU that fits" icon="dollar-sign">
-    The allocator picks the lowest-cost GPU class that fits your run. See live
-    pricing with `flash gpus`.
-  </Card>
-  <Card title="No infrastructure" icon="cloud">
-    No GPUs to rent, no servers to run, no provider keys. You authenticate with
-    a Freesolo API key; the platform owns the rest.
-  </Card>
-</CardGroup>
-
-<Note>
-  These docs cover **Flash** — the training and serving CLI. Create a Freesolo
-  API key at [freesolo.co/sign-in](https://freesolo.co/sign-in), then head to
-  the [Quickstart](/quickstart).
-</Note>

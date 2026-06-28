@@ -3,14 +3,12 @@ title: "Deploy & chat"
 description: "Serve a trained adapter and talk to it over an OpenAI-compatible API."
 ---
 
-Once a run reaches `done`, deploy its adapter and chat with it — from the CLI or
+Once a run reaches `done`, deploy its adapter and chat with it, from the CLI or
 any OpenAI-compatible client.
 
 `flash deploy` registers your adapter with Freesolo's **managed multi-LoRA
-serving service**. Every adapter for a given base model is served from one shared
-GPU that **scales to zero when idle**, so there's nothing to keep warm and **no
-per-day idle charge** — you're billed per token only for the requests you send
-(see [Billing](#billing)).
+serving service**. There is no serving mode to choose: you register the adapter,
+send requests to it, and pay per token (see [Billing](#billing)).
 
 ## Deploy
 
@@ -18,36 +16,49 @@ per-day idle charge** — you're billed per token only for the requests you send
 flash deploy <run-id>
 ```
 
-That's it — there are no serving modes or warm-up settings to choose. The adapter
-is registered, scales to zero when idle, and cold-starts on the first request.
-
 Preview what a deploy would do without creating it:
 
 ```bash
 flash deploy <run-id> --dry-run
 ```
 
-### Deploy an intermediate checkpoint
+## Deploy a specific checkpoint
 
-A GRPO run streams a deployable checkpoint at each save interval. List them and
-deploy a specific step instead of the final adapter — this works even for a run
-you cancelled mid-training:
+Every training step that saved an adapter is independently deployable — not just
+the run's final one. List a run's deployable checkpoints:
 
 ```bash
-flash checkpoints <run-id>          # list deployable per-step checkpoints
-flash deploy <run-id> --step 120    # serve the checkpoint at step 120
+flash checkpoints <run-id>
 ```
 
-(SFT-only runs produce a single final adapter and have no intermediate
-checkpoints.)
+Then serve a specific step instead of the final adapter:
+
+```bash
+flash deploy <run-id> --step <N>
+```
+
+This also rescues a run that stopped mid-RL. If you cancelled a GRPO run (or it
+failed) after some good steps, its intermediate checkpoints are still deployable
+by step. Deploying a `cancelled` or `failed` run's checkpoint attaches the
+serving deployment **without** changing the run's terminal training state, and a
+later `flash undeploy` leaves that state untouched.
 
 ## Billing
 
 Serving is **billed per token**. Each request costs its prompt + completion
 tokens at the base model's serverless list price plus a 20% markup, debited from
-your org's prepaid balance. There is no separate per-day, idle, or warm-GPU
-charge — a deployment that sits idle costs nothing; you pay only for the tokens of
-the requests it actually serves.
+your org's prepaid balance. See the actual per-model prices in
+[Supported models](/reference/models#serving-prices). There is no separate
+per-day idle or warm-GPU charge.
+
+**Cached prompt tokens are billed at a 75% discount.** Prefix caching is always
+on: when a request's prompt shares a leading prefix with a recent one — a shared
+system prompt, or the growing context of a multi-turn chat — the serving engine
+reuses that prefix from cache instead of recomputing it, so those tokens bill at
+**25% of the per-token rate**. This is automatic; there is nothing to deploy or
+configure. Only the input prefix can be cached, so completion tokens always bill
+at the full rate. When a request hits the prefix cache, the response reports how many prompt tokens were served from
+cache in `usage.prompt_tokens_details.cached_tokens`.
 
 ## Chat from the CLI
 
@@ -57,11 +68,11 @@ flash chat <run-id> -m "Summarize the plot of Hamlet in two sentences."
 
 Options:
 
-| Flag              | Default    | Effect                     |
-| ----------------- | ---------- | -------------------------- |
-| `-m`, `--message` | (required) | The user message to send   |
-| `--max-tokens`    | 512        | Maximum tokens to generate |
-| `--temperature`   | 0.0        | Sampling temperature       |
+| Flag | Default | Effect |
+| --- | --- | --- |
+| `-m`, `--message` | (required) | The user message to send |
+| `--max-tokens` | 512 | Maximum tokens to generate |
+| `--temperature` | 0.0 | Sampling temperature |
 
 ```bash
 flash chat <run-id> -m "Write a haiku about GPUs" --temperature 0.8 --max-tokens 128
@@ -70,27 +81,21 @@ flash chat <run-id> -m "Write a haiku about GPUs" --temperature 0.8 --max-tokens
 ## Manage deployments
 
 ```bash
-flash deployments        # list active deployments: run id, GPU, endpoint
+flash deployments        # list active deployments: GPU and endpoint
 flash undeploy <run-id>  # deregister the adapter from serving
 ```
-
-<Note>
-  Because serving scales to zero, there's no idle cost to stop. `flash undeploy`
-  deregisters the adapter so it no longer accepts requests; you're only ever
-  billed per token for requests you actually send.
-</Note>
 
 ## Use it from your own code
 
 Deployments are OpenAI-compatible, so you can point any OpenAI SDK at the
-endpoint and use your Freesolo API key:
+endpoint from `flash deployments`. The `model` is your run id:
 
 ```python
 from openai import OpenAI
 
 client = OpenAI(
-    base_url="<your-endpoint>/v1",   # endpoint from `flash deployments` (already includes https://)
-    api_key="<your-freesolo-key>",
+    base_url="https://<your-endpoint>/v1",   # from `flash deployments`
+    api_key="<your-freesolo-api-key>",       # your Freesolo API key (the same one `flash login` uses); the endpoint checks that your org owns the adapter
 )
 
 resp = client.chat.completions.create(
@@ -100,15 +105,19 @@ resp = client.chat.completions.create(
 print(resp.choices[0].message.content)
 ```
 
-## Take the adapter with you
+## Export to your own HuggingFace repo
 
-Want the trained weights outside Freesolo's serving? Export the adapter to a
-Hugging Face repo you own:
+To take a trained adapter out of Freesolo's managed storage, copy it into a
+HuggingFace repo you own:
 
 ```bash
-flash export --adapter-id <run-id> --repository your-name/your-adapter
+flash export --adapter-id <run-id> --repository <owner>/<name>
 ```
 
-Pass `--step <N>` to export a specific checkpoint, and `--public` to create the
-destination repo public (it's private by default). Authentication uses your
-`HF_TOKEN` (from your shell or a local `.env`), or pass `--api-key <hf-token>`.
+| Flag | Default | Effect |
+| --- | --- | --- |
+| `--adapter-id` | (required) | The Freesolo adapter id (the run id) to export |
+| `--repository` | (required) | Destination HuggingFace repo `owner/name` (created if it doesn't exist) |
+| `--api-key` | `HF_TOKEN` | HuggingFace token with write access to `--repository` (read from your shell or a local `.env` / `.env.local`) |
+| `--step` | (final adapter) | Export a specific intermediate checkpoint (see `flash checkpoints <run-id>`) instead of the final adapter; works even for a run cancelled mid-RL |
+| `--public` | private | Create the destination repo as public |

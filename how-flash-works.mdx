@@ -1,0 +1,154 @@
+---
+title: "How Flash works"
+description: "Post-training in plain terms: the few concepts that matter, and how Flash runs them for you."
+---
+
+If you've heard of "post-training" or "fine-tuning" but never shipped one, this
+page builds the intuition: the few concepts that matter, and how Flash runs the
+whole thing so there's no infrastructure for you to manage.
+
+## What post-training does
+
+A base model like Qwen3.5 arrives from **pre-training** already fluent, but
+generic: it has read a lot of the internet and is good at everything in general,
+nothing in particular. **Post-training** is the step that shapes that general
+model into one that's reliably good at _your_ task, using _your_ data and _your_
+definition of a good answer.
+
+Flash is a managed post-training service. You describe the task and pick a base
+model, Flash fine-tunes the model on a GPU, and then serves the result behind an
+OpenAI-compatible API. You never touch a GPU, a training framework, or a serving
+stack. Reach for post-training when you want consistent behavior, a smaller and
+cheaper model that matches a big one on a narrow task, or behavior that
+prompting can't reliably produce. More on when to use it below.
+
+## The training loop
+
+Every post-training run is the same loop with three moving parts: a **base
+model**, an **environment** (your task plus how to score it), and a **training
+algorithm** that improves the model from that score.
+
+<Steps>
+  <Step title="The model attempts a prompt">
+    Flash takes a prompt from your environment and the current model produces an
+    answer.
+  </Step>
+  <Step title="The environment scores it">
+    Your environment grades the answer, either against a known good answer or
+    with a reward function.
+  </Step>
+  <Step title="The algorithm updates the model">
+    The training algorithm nudges the model's weights toward answers that score
+    higher.
+  </Step>
+  <Step title="Repeat">
+    Over many steps the model gets measurably better at the task. The output is
+    a small **adapter** you can deploy.
+  </Step>
+</Steps>
+
+## Core concepts
+
+### Base models and LoRA adapters
+
+Flash doesn't rewrite the entire model. It trains a **LoRA adapter**: a small set
+of extra weights layered on top of the frozen base model. This is _parameter-
+efficient_ fine-tuning, and it has three practical payoffs:
+
+- **Cheap and fast** to train, because you're updating a tiny fraction of the
+  parameters.
+- **Small to store and move** (megabytes, not gigabytes).
+- **Efficient to serve**, because many adapters that share a base model can be
+  served together on one GPU.
+
+Pick the base model with one line in your config. Browse the catalog with
+`flash models`, or see [Supported models](/reference/models).
+
+### Environments: your task, as code
+
+An **environment** is the task, expressed as code. It bundles two things:
+
+- A **dataset**: the prompts your model practices on (and any gold answers).
+- A **reward**: a scoring function that looks at an answer and returns a
+  score.
+
+The environment is the single source of truth for _what the model practices on_
+and _how it's graded_. Flash uses Freesolo environments. You author one locally,
+publish it to the managed Environments Hub, and reference it from your config by
+Freesolo id. See the [Environment model](/environment-model) for the mental
+model, or [Environments](/guides/environments) and [Datasets](/guides/datasets)
+to build one.
+
+### Two ways to teach: SFT and GRPO
+
+There are two ways to turn that environment into a better model, and you choose
+between them with one line of config.
+
+<CardGroup cols={2}>
+  <Card title="SFT: learn by imitation" icon="copy">
+    **Supervised fine-tuning.** You show the model good answers and it learns to
+    reproduce them. Best when you already have examples of the behavior you
+    want.
+  </Card>
+  <Card title="GRPO: learn by practice" icon="trophy">
+    **Reinforcement learning.** The model generates attempts, your reward scores
+    them, and the model is pushed toward the higher-scoring ones. Best when good
+    output is easier to *score* than to *write out* by hand.
+  </Card>
+</CardGroup>
+
+If you can hand the model a stack of ideal answers, start with **SFT**. If you
+can't write the answers but you _can_ tell a good one from a bad one, that
+scoring function is exactly what **GRPO** needs. See
+[Training](/guides/training#choose-sft-or-grpo).
+
+### Rewards and rollouts (GRPO)
+
+In GRPO, a **rollout** is one attempt the model generates for a prompt. For each
+prompt, GRPO samples a _group_ of rollouts (the `group_size`), scores each one
+with your environment, and reinforces the rollouts that beat the group's
+average. The **reward** is the score your environment returns.
+
+The reward is the teacher. If it reliably separates good answers from bad ones,
+GRPO can optimize toward it; if the task is so hard that every rollout scores
+zero, there's no signal to learn from, so start with a model and task where some
+attempts succeed.
+
+### Serving the result
+
+A trained adapter isn't useful until you can call it. `flash deploy` registers
+your adapter with Freesolo's **managed multi-LoRA serving**. You talk to it over
+an OpenAI-compatible API, and serving is billed per prompt and completion token
+with no per-day idle charge. See
+[Deploy & chat](/guides/deploy-and-chat).
+
+## Is post-training right for your task?
+
+Post-training shines when the task is narrow and you can define success. Good
+signs:
+
+- You have **examples** of the behavior you want (favor SFT), or a way to
+  **score** outputs even when you can't write them (favor GRPO).
+- You want a **small, cheap model** to reliably do one job instead of paying for
+  a frontier model on every call.
+- Prompting gets you _close_ but not **consistent** enough.
+
+If you don't yet have data or a way to grade answers, start there: the quality of
+your environment sets the ceiling on what training can achieve.
+
+## Next
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Train, deploy, and chat with your first model in a few minutes.
+  </Card>
+  <Card title="Training in depth" icon="dumbbell" href="/guides/training">
+    SFT vs GRPO, config options, monitoring, and cost.
+  </Card>
+  <Card title="Build an environment" icon="flask" href="/guides/environments">
+    Turn your task into a dataset and a reward.
+  </Card>
+  <Card title="Supported models" icon="layer-group" href="/reference/models">
+    The base models you can fine-tune and serve, with sizes and prices.
+  </Card>
+</CardGroup>

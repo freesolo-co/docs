@@ -1,0 +1,135 @@
+---
+title: "Datasets"
+description: "Package task records and data files with Freesolo environments."
+---
+
+Datasets live inside the environment. A Flash config points at one published
+environment id; it does not take a separate dataset path. The environment's
+`load_environment()` function returns the dataset, prompt builder, and reward
+logic that Flash uses for SFT, GRPO, and local validation.
+
+```toml
+[environment]
+id = "your-name/your-env"
+```
+
+## Task records
+
+Author dataset rows with `input` and `output`:
+
+| Dataset key | Description |
+| --- | --- |
+| `input` | Prompt text for the model. |
+| `output` | Target answer or gold output. |
+| `id` | Optional stable identifier for the row, exposed as `example.id`. |
+| `metadata` | Optional dict preserved on `example.metadata` and available to scoring. |
+
+<Note>
+  Which column the model learns from depends on the algorithm. **SFT** trains
+  directly on `output`, the gold answer. **GRPO** (RL) uses only `input`: the
+  model generates its own answers from the prompt and learns from your reward,
+  so `output` is optional there and is read only if your `score_response` uses
+  it as a reference.
+</Note>
+
+`load_task_examples(...)` accepts a local file path or an iterable of records.
+For files, use `.jsonl`, `.json`, `.csv`, `.txt`, or `.bson`. It exposes each
+record's `input` as `example.input`, `output` as `example.output`, and any
+`id`/`metadata` as `example.id`/`example.metadata`; the original row stays
+available as `example.record`.
+
+```jsonl datasets/train.jsonl
+{"input":"What is 2 + 2?","output":"4"}
+{"input":"What is 3 + 5?","output":"8"}
+```
+
+## Package layout
+
+Put dataset files beside `environment.py` so they are included when you publish:
+
+```text
+math/
+  environment.py
+  helpers.py
+  datasets/
+    train.jsonl
+    eval.jsonl
+```
+
+Publish the folder with an explicit name. `flash env push` publishes a compact
+environment artifact to the managed Environments Hub and prints the Freesolo id
+you use in configs:
+
+```bash
+flash env push --name math math
+```
+
+```text Output
+published your-name/math
+```
+
+## Load sidecars
+
+Read packaged files relative to `__file__`. That works locally and when the
+environment runs on a worker.
+
+```python environment.py
+from pathlib import Path
+
+from freesolo.datasets import TaskExample
+from freesolo.datasets.records import load_task_examples
+from freesolo.environments import EnvironmentSingleTurn, RewardResult
+
+ROOT = Path(__file__).parent
+
+
+class MathEnv(EnvironmentSingleTurn):
+    def __init__(self, *, split: str = "train") -> None:
+        self.dataset = load_task_examples(ROOT / "datasets" / f"{split}.jsonl")
+
+    def build_prompt_messages(self, example: TaskExample, prompt_text: str):
+        return [{"role": "user", "content": example.input}]
+
+    def score_response(self, example: TaskExample, response_text: str) -> RewardResult:
+        expected = str(example.output or "").strip()
+        score = 1.0 if expected and expected in response_text else 0.0
+        return RewardResult(score=score, threshold=1.0)
+
+
+def load_environment(split: str = "train", **kwargs) -> MathEnv:
+    return MathEnv(split=split)
+```
+
+Then select the split from your Flash config:
+
+```toml
+[environment]
+id = "your-name/math"
+
+[environment.params]
+split = "eval"
+```
+
+<Warning>
+  This `split` pattern only takes effect if your package does **not** also ship a
+  file Flash auto-discovers as the default dataset (`datasets/train.jsonl`,
+  `datasets/train.json`, `train.jsonl`, or `train.json`). When one of those is
+  present, Flash uses it and ignores the dataset your `load_environment` built, so
+  the `split` param has no effect. Point `[environment.params].dataset_path` at the
+  split file instead, or avoid those default filenames.
+</Warning>
+
+## What gets uploaded
+
+For a local environment directory, `flash env push` includes:
+
+- `environment.py`, always at the artifact root.
+- Sibling Python helper files.
+- Sidecar directories named `datasets`.
+- Common sibling data files such as `.jsonl`, `.json`, `.csv`, `.txt`,
+  `.parquet`, `.tsv`, `.yaml`, and `.yml`.
+
+Workspace metadata, cache directories, virtualenvs, and version-control files
+are skipped. Keep the artifact small: environment uploads are capped at 64 MB
+compressed and 256 MB uncompressed. For large corpora, keep the data in an
+external store and pass the identifier or URL through `[environment.params]`.
