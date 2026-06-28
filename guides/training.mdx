@@ -11,13 +11,14 @@ the [configuration reference](/reference/configuration) for every field.
 ## Pick a base model
 
 Flash trains a **LoRA adapter** on top of a supported base model. List the
-catalog, with each model's supported algorithms and reasoning capability:
+supported model ids:
 
 ```bash
 flash models
 ```
 
-Set your choice at the top of the config (the default is `Qwen/Qwen3.5-4B`):
+Set your choice at the top of the config (`Qwen/Qwen3.5-4B` is a solid starting
+point); `model` is required:
 
 ```toml
 model = "Qwen/Qwen3.5-4B"
@@ -55,13 +56,12 @@ algorithm = "grpo"
 # thinking = true        # opt into reasoning mode (thinking-capable models only)
 
 [environment]
-id = "your-name/your-env"            # a published verifiers / Prime Hub env slug
+id = "your-name/your-env"            # a published Freesolo env id
 
 [train]
 steps = 150
 lora_rank = 32
 lora_alpha = 64
-seeds = [0]
 # learning_rate = 1e-4
 # batch_size = 8
 # group_size = 8                     # GRPO: completions sampled per prompt
@@ -72,19 +72,19 @@ seeds = [0]
 
 <Note>
   You don't configure a GPU or an artifact repo. **Both are fully managed:** the
-  allocator picks the cheapest validated GPU class that fits across providers, and
-  each run streams its LoRA adapters and checkpoints into its own private Hugging
-  Face repo provisioned for you server-side. The only fields you must set are
-  `model` and `[environment] id`; see the
-  [configuration reference](/reference/configuration) for every option.
+  allocator picks the cheapest validated GPU class that fits (RunPod, with
+  Lambda Labs as a capacity fallback), and each run streams its LoRA adapters
+  and checkpoints into its own private Hugging Face repo provisioned for you
+  server-side. The only fields you must set are `model` and `[environment] id`;
+  see the [configuration reference](/reference/configuration) for every option.
 </Note>
 
 ## GPU selection is automatic
 
 You don't pin a GPU. At submit time the allocator always picks the cheapest
-live-validated GPU class that fits your run across providers (and a retry walks
-to the next-cheapest class if one is unavailable). To see the live GPU classes,
-VRAM, and per-provider hourly pricing the allocator chooses from:
+validated GPU class that fits your run (RunPod, with Lambda Labs as a capacity
+fallback, and a retry walks to the next-cheapest class if one is unavailable). To
+see the GPU classes, VRAM, and RunPod `$/hr` the allocator chooses from:
 
 ```bash
 flash gpus
@@ -107,12 +107,12 @@ flash train config.toml
 
 By default `flash train` follows the logs until the run finishes. Useful flags:
 
-| Flag | Effect |
-| --- | --- |
-| `--background` | Submit and return immediately instead of following logs |
-| `--dry-run` | Validate locally without submitting |
-| `--cost` | Print the pre-flight USD cost estimate and exit (no submit) |
-| `--set key=value` | Override a config value (repeatable) |
+| Flag                  | Effect                                                         |
+| --------------------- | -------------------------------------------------------------- |
+| `--background`        | Submit and return immediately instead of following logs        |
+| `--dry-run`           | Validate locally without submitting                            |
+| `--cost`              | Print the pre-flight USD cost estimate and exit (no submit)    |
+| `--set key=value`     | Override a config value (repeatable)                           |
 | `--config other.toml` | Deep-merge additional TOML for config composition (repeatable) |
 
 ```bash
@@ -122,11 +122,12 @@ flash train config.toml --set train.steps=300 --set train.lora_rank=16
 
 ## Cost and billing
 
-Every run is **charged the pre-flight estimate up front, at submit time** —
-`flash train` computes the same number that `flash train --cost` prints (GPU
-$/hr × estimated wall-clock) and debits it from your org's prepaid balance before
-the run is accepted. The charge **gates the run**: if the balance can't cover the
-estimate, the submit is rejected and nothing runs. Preview it any time:
+A run is **billed when it finishes, on its realized cost** — the actual
+wall-clock time it ran times the `$/hr` of the GPU class it was actually
+allocated, debited from your org's prepaid balance. `flash train --cost` prints a
+pre-flight **estimate** (GPU `$/hr` × estimated wall-clock) so you can preview the
+likely price before committing; it's an estimate, not the final charge. Preview
+it any time:
 
 ```bash
 flash train config.toml --cost
@@ -135,7 +136,7 @@ flash train config.toml --cost
 ```text
 Run        : Qwen/Qwen3.5-4B  [GRPO, 150 steps]
 GPU        : RTX 5090 on runpod (32 GB; run needs >= 32 GB) @ $0.69/hr
-Setup      : 7.0 min (cold start: boot + deps + download + vLLM init)
+Setup      : 7.0 min (cold start: boot + deps + model load + vLLM init)
 Per step   : 9.50 s
 Train      : 23.8 min
 Wall clock : 0.51 h
@@ -145,7 +146,8 @@ TOTAL      : $0.35
 <Note>
   The estimate is catalog-deterministic and runs locally; for an uncapped SFT run
   it loads the environment to count its training examples. Once a run starts,
-  `flash cost <run-id>` shows the cost accrued so far.
+  `flash status <run-id>` (and the `COST($)` column in `flash runs`) shows the
+  cost accrued so far.
 </Note>
 
 ## Monitor a run
@@ -153,12 +155,11 @@ TOTAL      : $0.35
 `Ctrl-C` during `flash train` just detaches you — the run keeps going server-side.
 
 ```bash
-flash ps                  # all your runs: state, cost, GPU, model
-flash status <run-id>     # full status JSON for one run
-flash attach <run-id>     # re-follow logs to completion
-flash logs <run-id> -f    # stream logs
-flash cost <run-id>       # accrued cost (USD)
-flash cancel <run-id>     # cancel (best-effort)
+flash runs                       # all your runs: state, cost, GPU, model
+flash status <run-id>            # full status JSON (incl. accrued cost) for one run
+flash status <run-id> --follow   # re-follow logs to completion
+flash status <run-id> --logs     # print the run's logs
+flash cancel <run-id>            # cancel (best-effort)
 ```
 
 <Note>

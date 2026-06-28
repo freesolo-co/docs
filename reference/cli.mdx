@@ -10,19 +10,24 @@ thin, authenticated call to the hosted control plane. Run `flash --help` or
 
 ## Global flags
 
-| Flag | Effect |
-| --- | --- |
-| `-V`, `--version` | Print the Flash version and exit |
-| `--debug` | Show full tracebacks on error (otherwise errors print one clean line) |
-| `-v`, `-vv` | Increase log verbosity (`-v` info, `-vv` debug) |
+| Flag              | Effect                                                                |
+| ----------------- | --------------------------------------------------------------------- |
+| `-h`, `--help`    | Show help and exit (works on any subcommand too)                      |
+| `-V`, `--version` | Print the Flash version and exit                                      |
+| `--debug`         | Show full tracebacks on error (otherwise errors print one clean line) |
+| `-v`, `--verbose` | Increase log verbosity (`-v` info, `-vv` debug)                       |
 
 ## Auth & identity
 
-<ResponseField name="flash login" type="[--api-key KEY] [--freesolo-url URL] [--api-url URL]">
+<ResponseField
+  name="flash login"
+  type="[--api-key KEY] [--freesolo-url URL] [--api-url URL]"
+>
   Log in with your Freesolo API key. The key is verified against Freesolo and
-  saved locally. Defaults: `--api-key` from `FREESOLO_API_KEY`; `--freesolo-url`
-  from `FREESOLO_BASE_URL` (else `https://api.freesolo.co`); `--api-url` from
-  `FLASH_API_URL`.
+  saved locally. Create a key at
+  [freesolo.co/sign-in](https://freesolo.co/sign-in). Defaults: `--api-key` from
+  `FREESOLO_API_KEY`; `--freesolo-url` from `FREESOLO_BASE_URL` (else
+  `https://api.freesolo.co`); `--api-url` from `FLASH_API_URL`.
 </ResponseField>
 
 <ResponseField name="flash whoami">
@@ -30,45 +35,39 @@ thin, authenticated call to the hosted control plane. Run `flash --help` or
 </ResponseField>
 
 <ResponseField name="flash version">
-  Print the Flash version.
+  Print the Flash version (same as `-V` / `--version`).
 </ResponseField>
 
 ## Discovery
 
 <ResponseField name="flash models">
-  List supported base models with their algorithms, quantization, and reasoning
-  capability.
+  List the supported base model ids (the per-model algorithms, quantization, and
+  reasoning capability live in the catalog but aren't printed by this command).
 </ResponseField>
 
 <ResponseField name="flash gpus">
-  List managed GPU classes with VRAM, live per-provider `$/hr`, and where each
-  class is validated.
+  List managed GPU classes with VRAM and RunPod `$/hr`. GPU selection is
+  automatic — there is no GPU pin (see [GPU
+  selection](/guides/training#gpu-selection-is-automatic)).
 </ResponseField>
 
 ## Environments
 
-<ResponseField name="flash lab setup">
-  Scaffold `environments/` and `configs/` in the current directory with a
-  starter environment and config.
-</ResponseField>
-
-<ResponseField name="flash env init NAME">
-  Scaffold a new local verifiers environment at `environments/NAME/`.
-</ResponseField>
-
-<ResponseField name="flash env push [PATH]">
-  Publish a local verifiers environment to Freesolo's managed Environments Hub
-  (private) and print its id. `PATH` defaults to the current directory. Fully
-  managed — no Prime Intellect account or `prime` CLI needed.
-</ResponseField>
-
-<ResponseField name="flash env install ENV_ID">
-  Install a published Prime Hub environment (`owner/name`) locally for authoring
-  and `--dry-run`.
+<ResponseField name="flash env setup">
+  Scaffold a starter environment project in the current directory:
+  `environment.py`, a `datasets/` folder, `configs/rl.toml`, `configs/sft.toml`,
+  and `TRAINING.md`.
 </ResponseField>
 
 <ResponseField name="flash env list">
-  List installed Hub environments and local sources you can publish.
+  List the local environment sources in the current project that you can
+  publish.
+</ResponseField>
+
+<ResponseField name="flash env push --name NAME [PATH]">
+  Publish a local environment project to Freesolo's managed Environments Hub
+  (private) and print its id (`owner/name`). `PATH` defaults to the current
+  directory. Fully managed — no separate account or other CLI needed.
 </ResponseField>
 
 ## Training
@@ -78,35 +77,31 @@ thin, authenticated call to the hosted control plane. Run `flash --help` or
   Submitting charges the pre-flight cost estimate to your org and is gated on
   balance (see [Cost & billing](/guides/training#cost-and-billing)).
 
-  | Flag | Effect |
-  | --- | --- |
-  | `--dry-run` | Validate the config locally and print the resolved job spec; don't submit |
-  | `--cost` | Print the pre-flight USD cost estimate for the config and exit (no submit) |
-  | `--background` | Submit and return immediately instead of following logs |
-  | `--set KEY=VALUE` | Override a config value (dotted key, repeatable) |
-  | `--config FILE` | Deep-merge additional TOML for config composition (repeatable) |
+| Flag              | Effect                                                                     |
+| ----------------- | -------------------------------------------------------------------------- |
+| `--dry-run`       | Validate the config locally and print the resolved job spec; don't submit  |
+| `--cost`          | Print the pre-flight USD cost estimate for the config and exit (no submit) |
+| `--background`    | Submit and return immediately instead of following logs                    |
+| `--set KEY=VALUE` | Override a config value (dotted key, repeatable)                           |
+| `--config FILE`   | Deep-merge additional TOML for config composition (repeatable)             |
+
 </ResponseField>
 
 ## Run management
 
-<ResponseField name="flash ps">
-  List your runs with state, accrued cost, GPU, and model.
+<ResponseField name="flash runs">
+  List your runs with state, algorithm, accrued cost, GPU, and model.
 </ResponseField>
 
-<ResponseField name="flash status RUN_ID">
-  Print a run's full status JSON.
+<ResponseField name="flash status RUN_ID [--logs] [-f]">
+  Print a run's full status. `--logs` also prints the run's logs (the
+  orchestrator log plus the train-subprocess stdout/traceback). `-f`/`--follow`
+  streams logs until the run ends, then prints the final status.
 </ResponseField>
 
-<ResponseField name="flash attach RUN_ID">
-  Re-follow a running job's logs to completion (resumable any time).
-</ResponseField>
-
-<ResponseField name="flash logs RUN_ID [-f]">
-  Print a run's logs. `-f`/`--follow` streams new lines until the run ends.
-</ResponseField>
-
-<ResponseField name="flash cost RUN_ID">
-  Show a run's accrued cost in USD.
+<ResponseField name="flash checkpoints RUN_ID">
+  List a run's deployable per-step RL checkpoints (SFT-only runs have none).
+  Deploy one with `flash deploy RUN_ID --step <STEP>`.
 </ResponseField>
 
 <ResponseField name="flash cancel RUN_ID">
@@ -117,43 +112,46 @@ thin, authenticated call to the hosted control plane. Run `flash --help` or
 
 <ResponseField name="flash deploy RUN_ID [flags]">
   Register a trained adapter with the managed multi-LoRA serving service.
-  Serving scales to zero when idle and is [billed per token](/guides/deploy-and-chat#billing).
+  Serving scales to zero when idle and is [billed per
+  token](/guides/deploy-and-chat#billing).
 
-  | Flag | Default | Effect |
-  | --- | --- | --- |
-  | `--mode` | `dev` | `dev` (scale-to-zero) or `always-on` (kept warm to avoid cold starts) |
-  | `--idle-timeout SECONDS` | `300` | `dev` mode: idle seconds before scaling to zero |
-  | `--dry-run` | — | Preview the deploy without creating it |
+| Flag        | Default | Effect                                                                              |
+| ----------- | ------- | ----------------------------------------------------------------------------------- |
+| `--step N`  | —       | Deploy a specific checkpoint (see `flash checkpoints`) instead of the final adapter |
+| `--dry-run` | —       | Preview the deploy without creating it                                              |
+
 </ResponseField>
 
 <ResponseField name="flash chat RUN_ID -m MESSAGE [flags]">
   Send a message to a deployed adapter and print the reply.
 
-  | Flag | Default | Effect |
-  | --- | --- | --- |
-  | `-m`, `--message` | (required) | The user message |
-  | `--max-tokens` | `512` | Max tokens to generate |
-  | `--temperature` | `0.0` | Sampling temperature |
+| Flag              | Default    | Effect                 |
+| ----------------- | ---------- | ---------------------- |
+| `-m`, `--message` | (required) | The user message       |
+| `--max-tokens`    | `512`      | Max tokens to generate |
+| `--temperature`   | `0.0`      | Sampling temperature   |
+
 </ResponseField>
 
 <ResponseField name="flash deployments">
-  List active serving deployments with mode, GPU, `$/day` (always `0` — serving
-  scales to zero), and endpoint.
+  List active serving deployments with their run id, GPU, and endpoint.
 </ResponseField>
 
 <ResponseField name="flash undeploy RUN_ID">
   Deregister a run's adapter from serving so it no longer accepts requests.
 </ResponseField>
 
-## MCP server (for coding agents)
+## Export
 
-Flash also ships a stdio [MCP](https://modelcontextprotocol.io) bridge so coding
-agents can drive the platform. It isn't a `flash` subcommand — launch it with:
+<ResponseField name="flash export --adapter-id ID --repository REPO [flags]">
+  Export a trained adapter to a Hugging Face repo you own.
 
-```bash
-python -m flash.mcp.server
-```
+| Flag                      | Default    | Effect                                                                  |
+| ------------------------- | ---------- | ----------------------------------------------------------------------- |
+| `--adapter-id ID`         | (required) | The Freesolo adapter id (the run id) to export                          |
+| `--repository owner/name` | (required) | Destination HuggingFace repo (created if it doesn't exist)              |
+| `--api-key TOKEN`         | `HF_TOKEN` | HuggingFace token with write access (from your shell or a local `.env`) |
+| `--step N`                | —          | Export a specific checkpoint instead of the run's final adapter         |
+| `--public`                | private    | Create the destination repo public                                      |
 
-It authenticates with the same stored credentials as the CLI (`flash login`) and
-exposes tools to list models, submit and monitor training runs, and deploy
-adapters.
+</ResponseField>

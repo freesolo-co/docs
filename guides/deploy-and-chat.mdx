@@ -18,30 +18,8 @@ per-day idle charge** — you're billed per token only for the requests you send
 flash deploy <run-id>
 ```
 
-Pick a serving mode with `--mode`:
-
-<CodeGroup>
-
-```bash Scale-to-zero (default)
-flash deploy <run-id> --mode dev
-```
-
-```bash Always-on
-flash deploy <run-id> --mode always-on
-```
-
-</CodeGroup>
-
-<CardGroup cols={2}>
-  <Card title="dev — scale-to-zero" icon="moon">
-    The default. The adapter scales to zero when idle and cold-starts on the first
-    request. Tune the idle window with `--idle-timeout <seconds>` (default 300).
-  </Card>
-  <Card title="always-on" icon="bolt">
-    Requests that the adapter stay warm to avoid cold starts. Either way there's
-    **no per-day idle charge** — serving is billed per token (see below).
-  </Card>
-</CardGroup>
+That's it — there are no serving modes or warm-up settings to choose. The adapter
+is registered, scales to zero when idle, and cold-starts on the first request.
 
 Preview what a deploy would do without creating it:
 
@@ -49,13 +27,27 @@ Preview what a deploy would do without creating it:
 flash deploy <run-id> --dry-run
 ```
 
+### Deploy an intermediate checkpoint
+
+A GRPO run streams a deployable checkpoint at each save interval. List them and
+deploy a specific step instead of the final adapter — this works even for a run
+you cancelled mid-training:
+
+```bash
+flash checkpoints <run-id>          # list deployable per-step checkpoints
+flash deploy <run-id> --step 120    # serve the checkpoint at step 120
+```
+
+(SFT-only runs produce a single final adapter and have no intermediate
+checkpoints.)
+
 ## Billing
 
 Serving is **billed per token**. Each request costs its prompt + completion
 tokens at the base model's serverless list price plus a 20% markup, debited from
-your org's prepaid balance. This applies to **both** modes — even a `dev`
-deployment that's free while idle is billed for the tokens of every request it
-serves. There is no separate per-day or warm-GPU charge.
+your org's prepaid balance. There is no separate per-day, idle, or warm-GPU
+charge — a deployment that sits idle costs nothing; you pay only for the tokens of
+the requests it actually serves.
 
 ## Chat from the CLI
 
@@ -65,11 +57,11 @@ flash chat <run-id> -m "Summarize the plot of Hamlet in two sentences."
 
 Options:
 
-| Flag | Default | Effect |
-| --- | --- | --- |
-| `-m`, `--message` | (required) | The user message to send |
-| `--max-tokens` | 512 | Maximum tokens to generate |
-| `--temperature` | 0.0 | Sampling temperature |
+| Flag              | Default    | Effect                     |
+| ----------------- | ---------- | -------------------------- |
+| `-m`, `--message` | (required) | The user message to send   |
+| `--max-tokens`    | 512        | Maximum tokens to generate |
+| `--temperature`   | 0.0        | Sampling temperature       |
 
 ```bash
 flash chat <run-id> -m "Write a haiku about GPUs" --temperature 0.8 --max-tokens 128
@@ -78,15 +70,14 @@ flash chat <run-id> -m "Write a haiku about GPUs" --temperature 0.8 --max-tokens
 ## Manage deployments
 
 ```bash
-flash deployments        # list active deployments: mode, GPU, endpoint
+flash deployments        # list active deployments: run id, GPU, endpoint
 flash undeploy <run-id>  # deregister the adapter from serving
 ```
 
 <Note>
-  Because serving scales to zero, there's no idle cost to stop — the `$/DAY`
-  column in `flash deployments` is always `0`. `flash undeploy` deregisters the
-  adapter so it no longer accepts requests; you're only ever billed per token for
-  requests you actually send.
+  Because serving scales to zero, there's no idle cost to stop. `flash undeploy`
+  deregisters the adapter so it no longer accepts requests; you're only ever
+  billed per token for requests you actually send.
 </Note>
 
 ## Use it from your own code
@@ -98,7 +89,7 @@ endpoint and use your Freesolo API key:
 from openai import OpenAI
 
 client = OpenAI(
-    base_url="https://<your-endpoint>/v1",   # from `flash deployments`
+    base_url="<your-endpoint>/v1",   # endpoint from `flash deployments` (already includes https://)
     api_key="<your-freesolo-key>",
 )
 
@@ -109,7 +100,15 @@ resp = client.chat.completions.create(
 print(resp.choices[0].message.content)
 ```
 
-<Tip>
-  `flash lab setup` creates a `configs/endpoints.toml` where you can keep the
-  endpoints returned by `flash deploy` for easy reuse.
-</Tip>
+## Take the adapter with you
+
+Want the trained weights outside Freesolo's serving? Export the adapter to a
+Hugging Face repo you own:
+
+```bash
+flash export --adapter-id <run-id> --repository your-name/your-adapter
+```
+
+Pass `--step <N>` to export a specific checkpoint, and `--public` to create the
+destination repo public (it's private by default). Authentication uses your
+`HF_TOKEN` (from your shell or a local `.env`), or pass `--api-key <hf-token>`.

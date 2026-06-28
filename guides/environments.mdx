@@ -4,10 +4,9 @@ description: "Define the task your model trains on and is graded by."
 ---
 
 An **environment** is the task: the data your model sees and the rubric that
-scores its outputs. Flash uses
-[Prime Intellect `verifiers`](https://github.com/PrimeIntellect-ai/verifiers)
-environments. You author one locally, publish it to the Prime Hub, and reference
-it from your config by its id.
+scores its outputs. A Flash environment is a small Python project — an
+`environment.py` plus a `datasets/` folder — that you author locally, publish to
+Freesolo's Environments Hub, and reference from your config by its id.
 
 ```toml
 [environment]
@@ -17,79 +16,108 @@ id = "your-name/your-env"
 ## Scaffold one
 
 ```bash
-flash env init my-task
+flash env setup
 ```
 
-This creates `environments/my-task/my_task.py` with a working starter: a
-`load_environment()` that returns a `verifiers` environment built from a dataset
-and a rubric.
+This writes a ready-to-edit starter project into the current directory:
 
-```python environments/my-task/my_task.py
-import verifiers as vf
-from datasets import Dataset
-
-
-def load_environment(**kwargs) -> vf.Environment:
-    dataset = Dataset.from_list(
-        [
-            {"prompt": [{"role": "user", "content": "What is 2 + 2?"}], "answer": "4"},
-            {"prompt": [{"role": "user", "content": "What is 3 + 5?"}], "answer": "8"},
-        ]
-    )
-
-    def correct_answer(completion, answer, **_):
-        """Reward 1.0 when the gold answer appears in the model's final message."""
-        text = completion[-1]["content"] if isinstance(completion, list) else str(completion)
-        return 1.0 if str(answer) in text else 0.0
-
-    rubric = vf.Rubric(funcs=[correct_answer], weights=[1.0])
-    return vf.SingleTurnEnv(dataset=dataset, rubric=rubric, **kwargs)
+```
+environment.py            # the task + rubric
+datasets/
+  train.jsonl             # one {"input","output"} record per line
+configs/
+  rl.toml                 # a GRPO config
+  sft.toml                # an SFT config
+TRAINING.md               # a playbook for iterating on the run
 ```
 
-Replace the dataset and rubric with your task:
+`environment.py` subclasses a Freesolo `EnvironmentSingleTurn`: it builds the
+prompt for each example and scores the model's response.
 
-- **Dataset** — the prompts (and any gold answers) your model trains and is
-  evaluated on.
-- **Rubric** — one or more reward functions. Each returns a score; the weighted
-  sum is the reward GRPO optimizes (and SFT uses the dataset's target answers).
+```python environment.py
+import json
+from pathlib import Path
 
-See the [`verifiers` docs](https://github.com/PrimeIntellect-ai/verifiers) for
-the full API — multi-criteria rubrics, parsers, and more.
+from freesolo.datasets.types import TaskExample
+from freesolo.environments import EnvironmentSingleTurn, RewardResult
+
+DEFAULT_DATASET_PATH = Path(__file__).parent / "datasets" / "train.jsonl"
+
+
+def load_jsonl(path):
+    rows = []
+    with Path(path).open() as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                rows.append(json.loads(line))
+    return rows
+
+
+class StarterEnv(EnvironmentSingleTurn):
+    dataset = load_jsonl(DEFAULT_DATASET_PATH)
+
+    def build_prompt_messages(self, example: TaskExample, prompt_text: str):
+        return [{"role": "user", "content": example.input}]
+
+    def score_response(self, example: TaskExample, response_text: str) -> RewardResult:
+        expected = str(example.output or "").strip()
+        score = 1.0 if expected and expected in response_text else 0.0
+        return RewardResult(score=score, threshold=1.0)
+
+
+def load_environment(dataset_path: str | None = None, **kwargs) -> StarterEnv:
+    env = StarterEnv()
+    if dataset_path:
+        env.dataset = load_jsonl(dataset_path)
+    return env
+```
+
+Replace the dataset and the scoring with your task:
+
+- **Dataset** — `datasets/train.jsonl`, one record per line. Each record is a
+  `{"input": ..., "output": ...}` pair: `input` is what the model is prompted
+  with, `output` is the gold answer (SFT trains on it directly, and your rubric
+  can use it for GRPO).
+- **`build_prompt_messages`** — turn one `TaskExample` into the chat messages the
+  model sees. `example.input` is the record's input; `example.output` is its gold
+  answer.
+- **`score_response`** — return a `RewardResult(score=..., threshold=...)`. For
+  GRPO the `score` is the reward the policy is optimized toward; `threshold` is
+  the score at/above which the response counts as a pass.
 
 ## Publish it
 
 Training runs on managed GPUs, so the environment has to be reachable by id.
-Publish your local source to the Prime Hub:
+Publish your project folder to Freesolo's Environments Hub:
 
 ```bash
-flash env push environments/my-task/my_task.py
+flash env push --name my-env .
 ```
 
 It prints the published id (`owner/name`). Put that in your config's
-`[environment] id`.
+`[environment] id`. The path defaults to the current directory, so running
+`flash env push --name my-env` from inside the project does the same thing.
 
 <Note>
-  Publishing is fully managed: `flash env push` uploads your env to Freesolo's
-  hosted Environments Hub (published **private**) under one managed account, using
-  only your Freesolo API key. You don't need a Prime Intellect account or the
-  `prime` CLI.
+  Publishing is fully managed: `flash env push` packages your project
+  (`environment.py` plus its `datasets/` and any data files) and uploads it to
+  Freesolo's hosted Environments Hub (published **private**) using only your
+  Freesolo API key. You don't need a separate account or any other CLI.
 </Note>
 
 ## Use an existing environment
 
-If you already have a published env id (yours or one shared with you), you don't
-need to author anything — just reference it:
+If you already have a published env id (yours or one shared with you), just
+reference it — there's nothing to author:
 
 ```toml
 [environment]
 id = "owner/name"
 ```
 
-To pull it into your local project for authoring and `--dry-run`:
-
-```bash
-flash env install owner/name
-```
+You can also point `id` at a public GitHub repo holding an environment, either
+as `github:owner/repo` or a full `https://github.com/owner/repo` URL.
 
 ## List what you have
 
@@ -97,12 +125,13 @@ flash env install owner/name
 flash env list
 ```
 
-Shows installed Hub environments and local sources you can still publish.
+Shows the local environment sources in the current project that you can publish
+with `flash env push`.
 
 ## Pass parameters
 
 If your `load_environment(**kwargs)` accepts arguments, set them under
-`[environment.params]`:
+`[environment.params]` — they're passed straight through as keyword arguments:
 
 ```toml
 [environment]
@@ -113,7 +142,32 @@ difficulty = "hard"
 num_examples = 500
 ```
 
+## Secrets and extra dependencies
+
+If your environment reads secrets at runtime (say an API key for a tool it
+calls), declare the env-var **names** under `[environment] secrets`. Their values
+are read from your shell or a local `.env` at submit time and forwarded to the
+run securely — they're never written into the stored spec:
+
+```toml
+[environment]
+id = "your-name/your-env"
+secrets = ["SERPAPI_API_KEY"]
+```
+
+Flash installs `freesolo` itself on the worker, but it does **not** infer your
+environment's other dependencies. List every extra Python package your
+`environment.py` imports under `[environment] pip` — anything you omit will be
+missing at runtime:
+
+```toml
+[environment]
+id = "your-name/your-env"
+pip = ["beautifulsoup4", "httpx"]
+```
+
 <Tip>
   Single-turn environments (one prompt → one response, graded by a rubric) are
-  fully supported for SFT, GRPO, and eval. Start there, then grow the rubric.
+  the place to start; they're fully supported for SFT, GRPO, and eval. Grow the
+  rubric from there.
 </Tip>

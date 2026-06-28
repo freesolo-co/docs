@@ -26,7 +26,7 @@ flash chat <run-id> -m "hi"  # talk to it
     Define the task your model trains and is graded on.
   </Card>
   <Card title="Deploy & chat" icon="comments" href="/guides/deploy-and-chat">
-    Serve an adapter scale-to-zero or always-on, then chat with it.
+    Serve an adapter scale-to-zero, billed per token, then chat with it.
   </Card>
 </CardGroup>
 
@@ -38,16 +38,16 @@ flash chat <run-id> -m "hi"  # talk to it
     adapter on top — small, cheap, and fast to serve.
   </Step>
   <Step title="Point at an environment">
-    An [environment](/guides/environments) is the task: the data your model
-    sees and the rubric it's graded on. Flash uses
-    [Prime Intellect `verifiers`](https://github.com/PrimeIntellect-ai/verifiers)
-    environments, referenced by a published Hub slug.
+    An [environment](/guides/environments) is the task: the data your model sees
+    and the rubric it's graded on. You author it as a small Python class (a
+    Freesolo `EnvironmentSingleTurn`), publish it with `flash env push`, and
+    reference it from your config by id.
   </Step>
   <Step title="Train on a managed GPU">
     `flash train` submits the run to the control plane, which allocates the
-    cheapest GPU that fits across providers (RunPod and Vast.ai), supervises the
-    job (stall watchdog, bounded auto-retry from the last checkpoint), and streams
-    logs back to you.
+    cheapest GPU that fits (RunPod, with Lambda Labs as a capacity fallback),
+    supervises the job (stall watchdog, bounded auto-retry from the last
+    checkpoint), and streams logs back to you.
   </Step>
   <Step title="Deploy and use it">
     `flash deploy` serves the adapter. `flash chat` (or any OpenAI-compatible
@@ -68,8 +68,8 @@ flash chat <run-id> -m "hi"  # talk to it
     auto-retry that resumes from the last streamed checkpoint.
   </Card>
   <Card title="Cheapest GPU that fits" icon="dollar-sign">
-    The allocator picks the lowest-cost validated GPU class that fits your run.
-    See live pricing with `flash gpus`.
+    The allocator picks the lowest-cost GPU class that fits your run. See live
+    pricing with `flash gpus`.
   </Card>
   <Card title="No infrastructure" icon="cloud">
     No GPUs to rent, no servers to run, no provider keys. You authenticate with
@@ -79,6 +79,6 @@ flash chat <run-id> -m "hi"  # talk to it
 
 <Note>
   These docs cover **Flash** — the training and serving CLI. Create a Freesolo
-  API key in your dashboard at [freesolo.co](https://freesolo.co), then head to
+  API key at [freesolo.co/sign-in](https://freesolo.co/sign-in), then head to
   the [Quickstart](/quickstart).
 </Note>

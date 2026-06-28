@@ -7,9 +7,9 @@ This walks you from zero to a deployed, chatting model. It takes a few minutes
 of your time plus the training run itself.
 
 <Note>
-  You need a **Freesolo API key**. Create one in your dashboard at
-  [freesolo.co](https://freesolo.co) — it's how every `flash` command
-  authenticates. No GPU or provider credentials required.
+  You need a **Freesolo API key**. Create one at
+  [freesolo.co/sign-in](https://freesolo.co/sign-in) — it's how every `flash`
+  command authenticates. No GPU or provider credentials required.
 </Note>
 
 ## 1. Install the CLI
@@ -55,100 +55,99 @@ flash whoami    # confirm who your stored key resolves to
 ## 3. Scaffold a project
 
 ```bash
-flash lab setup
+flash env setup
 ```
 
 This drops a ready-to-edit starter in the current directory:
 
 ```
-environments/
-  starter_env.py          # a verifiers environment (the task + rubric)
+environment.py            # a Freesolo environment (the task + rubric)
+datasets/
+  train.jsonl             # the starter dataset (one {"input","output"} per line)
 configs/
-  verifiers_grpo.toml     # a training config to start from
-  endpoints.toml          # somewhere to stash deploy endpoints
+  rl.toml                 # a GRPO training config to start from
+  sft.toml                # an SFT training config to start from
+TRAINING.md               # a playbook for iterating on the run
 ```
 
 <Note>
-  `flash lab setup` writes a single starter module, `environments/starter_env.py`.
-  To scaffold an additional, named environment later, use
-  [`flash env init NAME`](/guides/environments), which creates a per-task
-  directory with a snake_cased module file instead (e.g. `flash env init my-task`
-  → `environments/my-task/my_task.py`). Both forms are valid env sources you can
-  `flash env push`.
+  `flash env setup` writes the starter as a single project in the current
+  directory: `environment.py` plus a `datasets/` folder. You publish the whole
+  folder with `flash env push --name <name> .` (see step 4).
 </Note>
 
 ## 4. Publish your environment
 
 An [environment](/guides/environments) defines what your model trains on and
-how it's graded. Publish the scaffolded one to the Prime Hub to get an id:
+how it's graded. Publish the scaffolded project to get an id:
 
 ```bash
-flash env push environments/starter_env.py
+flash env push --name my-env .
 ```
 
 This prints an environment id of the form `owner/name`.
 
 <Note>
-  Publishing is fully managed — `flash env push` packages your env and uploads it
-  to Freesolo's hosted Environments Hub (published **private**) using just your
-  Freesolo API key. **No Prime Intellect account or `prime` CLI needed.** Already
-  have a published env id? Skip straight to step 5.
+  Publishing is fully managed — `flash env push` packages your project folder
+  (`environment.py` plus its `datasets/`) and uploads it to Freesolo's hosted
+  Environments Hub (published **private**) using just your Freesolo API key.
+  Already have a published env id? Skip straight to step 5.
 </Note>
 
 ## 5. Configure your run
 
-Open `configs/verifiers_grpo.toml` and set the one thing that's yours — the
-environment id from the previous step:
+Open `configs/rl.toml` and set the one thing that's yours — the environment id
+from the previous step:
 
-```toml configs/verifiers_grpo.toml
+```toml configs/rl.toml
 model = "Qwen/Qwen3.5-4B"
 algorithm = "grpo"
 
 [environment]
-id = "your-name/starter-env"        # from `flash env push`
+id = "your-name/my-env"             # from `flash env push --name my-env .`
 
 [train]
 steps = 150
 lora_rank = 32
-seeds = [0]
 ```
 
 <Note>
   The only fields you must set are `model` and `[environment] id`. **The GPU and
   the run's artifact storage are fully managed** — the allocator picks the
-  cheapest GPU class that fits across providers, and each run gets its own private
-  HF repo automatically. You don't pick a GPU or supply a Hugging Face repo.
+  cheapest GPU class that fits (RunPod, with Lambda Labs as a capacity
+  fallback), and each run gets its own private HF repo automatically. You don't
+  pick a GPU or supply a Hugging Face repo.
 </Note>
 
 Validate it locally first — `--dry-run` parses and checks the config with no
 credentials, server, or GPU:
 
 ```bash
-flash train configs/verifiers_grpo.toml --dry-run
+flash train configs/rl.toml --dry-run
 ```
 
 See what the run will cost before committing — `--cost` prints the pre-flight
 USD estimate and exits without submitting:
 
 ```bash
-flash train configs/verifiers_grpo.toml --cost
+flash train configs/rl.toml --cost
 ```
 
 ## 6. Train
 
 ```bash
-flash train configs/verifiers_grpo.toml
+flash train configs/rl.toml
 ```
 
-Submitting charges the pre-flight estimate (the `--cost` number) to your org's
-balance up front — if the balance can't cover it, the run is rejected and never
-starts. Flash then follows the logs live. Press `Ctrl-C` to detach — the run
-keeps going on the server, and you can re-attach any time:
+Flash follows the logs live. The run is billed when it finishes, on its realized
+cost (the `--cost` number above is a pre-flight estimate, not the final charge).
+Press `Ctrl-C` to detach — the run keeps going on the server, and you can
+re-attach any time:
 
 ```bash
-flash ps                  # list your runs and their state/cost
-flash attach <run-id>     # re-follow the logs
-flash logs <run-id> -f    # stream just the logs
+flash runs                       # list your runs and their state/cost
+flash status <run-id> --follow   # re-follow the logs to completion
+flash status <run-id> --logs     # print the run's logs
 ```
 
 The run reaches `done` when training finishes.
@@ -185,7 +184,7 @@ flash undeploy <run-id>
     Replace the starter task with your own data and rubric.
   </Card>
   <Card title="Deploy & chat" icon="comments" href="/guides/deploy-and-chat">
-    Scale-to-zero vs always-on, and the OpenAI-compatible API.
+    Scale-to-zero serving, per-token billing, and the OpenAI-compatible API.
   </Card>
   <Card title="CLI reference" icon="terminal" href="/reference/cli">
     Every `flash` command and flag.
