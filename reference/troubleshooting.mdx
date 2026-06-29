@@ -62,7 +62,7 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
     flash env push --name math math
     ```
 
-    It prints the published id (`your-name/math`) to put in your config's
+    It prints the published id (`your-org/math`) to put in your config's
     `[environment] id`.
 
   </Accordion>
@@ -78,7 +78,7 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
     ```
 
     To pull a published env into your project for local work, use
-    `flash env pull your-name/your-env`.
+    `flash env pull your-org/your-env`.
 
   </Accordion>
 
@@ -90,9 +90,9 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
 
   <Accordion title="What id do I reference in my config?">
     The `[environment] id` must be a published Freesolo environment id, produced
-    by `flash env push`, for example `your-name/your-env`.
+    by `flash env push`, for example `your-org/your-env`.
     A local file path is not a valid id, so publish it first or reference an
-    existing published id. Use `flash env pull your-name/your-env` only when you
+    existing published id. Use `flash env pull your-org/your-env` only when you
     want a local copy to edit or inspect.
   </Accordion>
 </AccordionGroup>
@@ -154,8 +154,9 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
 
 <AccordionGroup>
   <Accordion title="When am I charged for a run?">
-    A run is billed only when it **finishes successfully**, for the actual GPU
-    time it used; a run that doesn't complete isn't billed. Nothing is charged at
+    A run is billed only when it **finishes successfully**, for the
+    training-loop GPU time it used. Setup time is reported but not billed, and a
+    run that doesn't complete isn't billed for training. Nothing is charged at
     submit. Preview the cost before you submit with the pre-flight estimate:
 
     ```bash
@@ -216,7 +217,9 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
     Runs are supervised server-side: a stall watchdog plus bounded auto-retry that
     **resumes from the last streamed checkpoint**, and the allocator walks to the
     next-cheapest validated GPU class if one is unavailable. A transient failure
-    usually doesn't cost you the whole run. Watch with `flash status <run-id> -f`.
+    does not create a separate training charge; if the run ultimately succeeds,
+    the final charge is based on measured training-loop GPU time. Watch with
+    `flash status <run-id> -f`.
   </Accordion>
 </AccordionGroup>
 

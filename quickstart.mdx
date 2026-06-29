@@ -98,7 +98,7 @@ Environments Hub to get an id:
 flash env push --name starter .
 ```
 
-This prints an environment id of the form `your-name/starter`.
+This prints an environment id of the form `your-org/starter`.
 
 ## Step 5: Configure and validate your run
 
@@ -110,7 +110,7 @@ model = "Qwen/Qwen3.5-4B"
 algorithm = "grpo"
 
 [environment]
-id = "your-name/starter"
+id = "your-org/starter"
 
 [train]
 steps = 150
@@ -139,7 +139,8 @@ flash train configs/rl.toml
 
 <Note>
   This is the first step that spends money. A run is billed only when it
-  finishes successfully, for the actual GPU time it used; the `--cost` number is
+  finishes successfully, for the training-loop GPU time it used. Setup and cold
+  start time are reported separately but are not billed; the `--cost` number is
   a pre-flight estimate, and a run that never completes isn't billed.
 </Note>
 
@@ -149,7 +150,7 @@ on the server, and you can
 
 ```bash
 flash runs                # list your runs and their state/cost
-flash status <run-id>     # status JSON, including accrued cost
+flash status <run-id>     # status JSON, including the cost record
 flash status <run-id> -f  # stream logs until the run finishes
 ```
 
@@ -163,7 +164,7 @@ raise `train.steps` and change little else.
 Serve the trained adapter on Freesolo's
 [managed serving service](/guides/deploy-and-chat). There's no per-day idle
 charge: serving is
-[billed per input and output token](/guides/deploy-and-chat#billing) for
+[billed per token](/guides/deploy-and-chat#billing) for
 requests you send:
 
 ```bash

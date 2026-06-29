@@ -39,9 +39,9 @@ inline help.
 </ResponseField>
 
 <ResponseField name="flash gpus">
-  List RunPod-backed managed GPU classes with VRAM and a static `$/hr` snapshot.
-  Submitted runs report the realized GPU and provider in `flash runs` and
-  `flash status`.
+  List RunPod-backed managed GPU classes with VRAM and the CLI's current `$/hr`
+  snapshot. Submitted runs report the realized GPU and provider in `flash runs`
+  and `flash status`.
 </ResponseField>
 
 ## Environments
@@ -55,15 +55,18 @@ inline help.
 
 <ResponseField name="flash env push --name NAME [PATH]">
   Publish a local Freesolo environment to Freesolo's managed Environments Hub
-  (private) and print its id (`your-name/NAME`). `--name` is required; `PATH`
-  defaults to the current directory. Pass `.` or any folder with
-  `environment.py` at its root so helper modules, `datasets/`, and common
-  sibling data files are uploaded.
+  (private) and print its id (`your-org/name`). `--name` is required and is
+  normalized to a lowercase hyphen slug; `PATH` defaults to the current
+  directory. Pass `.` or any folder with `environment.py` at its root so helper
+  modules, `datasets/`, `README.md`, and common sibling sidecars (`.jsonl`,
+  `.json`, `.csv`, `.txt`, `.md`, `.parquet`, `.tsv`, `.yaml`, `.yml`) are
+  uploaded. A single `.py` file or a folder with one top-level `.py` file also
+  works for small smoke tests.
 </ResponseField>
 
 <ResponseField name="flash env pull ENV_ID [PATH] [-o OUTPUT] [-f]">
   Download a published environment, or one file from it, to local disk. `ENV_ID`
-  can be a managed slug such as `your-name/your-env`, a
+  can be a managed slug such as `your-org/your-env`, a
   `github:owner/repo@ref:path` ref, or a GitHub URL. Without `PATH`, the whole
   environment is written to a directory. With `PATH`, only that file is fetched.
   `-o` chooses the output path and `-f` allows overwriting an existing output.
@@ -83,8 +86,9 @@ inline help.
 
 <ResponseField name="flash train CONFIG [flags]">
   Submit a managed training run from a TOML config and follow its logs.
-  A run is billed only when it finishes successfully, for the GPU time it
-  used (see [Cost & billing](/guides/training#cost-and-billing)); the
+  A run is billed only when it finishes successfully, for the training-loop GPU
+  time it used; setup time is reported but not billed (see
+  [Cost & billing](/guides/training#cost-and-billing)); the
   pre-flight `--cost` estimate is derived in
   [How cost is computed](/reference/cost-model).
 
@@ -100,13 +104,13 @@ inline help.
 ## Run management
 
 <ResponseField name="flash runs">
-  List your runs with state, algorithm, accrued cost, GPU, and model.
+  List your runs with state, algorithm, cost, GPU, and model.
 </ResponseField>
 
 <ResponseField name="flash status RUN_ID [--logs] [-f]">
-  Print a run's full status JSON, including accrued cost. `--logs` prints current
-  logs before the status JSON. `-f`/`--follow` streams logs until the run ends,
-  then prints final status.
+  Print a run's full status JSON, including its current or final cost record.
+  `--logs` prints current logs before the status JSON. `-f`/`--follow` streams
+  logs until the run ends, then prints final status.
 </ResponseField>
 
 <ResponseField name="flash cancel RUN_ID">

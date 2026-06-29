@@ -11,7 +11,7 @@ reference it in config by its Freesolo environment id.
 
 ```toml
 [environment]
-id = "your-name/your-env"
+id = "your-org/your-env"
 ```
 
 ## Scaffold one
@@ -87,7 +87,8 @@ flash env push --name math math
 ```
 
 Single `.py` upload still works for tiny smoke tests, but push real environments
-as folders.
+as folders. The `--name` value is normalized to a lowercase hyphen slug, and the
+published id uses your Freesolo org namespace, for example `your-org/math`.
 
 Keep all imports either from sibling files in the folder you publish, from the
 `freesolo` SDK, or from third-party packages you declare under
@@ -101,7 +102,7 @@ environment:
 
 ```toml
 [environment]
-id = "your-name/your-env"
+id = "your-org/your-env"
 pip = ["rapidfuzz>=3.0", "pydantic"]
 ```
 
@@ -291,30 +292,31 @@ flash env push --name math math
 ```
 
 It prints the published id
-(`your-name/math`). Put that in your config's `[environment] id`.
+(`your-org/math`). Put that in your config's `[environment] id`.
 
 ## Use an existing environment
 
 If you already have a published env id (yours or one shared with you), reference
-it directly:
+it directly. You can also reference a GitHub environment source with a
+`github:owner/repo@ref:path` ref or a GitHub URL.
 
 ```toml
 [environment]
-id = "your-name/your-env"
+id = "your-org/your-env"
 ```
 
 If you want the source locally for editing or inspection, pull the whole
 environment into a directory:
 
 ```bash
-flash env pull your-name/your-env
+flash env pull your-org/your-env
 ```
 
 Pull one file by adding its path inside the environment. Use `-o` to choose the
 destination and `-f` to overwrite an existing output:
 
 ```bash
-flash env pull your-name/your-env datasets/train.jsonl -o train.jsonl
+flash env pull your-org/your-env datasets/train.jsonl -o train.jsonl
 ```
 
 ## List what you have
@@ -332,8 +334,8 @@ Delete only targets managed Hub ids of the form `namespace/name`; GitHub refs
 and local paths are not Hub records and cannot be deleted this way.
 
 ```bash
-flash env delete your-name/your-env
-flash env delete your-name/your-env -y   # skip the confirmation prompt
+flash env delete your-org/your-env
+flash env delete your-org/your-env -y   # skip the confirmation prompt
 ```
 
 ## Pass parameters
@@ -343,7 +345,7 @@ If your `load_environment(**kwargs)` accepts arguments, set them under
 
 ```toml
 [environment]
-id = "your-name/your-env"
+id = "your-org/your-env"
 
 [environment.params]
 difficulty = "hard"
@@ -365,7 +367,7 @@ Then declare the environment variable names in your training config:
 
 ```toml
 [environment]
-id = "your-name/your-env"
+id = "your-org/your-env"
 secrets = ["SERVICE_API_KEY"]
 ```
 
