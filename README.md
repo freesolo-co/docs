@@ -1,8 +1,8 @@
 # Freesolo docs
 
-[Mintlify](https://mintlify.com) documentation site for Freesolo. Right now it
-covers **Flash** (the managed training + serving CLI); more product areas can be
-added as new groups in `docs.json`.
+[Mintlify](https://mintlify.com) documentation site for Freesolo. It covers
+**Flash** (the managed training + serving CLI), the Freesolo platform dashboard,
+and the separate `freesolo` agent CLI reference.
 
 This repo IS the Mintlify deployment source (the site builds from the repo root).
 The pages were moved here from the `freesolo-co/freesolo` monorepo (`docs/`) so the
@@ -33,8 +33,12 @@ guides/
   datasets.mdx
   deploy-and-chat.mdx
 reference/
+  models.mdx              # supported Flash model catalog and serving prices
   cli.mdx                 # every flash command + flag
+  freesolo-agent-cli.mdx  # the separate freesolo command
   configuration.mdx       # every config TOML field
+  cost-model.mdx          # Flash training cost estimate details
+  troubleshooting.mdx
 ```
 
 ## Editing
@@ -42,6 +46,8 @@ reference/
 - Pages are `.mdx` with YAML frontmatter (`title`, `description`).
 - Add a new page by creating the `.mdx` file and adding its path (without the
   extension) to the right group in `docs.json` `navigation.groups`.
-- Keep content accurate to the `flash` CLI; when a command or config field
-  changes in [flash](https://github.com/freesolo-co/flash), update the matching
-  reference page here.
+- Keep content accurate to
+  [flash](https://github.com/freesolo-co/flash) and
+  [freesolo](https://github.com/freesolo-co/freesolo); when a command, config
+  field, dashboard behavior, or billing rule changes, update the matching page
+  here.

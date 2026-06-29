@@ -54,7 +54,7 @@ algorithm = "grpo"
 # thinking = true        # opt into reasoning mode (thinking-capable models only)
 
 [environment]
-id = "your-name/your-env"
+id = "your-org/your-env"
 
 [train]
 steps = 150                          # GRPO is step-driven; SFT is epoch-driven (set epochs = N instead)
@@ -111,11 +111,11 @@ flash train config.toml --set train.steps=300 --set train.lora_rank=16
 
 ## Cost and billing
 
-A run is **billed when it finishes successfully**, for the actual GPU time it
-used. Once the run reaches `done`, Flash measures the real cost (GPU $/hr ×
-wall-clock) and debits it from your org's prepaid balance. Preview the cost
-before you submit with `flash train --cost`, which prints a pre-flight estimate,
-not the final charge:
+A run is **billed when it finishes successfully**, for the training-loop GPU time
+it used. Setup and cold start time are shown so you understand wall clock, but
+they are not billed. Once the run reaches `done`, Flash posts the final training
+charge to your org's prepaid balance. Preview the cost before you submit with
+`flash train --cost`, which prints a pre-flight estimate, not the final charge:
 
 ```bash
 flash train config.toml --cost
@@ -123,19 +123,20 @@ flash train config.toml --cost
 
 ```text
 Run        : Qwen/Qwen3.5-0.8B  [GRPO, 100 steps]
-GPU        : RTX A6000 on auto (48 GB; run needs >= 24 GB) @ $0.49/hr
-Setup      : 9.5 min (cold start: boot + deps + model load + vLLM init)
-Per step   : 11.52 s
-Train      : 19.2 min
-Wall clock : 0.48 h
-TOTAL      : $0.23
+GPU        : RTX 4090 on auto (24 GB; run needs >= 24 GB) @ $0.69/hr
+Setup      : 9.5 min (cold start: boot + deps + model load + vLLM init; not billed)
+Per step   : 11.06 s
+Train      : 18.4 min
+Wall clock : 0.47 h
+Billable   : 0.31 h (training only)
+TOTAL      : $0.21
 ```
 
 <Note>
   The cost is catalog-deterministic and runs locally; for an uncapped SFT run
   it loads the environment to count its training examples. Once a run starts,
-  `flash status <run-id>` includes the cost accrued so far. The numbers above
-  are an example for one config and use Flash's static GPU rate snapshot.
+  `flash status <run-id>` includes the current or final cost record. The numbers
+  above are an example for one config and use Flash's GPU rate snapshot.
 </Note>
 
 For how each line of the pre-flight estimate is computed, see
@@ -147,7 +148,7 @@ For how each line of the pre-flight estimate is computed, see
 
 ```bash
 flash runs                # all your runs: state, cost, GPU, model
-flash status <run-id>     # status JSON, including accrued cost
+flash status <run-id>     # status JSON, including the cost record
 flash status <run-id> --logs    # print logs, then status
 flash status <run-id> --follow  # stream logs until completion, then status
 flash cancel <run-id>     # cancel a run

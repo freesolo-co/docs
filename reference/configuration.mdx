@@ -13,7 +13,7 @@ model = "Qwen/Qwen3.5-4B"
 algorithm = "grpo"
 
 [environment]
-id = "your-name/your-env"
+id = "your-org/your-env"
 
 [train]
 steps = 150
@@ -32,14 +32,14 @@ lora_rank = 32
 
 | Key | Type | Default | Description |
 | --- | --- | --- | --- |
-| `id` | string | (required) | Published Freesolo environment id, `your-name/your-env`. |
+| `id` | string | (required) | Published Freesolo environment id, `your-org/your-env`. |
 | `params` | table | `{}` | Keyword arguments passed to the env's `load_environment(**kwargs)`. |
-| `secrets` | list[string] | `[]` | Environment variable names to forward to the worker as runtime secrets. Values are read from your shell, `.env`, or `.env.local` at submit time. |
 | `pip` | list[string] | `[]` | Extra third-party pip requirements the worker installs before importing your environment (an escape hatch for deps your `environment.py` imports). |
+| `secrets` | list[string] | `[]` | Environment variable names to forward to the worker as runtime secrets. Values are read from your shell, `.env`, or `.env.local` at submit time. |
 
 ```toml
 [environment]
-id = "your-name/your-env"
+id = "your-org/your-env"
 secrets = ["SERVICE_API_KEY"]
 ```
 
@@ -54,12 +54,14 @@ service_api_key = os.environ["SERVICE_API_KEY"]
 Never put secret values in `[environment.params]`; it becomes part of the run
 spec. Every name you list under `[environment].secrets` must
 resolve to a value in your shell, `.env`, or `.env.local` when you submit.
+Reserved platform secret names such as `FREESOLO_API_KEY`, `HF_TOKEN`,
+`GITHUB_TOKEN`, `RUNPOD_API_KEY`, and `RUN_ID` cannot be forwarded.
 
 ## `[train]`
 
 | Key | Type | Default | Description |
 | --- | --- | --- | --- |
-| `lora_rank` | int | `32` | LoRA rank; higher means a larger adapter with more capacity and cost. |
+| `lora_rank` | int | `32` | LoRA rank; higher means a larger adapter with more capacity and cost. Deployment validates the trained adapter against the serving rank cap for the selected base model. |
 | `lora_alpha` | int | `64` | LoRA alpha. |
 | `learning_rate` | float | recipe default | Optimizer learning rate. |
 | `batch_size` | int | recipe default | Training batch size. |
@@ -93,8 +95,21 @@ resolve to a value in your shell, `.env`, or `.env.local` when you submit.
 GPU class selection is automatic. At submit time the allocator picks the
 cheapest validated managed GPU class that fits your run from the platform's
 available providers, and a retry walks to the next-cheapest class if one is
-unavailable. Disk, the wall-clock cap, and the auto-retry budget are platform
-defaults.
+unavailable. Do not use `[gpu]` to pin hardware: user-specified `gpu.type` is
+not a placement request. Disk, the wall-clock cap, and the auto-retry budget are
+platform-managed fields that may appear in resolved specs and run status.
+
+## `[worker_env]` (advanced)
+
+`[worker_env]` passes non-secret string values into the worker environment and is
+serialized into the run spec and artifacts. Use it only for harmless labels or
+feature flags. Secret-looking keys and values are rejected; runtime secrets
+belong in `[environment].secrets`.
+
+```toml
+[worker_env]
+FEATURE_FLAG = "enabled"
+```
 
 ## `[wandb]`
 

@@ -10,7 +10,7 @@ logic that Flash uses for SFT, GRPO, and local validation.
 
 ```toml
 [environment]
-id = "your-name/your-env"
+id = "your-org/your-env"
 ```
 
 ## Task records
@@ -65,7 +65,7 @@ flash env push --name math math
 ```
 
 ```text Output
-published your-name/math
+published your-org/math
 ```
 
 ## Load sidecars
@@ -104,20 +104,17 @@ Then select the split from your Flash config:
 
 ```toml
 [environment]
-id = "your-name/math"
+id = "your-org/math"
 
 [environment.params]
 split = "eval"
 ```
 
-<Warning>
-  This `split` pattern only takes effect if your package does **not** also ship a
-  file Flash auto-discovers as the default dataset (`datasets/train.jsonl`,
-  `datasets/train.json`, `train.jsonl`, or `train.json`). When one of those is
-  present, Flash uses it and ignores the dataset your `load_environment` built, so
-  the `split` param has no effect. Point `[environment.params].dataset_path` at the
-  split file instead, or avoid those default filenames.
-</Warning>
+<Note>
+  `[environment.params]` only changes dataset selection if your
+  `load_environment(**kwargs)` reads those values. The `split` example above is
+  a convention inside the environment code, not a separate Flash dataset switch.
+</Note>
 
 ## What gets uploaded
 
@@ -127,7 +124,7 @@ For a local environment directory, `flash env push` includes:
 - Sibling Python helper files.
 - Sidecar directories named `datasets`.
 - Common sibling data files such as `.jsonl`, `.json`, `.csv`, `.txt`,
-  `.parquet`, `.tsv`, `.yaml`, and `.yml`.
+  `.md`, `.parquet`, `.tsv`, `.yaml`, and `.yml`.
 
 Workspace metadata, cache directories, virtualenvs, and version-control files
 are skipped. Keep the artifact small: environment uploads are capped at 64 MB

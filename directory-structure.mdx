@@ -126,8 +126,10 @@ exists is left untouched.
     run actually improved the model (not just finished). It's reference for you and
     your agent.
 
-    **When Flash reads it:** never. It's local documentation only; nothing in the
-    train, deploy, or chat path depends on it.
+    **When Flash reads it:** the training loop never reads it. If you publish the
+    whole scaffolded folder, `flash env push` includes `.md` sidecars, so
+    `TRAINING.md` can travel with the environment source in the Hub for humans
+    and coding agents.
 
   </Accordion>
 </AccordionGroup>
@@ -159,7 +161,8 @@ math/
 
   <Accordion title="datasets/" icon="table">
     **What it is:** sidecar data files (`.jsonl`, `.json`, `.csv`, `.txt`,
-    `.parquet`, and more) that your environment loads. See [Datasets](/guides/datasets).
+    `.md`, `.parquet`, `.tsv`, `.yaml`, `.yml`, and more) that your environment
+    loads. See [Datasets](/guides/datasets).
 
     **When Flash reads it:** your environment code reads it (for example via
     `load_task_examples(...)`); `flash env push` includes the `datasets/` folder
