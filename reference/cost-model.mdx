@@ -33,8 +33,7 @@ Three things matter:
   completions. For SFT each step is one forward/backward pass over a batch; cost
   scales with batch size and sequence length.
 - **GPU class.** The allocator picks the cheapest validated managed GPU class
-  that fits your run from the available provider pool. A faster card costs more
-  per hour but may finish sooner.
+  that fits your run. A faster card costs more per hour but may finish sooner.
 - **Setup time.** Container boot, dependency install, model load, and vLLM init
   are included in wall-clock reporting and the wall-time cap, but not in the
   customer training charge.
@@ -58,11 +57,10 @@ the values are calibrated against observed run time.
 
 ## GPU class and price
 
-You do not pin a GPU. The estimator sizes the run's VRAM, then prices the
-cheapest fitting class in the current catalog. The submit-time allocator can
-choose a different validated provider/class if availability changes.
+The estimator sizes the run's VRAM, then prices the cheapest fitting class in
+the current catalog. The submit-time allocator uses current managed capacity.
 
-| GPU class | VRAM | RunPod $/hr | Peak bf16 TFLOPS |
+| GPU class | VRAM | Estimated $/hr | Peak bf16 TFLOPS |
 | --- | ---: | ---: | ---: |
 | RTX 4090 | 24 GB | $0.69 | 165 |
 | RTX 5090 | 32 GB | $0.99 | 210 |
@@ -74,13 +72,12 @@ choose a different validated provider/class if availability changes.
 | B200 | 180 GB | $5.89 | 2250 |
 
 Run [`flash gpus`](/reference/cli#discovery) for the CLI's current GPU table.
-Submitted runs record the realized GPU and provider in `flash runs` and
-`flash status`.
+Submitted runs record the realized GPU class in `flash runs` and `flash status`.
 
 <Warning>
   **The estimate is a local forecast.** It prices the cheapest fitting class from
-  the local snapshot. The allocator provisions from the validated provider pool,
-  so the card actually used can differ from the estimate.
+  the local snapshot. The card actually used can differ from the estimate when
+  managed capacity changes.
 </Warning>
 
 ## Setup (cold start)
@@ -222,7 +219,7 @@ time:
 
 ```text
 Run        : Qwen/Qwen3.5-0.8B  [GRPO, 100 steps]
-GPU        : RTX 4090 on auto (24 GB; run needs >= 24 GB) @ $0.69/hr
+GPU        : RTX 4090 (24 GB; run needs >= 24 GB) @ $0.69/hr
 Setup      : 9.5 min (cold start: boot + deps + model load + vLLM init; not billed)
 Per step   : 11.06 s
 Train      : 18.4 min
@@ -241,8 +238,7 @@ Each lever maps back to a term above:
   scale generation and the policy update linearly through `D`.
 - **Fewer steps.** `train` is linear in `steps`.
 - **A faster card** can be cheaper overall when it finishes enough sooner to
-  offset a higher `$/hr`, but you do not choose this; the allocator picks the
-  cheapest fitting class.
+  offset a higher `$/hr`; the allocator picks the cheapest fitting class.
 
 ## Why your bill can differ from the estimate
 
@@ -252,13 +248,11 @@ diverge because:
 - **The bill is measured, not estimated.** You are charged for the actual
   training-loop GPU time the successful run used, not the setup time.
 - **A different card may be provisioned.** The estimate prices the cheapest
-  fitting class; the allocator provisions from the validated pool, which can
-  change with provider availability.
+  fitting class; managed capacity can change between preview and submit.
 - **Pricing can drift.** The estimate uses a GPU `$/hr` snapshot; the final run
   uses the platform rate in effect when the run completed.
 - **MFU and setup are calibrated approximations.** Real utilization, boot time,
-  model load, and dependency install time vary with the model, environment, and
-  provider.
+  model load, and dependency install time vary with the model and environment.
 - **Reward latency is an estimate.** GRPO uses a default per-completion grading
   latency unless your run overrides it; a slow [reward](/guides/environments)
   costs more wall time than the default assumes.

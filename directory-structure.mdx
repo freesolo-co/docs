@@ -123,11 +123,11 @@ exists is left untouched.
   <Accordion title="TRAINING.md" icon="book">
     **What it is:** a playbook for the AI coding agent you point at this project —
     how to design the reward, what to read in a run's output, and how to decide a
-    run actually improved the model (not just finished). It's reference for you and
-    your agent.
+    run actually improved the model. It includes current CLI usage and common
+    Flash issue mitigations.
 
-    **When Flash reads it:** the training loop never reads it. If you publish the
-    whole scaffolded folder, `flash env push` includes `.md` sidecars, so
+    **When it travels:** if you publish the whole scaffolded folder,
+    `flash env push` includes `.md` sidecars, so
     `TRAINING.md` can travel with the environment source in the Hub for humans
     and coding agents.
 

@@ -103,6 +103,11 @@ def load_environment(**kwargs) -> CustomEnv:
 See [Environments](/guides/environments) for the full SDK: prompt builders,
 loading dataset files, parameters, and secrets.
 
+With `thinking = true`, `response_text` is the answer text by default. It is also
+string-compatible and exposes `.completion`, `.thinking`, and `.raw` when a
+reward intentionally needs the separated answer, reasoning trace, or raw model
+output.
+
 ## From local file to managed run
 
 An environment is authored locally but has to be reachable by id when training

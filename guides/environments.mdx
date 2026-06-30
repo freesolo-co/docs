@@ -158,6 +158,11 @@ At runtime, read the same values from `example.record["input"]` and
 `load_task_examples(...)` exposes each record's `input` as `example.input` and
 `output` as `example.output`.
 
+When a run uses `thinking = true`, `score_response` receives answer text by
+default. The `response_text` value is still string-compatible and also exposes
+`response_text.completion`, `response_text.thinking`, and `response_text.raw` for
+rewards that intentionally inspect the reasoning trace.
+
 ## Multi-turn environments
 
 Some tasks aren't resolved in a single response: a conversation, a tool-using
@@ -272,8 +277,8 @@ plain function (importable without the trainer) makes it unit-testable.
 
 ### Configure for multi-turn
 
-There's no "number of turns" knob in the config — the budget comes from
-`max_episode_turns`. What matters in `[train]`:
+For multi-turn runs, the episode budget comes from `max_episode_turns`. What
+matters in `[train]`:
 
 - **`max_tokens`** is *per assistant action* (one tool call or one reply), not per
   episode — keep it modest.

@@ -39,9 +39,9 @@ inline help.
 </ResponseField>
 
 <ResponseField name="flash gpus">
-  List RunPod-backed managed GPU classes with VRAM and the CLI's current `$/hr`
-  snapshot. Submitted runs report the realized GPU and provider in `flash runs`
-  and `flash status`.
+  List managed GPU classes with VRAM and the CLI's current estimated `$/hr`
+  snapshot. Submitted runs report the realized GPU class in `flash runs` and
+  `flash status`.
 </ResponseField>
 
 ## Environments
@@ -49,8 +49,8 @@ inline help.
 <ResponseField name="flash env setup">
   Scaffold a starter project into the current directory: `environment.py`, a tiny
   `datasets/train.jsonl`, `configs/rl.toml` (GRPO) plus `configs/sft.toml` (SFT),
-  and a `TRAINING.md` playbook for coding agents. Files that already exist are left
-  untouched, so it is safe to rerun.
+  and a `TRAINING.md` playbook for coding agents with current CLI usage, reward
+  guidance, and common run mitigations. Existing files are preserved.
 </ResponseField>
 
 <ResponseField name="flash env push --name NAME [PATH]">
@@ -86,10 +86,10 @@ inline help.
 
 <ResponseField name="flash train CONFIG [flags]">
   Submit a managed training run from a TOML config and follow its logs.
-  A run is billed only when it finishes successfully, for the training-loop GPU
-  time it used; setup time is reported but not billed (see
-  [Cost & billing](/guides/training#cost-and-billing)); the
-  pre-flight `--cost` estimate is derived in
+  Flash checks prepaid balance against the pre-flight estimate before submit, and
+  successful runs are billed for measured training-loop GPU time (see
+  [Cost & billing](/guides/training#cost-and-billing)). The pre-flight `--cost`
+  estimate is derived in
   [How cost is computed](/reference/cost-model).
 
   | Flag | Effect |
@@ -108,7 +108,7 @@ inline help.
 </ResponseField>
 
 <ResponseField name="flash status RUN_ID [--logs] [-f]">
-  Print a run's full status JSON, including its current or final cost record.
+  Print a run's status, including its current or final cost record.
   `--logs` prints current logs before the status JSON. `-f`/`--follow` streams
   logs until the run ends, then prints final status.
 </ResponseField>
@@ -121,8 +121,7 @@ inline help.
 
 <ResponseField name="flash deploy RUN_ID [flags]">
   Register a trained adapter with the managed multi-LoRA serving service.
-  Serving is [billed per token](/guides/deploy-and-chat#billing); there is no
-  per-day idle charge.
+  Serving is [billed per token](/guides/deploy-and-chat#billing).
 
   | Flag | Default | Effect |
   | --- | --- | --- |
@@ -132,7 +131,7 @@ inline help.
 
 <ResponseField name="flash checkpoints RUN_ID">
   List a run's per-step checkpoints that are available to deploy — including
-  intermediate checkpoints from a run that stopped mid-RL. Serve one with
+  intermediate checkpoints from a live or stopped RL run. Serve one with
   `flash deploy RUN_ID --step N`.
 </ResponseField>
 

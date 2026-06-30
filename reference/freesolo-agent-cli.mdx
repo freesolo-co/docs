@@ -1,9 +1,9 @@
 ---
 title: "Freesolo agent CLI"
-description: "The separate freesolo command for repository-agent workflows."
+description: "The freesolo command for repository-agent workflows."
 ---
 
-The `freesolo` CLI is separate from `flash`.
+The `freesolo` CLI runs repository-agent workflows.
 
 - Use **`flash`** to train LoRA adapters on managed GPUs, deploy them, and chat
   with them.
@@ -53,10 +53,7 @@ https://github.com/apps/freesolo-agent/installations/new
 The backend job states are `queued`, `running`, `succeeded`, `blocked`,
 `user_stopped`, and `failed`.
 
-## Notes
+## Help
 
-The CLI no longer supports JSON mode. Run `freesolo --help` or
-`freesolo setup --help` for command help.
-
-This CLI uses the Freesolo API key from your setup flow. It does not replace
-`flash login`; keep using `flash` for Flash runs and serving.
+Run `freesolo --help` or `freesolo setup --help` for command help. Use `flash`
+for managed LoRA training, deployment, and chat.

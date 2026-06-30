@@ -5,7 +5,7 @@ description: "Post-training in plain terms: the few concepts that matter, and ho
 
 If you've heard of "post-training" or "fine-tuning" but never shipped one, this
 page builds the intuition: the few concepts that matter, and how Flash runs the
-whole thing so there's no infrastructure for you to manage.
+whole managed loop.
 
 ## What post-training does
 
@@ -17,10 +17,9 @@ definition of a good answer.
 
 Flash is a managed post-training service. You describe the task and pick a base
 model, Flash fine-tunes the model on a GPU, and then serves the result behind an
-OpenAI-compatible API. You never touch a GPU, a training framework, or a serving
-stack. Reach for post-training when you want consistent behavior, a smaller and
-cheaper model that matches a big one on a narrow task, or behavior that
-prompting can't reliably produce. More on when to use it below.
+OpenAI-compatible API. Reach for post-training when you want consistent behavior,
+a smaller and cheaper model that matches a big one on a narrow task, or behavior
+that prompting alone does not reliably produce. More on when to use it below.
 
 ## The training loop
 
@@ -51,9 +50,9 @@ algorithm** that improves the model from that score.
 
 ### Base models and LoRA adapters
 
-Flash doesn't rewrite the entire model. It trains a **LoRA adapter**: a small set
-of extra weights layered on top of the frozen base model. This is _parameter-
-efficient_ fine-tuning, and it has three practical payoffs:
+Flash trains a **LoRA adapter**: a small set of extra weights layered on top of
+the frozen base model. This is _parameter-efficient_ fine-tuning, and it has
+three practical payoffs:
 
 - **Cheap and fast** to train, because you're updating a tiny fraction of the
   parameters.
@@ -118,8 +117,7 @@ attempts succeed.
 
 A trained adapter isn't useful until you can call it. `flash deploy` registers
 your adapter with Freesolo's **managed multi-LoRA serving**. You talk to it over
-an OpenAI-compatible API, and serving is billed per token with no per-day idle
-charge. See
+an OpenAI-compatible API, and serving is billed per token. See
 [Deploy & chat](/guides/deploy-and-chat).
 
 ## Is post-training right for your task?
