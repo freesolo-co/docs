@@ -27,17 +27,22 @@ point at the project. The starter `load_environment()` returns a Freesolo
 `EnvironmentSingleTurn` with a sample dataset and reward.
 
 ```python environment.py
+import json
+from pathlib import Path
+
 from freesolo.datasets.types import TaskExample
 from freesolo.environments import EnvironmentSingleTurn, RewardResult
 
-DATASET = [
-    {"input": "What is 2 + 2?", "output": "4"},
-    {"input": "What is 3 + 5?", "output": "8"},
-]
+DEFAULT_DATASET_PATH = Path(__file__).parent / "datasets" / "train.jsonl"
 
 
-class CustomEnv(EnvironmentSingleTurn):
-    dataset = DATASET
+def load_jsonl(path):
+    with Path(path).open() as f:
+        return [json.loads(line) for line in f if line.strip()]
+
+
+class StarterEnv(EnvironmentSingleTurn):
+    dataset = load_jsonl(DEFAULT_DATASET_PATH)
 
     def build_prompt_messages(self, example: TaskExample, prompt_text: str):
         return [{"role": "user", "content": example.input}]
@@ -48,8 +53,11 @@ class CustomEnv(EnvironmentSingleTurn):
         return RewardResult(score=score, threshold=1.0)
 
 
-def load_environment(**kwargs) -> CustomEnv:
-    return CustomEnv()
+def load_environment(dataset_path: str | None = None, **kwargs) -> StarterEnv:
+    env = StarterEnv()
+    if dataset_path:
+        env.dataset = load_jsonl(dataset_path)
+    return env
 ```
 
 Replace the dataset and reward with your task:
