@@ -36,17 +36,18 @@ Every catalog model supports **both SFT and GRPO**, and all are hybrid reasoning
 
 Serving is billed per token after deployment. Prompt and completion tokens have
 separate per-model rates, and cached prompt tokens use the model's cached-input
-rate. The prices below are **per 1M tokens**; your Freesolo billing
-dashboard shows the charges you actually accrue.
+rate. The prices below are **per 1M tokens** and include Freesolo's 1.2 serving
+markup over typical provider rates; your Freesolo billing dashboard shows the
+charges you actually accrue.
 
 | Model | Prompt / 1M | Completion / 1M | Cached prompt / 1M |
 | --- | ---: | ---: | ---: |
-| `Qwen/Qwen3.5-0.8B` | $0.01 | $0.05 | $0.002 |
-| `openbmb/MiniCPM5-1B` | $0.01 | $0.05 | $0.002 |
-| `Qwen/Qwen3.5-2B` | $0.02 | $0.10 | $0.004 |
-| `Qwen/Qwen3.5-4B` | $0.03 | $0.15 | $0.006 |
-| `Qwen/Qwen3.5-9B` | $0.10 | $0.15 | $0.020 |
-| `Qwen/Qwen3.6-35B-A3B` | $0.15 | $1.00 | $0.050 |
+| `Qwen/Qwen3.5-0.8B` | $0.012 | $0.060 | $0.0024 |
+| `openbmb/MiniCPM5-1B` | $0.012 | $0.060 | $0.0024 |
+| `Qwen/Qwen3.5-2B` | $0.024 | $0.120 | $0.0048 |
+| `Qwen/Qwen3.5-4B` | $0.036 | $0.180 | $0.0072 |
+| `Qwen/Qwen3.5-9B` | $0.120 | $0.180 | $0.0240 |
+| `Qwen/Qwen3.6-35B-A3B` | $0.180 | $1.200 | $0.0600 |
 
 The **Cached prompt** column is the rate for prompt tokens served from the
 **prefix cache**. Caching is automatic whenever a request's prompt shares a

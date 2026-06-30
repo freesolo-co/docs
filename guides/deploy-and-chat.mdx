@@ -44,8 +44,9 @@ metadata to the run while preserving the run's training state.
 ## Billing
 
 Serving is **billed per token**. Prompt and completion tokens have per-model
-rates, and cached prompt tokens use the model's cached-input rate. See the actual prices in
-[Supported models](/reference/models#serving-prices).
+rates, and cached prompt tokens use the model's cached-input rate. Listed prices
+include Freesolo's 1.2 serving markup over typical provider rates. See the
+actual prices in [Supported models](/reference/models#serving-prices).
 
 **Cached prompt tokens are cheaper than uncached prompt tokens.** Prefix caching
 is always on: when a request's prompt shares a leading prefix with a recent one
