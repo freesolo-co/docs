@@ -107,9 +107,7 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
     flash models
     ```
 
-    Managed runs train catalog models only. Need one that isn't listed?
-    [Let us know](https://freesolo.co/contact). See
-    [Supported models](/reference/models).
+    Managed runs train catalog models only. See [Supported models](/reference/models).
 
   </Accordion>
 
@@ -123,14 +121,6 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
     ```
 
   </Accordion>
-
-<Accordion title="My [gpu] table or hf_repo is being ignored">
-  GPU **class** selection is fully managed and `hf_repo` is assigned for you, so
-  a pinned `gpu.type` or `hf_repo` is ignored. The allocator picks the cheapest
-  fitting GPU, and each run streams artifacts into a private Hugging Face repo
-  provisioned server-side. Remove `gpu.type` and `hf_repo` from your config. See
-  [GPU & infrastructure](/reference/configuration#gpu-infrastructure-managed).
-</Accordion>
 
   <Accordion title="unsupported algorithm">
     `algorithm` must be `grpo` (the default) or `sft`. Fix the value and
@@ -154,15 +144,20 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
 
 <AccordionGroup>
   <Accordion title="When am I charged for a run?">
-    A run is billed only when it **finishes successfully**, for the
-    training-loop GPU time it used. Setup time is reported but not billed, and a
-    run that doesn't complete isn't billed for training. Nothing is charged at
-    submit. Preview the cost before you submit with the pre-flight estimate:
+    Flash checks your prepaid org balance against the pre-flight estimate before
+    submit, then bills successful runs for measured training-loop GPU time. Setup
+    time is reported separately. Preview the estimate before you submit:
 
     ```bash
     flash train config.toml --cost
     ```
 
+  </Accordion>
+
+  <Accordion title="Run submit reports insufficient balance">
+    Add funds or reduce the run estimate before submitting again. Smaller base
+    models, fewer GRPO steps, lower `group_size`, shorter `max_tokens`, and SFT
+    smoke tests are the fastest ways to lower the pre-flight estimate.
   </Accordion>
 
 <Accordion title="GRPO reward is stuck at 0">
@@ -192,9 +187,10 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
     and make sure `max_length` is large enough to hold the prompt plus that budget.
   - Optionally set `thinking_length_penalty_coef` to nudge the model toward shorter
     reasoning so the answer reliably lands inside the budget.
-  - Make your reward's parser **thinking-aware**: strip a leading
-    `<think>…</think>` block (and tolerate reasoning prose) before extracting the
-    answer, so an answer that *did* fit still scores.
+  - Score the answer text by default. In thinking mode `response_text` remains
+    string-compatible answer text and also exposes `response_text.completion`,
+    `response_text.thinking`, and `response_text.raw` for rewards that intentionally
+    inspect reasoning.
 
   The same trap applies to any **reasoning model you call as an LLM judge** from a
   reward: give the judge call enough `max_tokens` or it returns empty content and
@@ -216,9 +212,8 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
   <Accordion title="A GPU hiccup or unavailability interrupted training">
     Runs are supervised server-side: a stall watchdog plus bounded auto-retry that
     **resumes from the last streamed checkpoint**, and the allocator walks to the
-    next-cheapest validated GPU class if one is unavailable. A transient failure
-    does not create a separate training charge; if the run ultimately succeeds,
-    the final charge is based on measured training-loop GPU time. Watch with
+    next-cheapest validated GPU class when capacity shifts. If the run ultimately
+    succeeds, the final charge is based on measured training-loop GPU time. Watch with
     `flash status <run-id> -f`.
   </Accordion>
 </AccordionGroup>
@@ -232,10 +227,10 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
     See [Deploy & chat](/guides/deploy-and-chat).
   </Accordion>
 
-  <Accordion title="Am I being charged while the deployment is idle?">
-    No. Serving is **billed per token** for the requests you actually send; there
-    is no per-day idle or warm-GPU charge. `flash undeploy <run-id>` deregisters
-    the adapter entirely.
+  <Accordion title="How is serving billed?">
+    Serving is **billed per token** for requests. Prompt, completion, and cached
+    prompt token rates are listed in [Supported models](/reference/models#serving-prices).
+    `flash undeploy <run-id>` deregisters the adapter.
   </Accordion>
 
   <Accordion title="Calling the endpoint from my own code is rejected">

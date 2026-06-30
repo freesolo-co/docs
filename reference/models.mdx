@@ -23,39 +23,36 @@ current catalog.
 Every catalog model supports **both SFT and GRPO**, and all are hybrid reasoning
 ("thinking") capable.
 
-| Model (`model =`) | Parameters | Training fit | Serving tier | Reasoning |
+| Model (`model =`) | Parameters | Training class | Serving tier | Reasoning |
 | --- | ---: | --- | --- | --- |
-| `Qwen/Qwen3.5-0.8B` | 0.9B | 12 GB+ | L4 | Hybrid |
-| `openbmb/MiniCPM5-1B` | 1.2B | 12 GB+ | L4 | Hybrid |
-| `Qwen/Qwen3.5-2B` | 2.3B | 16 GB+ | L4 | Hybrid |
-| `Qwen/Qwen3.5-4B` | 4.7B | 32 GB+ | L4 FP8 | Hybrid |
-| `Qwen/Qwen3.5-9B` | 9.7B | 48 GB+ SFT / 80 GB+ GRPO | L4 FP8 | Hybrid |
-| `Qwen/Qwen3.6-35B-A3B` | 35B total / ~3B active | H200/B200 tier | A100-80GB FP8 | Hybrid |
+| `Qwen/Qwen3.5-0.8B` | 0.9B | RTX 4090 | L4 | Hybrid |
+| `openbmb/MiniCPM5-1B` | 1.2B | RTX 4090 SFT / RTX 5090 GRPO | L4 | Hybrid |
+| `Qwen/Qwen3.5-2B` | 2.3B | RTX 4090 SFT / RTX 5090 GRPO | L4 | Hybrid |
+| `Qwen/Qwen3.5-4B` | 4.7B | RTX 4090 SFT / A100-80GB GRPO | L4 FP8 | Hybrid |
+| `Qwen/Qwen3.5-9B` | 9.7B | RTX 5090 SFT / A100-80GB GRPO | L4 FP8 | Hybrid |
+| `Qwen/Qwen3.6-35B-A3B` | 35B total / ~3B active | H200 SFT / B200 GRPO | A100-80GB FP8 | Hybrid |
 
 ## Serving prices
 
-Serving is billed per token after deployment. The Freesolo billing backend uses
-the same per-model rate for **prompt** and **completion** tokens, with cached
-prompt tokens billed at 25% of the normal prompt rate. The prices below are
-**per 1M tokens**; your Freesolo billing dashboard shows the charges you
-actually accrue.
+Serving is billed per token after deployment. Prompt and completion tokens have
+separate per-model rates, and cached prompt tokens use the model's cached-input
+rate. The prices below are **per 1M tokens**; your Freesolo billing
+dashboard shows the charges you actually accrue.
 
 | Model | Prompt / 1M | Completion / 1M | Cached prompt / 1M |
 | --- | ---: | ---: | ---: |
-| `Qwen/Qwen3.5-0.8B` | $0.12 | $0.12 | $0.03 |
-| `openbmb/MiniCPM5-1B` | $0.12 | $0.12 | $0.03 |
-| `Qwen/Qwen3.5-2B` | $0.12 | $0.12 | $0.03 |
-| `Qwen/Qwen3.5-4B` | $0.24 | $0.24 | $0.06 |
-| `Qwen/Qwen3.5-9B` | $0.24 | $0.24 | $0.06 |
-| `Qwen/Qwen3.6-35B-A3B` | $0.60 | $0.60 | $0.15 |
+| `Qwen/Qwen3.5-0.8B` | $0.01 | $0.05 | $0.002 |
+| `openbmb/MiniCPM5-1B` | $0.01 | $0.05 | $0.002 |
+| `Qwen/Qwen3.5-2B` | $0.02 | $0.10 | $0.004 |
+| `Qwen/Qwen3.5-4B` | $0.03 | $0.15 | $0.006 |
+| `Qwen/Qwen3.5-9B` | $0.10 | $0.15 | $0.020 |
+| `Qwen/Qwen3.6-35B-A3B` | $0.15 | $1.00 | $0.050 |
 
 The **Cached prompt** column is the rate for prompt tokens served from the
-**prefix cache** — **25% of the input rate** (a 75% discount) — because the
-serving engine reuses a cached prefix instead of recomputing it. Caching is
-automatic whenever a request's prompt shares a leading prefix with a recent one
-(a shared system prompt, or a multi-turn chat); only prompt tokens are
-cacheable, so completion tokens always bill at the full per-token rate. See
-[Billing](/guides/deploy-and-chat#billing).
+**prefix cache**. Caching is automatic whenever a request's prompt shares a
+leading prefix with a recent one (a shared system prompt, or a multi-turn chat);
+only prompt tokens are cacheable, so completion tokens always bill at the full
+per-token rate. See [Billing](/guides/deploy-and-chat#billing).
 
 ### Notes per model
 
@@ -68,9 +65,8 @@ cacheable, so completion tokens always bill at the full per-token rate. See
 - **`Qwen/Qwen3.5-9B`**: the largest dense catalog model. GRPO uses an 80 GB-class
   card, so use it when quality matters more than the run cost.
 - **`Qwen/Qwen3.6-35B-A3B`**: a Mixture-of-Experts checkpoint (35B total, ~3B
-  active per token) and the largest model in the catalog. It is the
-  big-checkpoint tier (SFT runs on an H200, GRPO on a B200), so it costs the
-  most per run.
+  active per token) and the largest model in the catalog. SFT runs on an H200
+  class and GRPO runs on a B200 class.
 
 <Note>
   The Qwen3.5 entries are **text-only** fine-tunes: the checkpoints are natively
@@ -102,11 +98,6 @@ configuration reference.
     and you want stronger results. Larger models cost more per run.
   </Card>
 </CardGroup>
-
-## Models not in the catalog
-
-`model` must be one of the ids above. If your task needs a model that isn't
-listed, [let us know](https://freesolo.co/contact) so we can look at adding it.
 
 <Card
   title="Pick a model, then train"

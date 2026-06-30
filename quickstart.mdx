@@ -11,7 +11,7 @@ train a LoRA adapter on a managed GPU, serve it, and chat with it from the CLI.
 - **Python 3.11 or 3.12**, with `uv`, `pipx`, or `pip` to install the CLI.
 - **A Freesolo API key**, created in your dashboard at
   [freesolo.co](https://freesolo.co). It's how every `flash` command
-  authenticates; no GPU or provider credentials required.
+  authenticates.
 
 ## Step 1: Install the CLI
 
@@ -47,8 +47,7 @@ flash whoami    # confirm who your stored key resolves to
 ## Step 3: Scaffold a project
 
 Already have a published environment id, yours or one shared with you? Set it as
-`[environment] id` in your config and skip ahead to step 5. No need to scaffold
-or publish.
+`[environment] id` in your config and skip ahead to step 5.
 
 ```bash
 flash env setup
@@ -63,7 +62,7 @@ datasets/
 configs/
   rl.toml                 # a GRPO (RL) training config to start from
   sft.toml                # an SFT training config to start from
-TRAINING.md               # a playbook for the AI agent driving your runs
+TRAINING.md               # agent playbook with common run issues and mitigations
 ```
 
 Rerunning is safe: `flash env setup` leaves any file that already exists
@@ -118,7 +117,7 @@ lora_rank = 32
 ```
 
 [Validate it locally](/guides/training#validate-before-you-submit) first.
-`--dry-run` parses and checks the config with no credentials, server, or GPU:
+`--dry-run` parses and checks the config locally:
 
 ```bash
 flash train configs/rl.toml --dry-run
@@ -138,10 +137,10 @@ flash train configs/rl.toml
 ```
 
 <Note>
-  This is the first step that spends money. A run is billed only when it
-  finishes successfully, for the training-loop GPU time it used. Setup and cold
-  start time are reported separately but are not billed; the `--cost` number is
-  a pre-flight estimate, and a run that never completes isn't billed.
+  This is the first step that can spend money. At submit time Flash checks your
+  org balance against the pre-flight estimate, then bills successful runs for
+  measured training-loop GPU time. Setup and cold start time are reported
+  separately for observability.
 </Note>
 
 Flash then follows the logs live. Press `Ctrl-C` to detach. The run keeps going
@@ -162,10 +161,8 @@ raise `train.steps` and change little else.
 ## Step 7: Deploy
 
 Serve the trained adapter on Freesolo's
-[managed serving service](/guides/deploy-and-chat). There's no per-day idle
-charge: serving is
-[billed per token](/guides/deploy-and-chat#billing) for
-requests you send:
+[managed serving service](/guides/deploy-and-chat). Serving is
+[billed per token](/guides/deploy-and-chat#billing) for requests you send:
 
 ```bash
 flash deploy <run-id>

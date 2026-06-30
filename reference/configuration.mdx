@@ -55,7 +55,7 @@ Never put secret values in `[environment.params]`; it becomes part of the run
 spec. Every name you list under `[environment].secrets` must
 resolve to a value in your shell, `.env`, or `.env.local` when you submit.
 Reserved platform secret names such as `FREESOLO_API_KEY`, `HF_TOKEN`,
-`GITHUB_TOKEN`, `RUNPOD_API_KEY`, and `RUN_ID` cannot be forwarded.
+`GITHUB_TOKEN`, `RUN_ID`, and `HF_REPO` are owned by Flash.
 
 ## `[train]`
 
@@ -93,11 +93,13 @@ Reserved platform secret names such as `FREESOLO_API_KEY`, `HF_TOKEN`,
 ## GPU & infrastructure (managed)
 
 GPU class selection is automatic. At submit time the allocator picks the
-cheapest validated managed GPU class that fits your run from the platform's
-available providers, and a retry walks to the next-cheapest class if one is
-unavailable. Do not use `[gpu]` to pin hardware: user-specified `gpu.type` is
-not a placement request. Disk, the wall-clock cap, and the auto-retry budget are
-platform-managed fields that may appear in resolved specs and run status.
+cheapest validated managed GPU class that fits your run, and retry uses the next
+fitting class when capacity shifts. Disk, the wall-clock cap, the auto-retry
+budget, and run artifact storage are platform-managed fields that may appear in
+resolved specs and run status.
+
+Run artifacts are written to a private environment-scoped repo with the
+content-addressed Flash code snapshot used for that run.
 
 ## `[worker_env]` (advanced)
 

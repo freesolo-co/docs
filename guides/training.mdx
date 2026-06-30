@@ -70,10 +70,9 @@ lora_alpha = 64
 
 ## GPU selection is automatic
 
-You don't pin a GPU. At submit time the allocator always picks the cheapest
-validated managed GPU class that fits your run from the platform's available
-providers, and a retry walks to the next-cheapest class if one is unavailable.
-To see the RunPod-backed GPU classes, VRAM, and representative `$/hr` snapshot:
+At submit time the allocator picks the cheapest validated managed GPU class
+that fits your run, and retry uses the next fitting class when capacity shifts.
+To see the managed GPU classes, VRAM, and representative `$/hr` snapshot:
 
 ```bash
 flash gpus
@@ -81,8 +80,8 @@ flash gpus
 
 ## Validate before you submit
 
-`--dry-run` parses and validates the config fully locally (no credentials, no
-server, no GPU) and prints the resolved job spec:
+`--dry-run` parses and validates the config locally and prints the resolved job
+spec:
 
 ```bash
 flash train config.toml --dry-run
@@ -111,11 +110,11 @@ flash train config.toml --set train.steps=300 --set train.lora_rank=16
 
 ## Cost and billing
 
-A run is **billed when it finishes successfully**, for the training-loop GPU time
-it used. Setup and cold start time are shown so you understand wall clock, but
-they are not billed. Once the run reaches `done`, Flash posts the final training
-charge to your org's prepaid balance. Preview the cost before you submit with
-`flash train --cost`, which prints a pre-flight estimate, not the final charge:
+Flash checks your org's prepaid balance against the pre-flight estimate before a
+run is submitted. A successful run is billed for measured training-loop GPU time.
+Setup and cold start time are shown so you understand wall clock. Once the run
+reaches `done`, Flash posts the final training charge to your org balance.
+Preview the estimate before you submit with `flash train --cost`:
 
 ```bash
 flash train config.toml --cost
@@ -123,7 +122,7 @@ flash train config.toml --cost
 
 ```text
 Run        : Qwen/Qwen3.5-0.8B  [GRPO, 100 steps]
-GPU        : RTX 4090 on auto (24 GB; run needs >= 24 GB) @ $0.69/hr
+GPU        : RTX 4090 (24 GB; run needs >= 24 GB) @ $0.69/hr
 Setup      : 9.5 min (cold start: boot + deps + model load + vLLM init; not billed)
 Per step   : 11.06 s
 Train      : 18.4 min
@@ -156,6 +155,6 @@ flash cancel <run-id>     # cancel a run
 
 ## After training
 
-When a run reaches `done`, its adapter lives in the run's managed artifact repo.
-Serve it with [`flash deploy`](/guides/deploy-and-chat) and talk to it with
-`flash chat`.
+When a run reaches `done`, its adapter lives in a private environment-scoped
+artifact repo with the code snapshot used for the run. Serve it with
+[`flash deploy`](/guides/deploy-and-chat) and talk to it with `flash chat`.

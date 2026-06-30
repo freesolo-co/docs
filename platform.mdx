@@ -61,15 +61,13 @@ The activity log itemizes:
 
 - Training runs, charged after successful completion for final
   training-loop GPU time. Setup time is reported but not billed.
-- Serving usage, charged per token with no per-day idle or warm-GPU charge.
+- Serving usage, charged per token.
 
 ## Freesolo agent CLI
 
-The `freesolo` command is a separate CLI for repo-level Freesolo agent workflows,
-not the Flash LoRA adapter workflow. Install it with `pip install
-freesolo-agent`, then run `freesolo setup` to connect a Freesolo API key, choose
-an operation (`draft`, `optimize`, `training`, or `poll`), and submit or follow a
-backend training-agent job.
+The `freesolo` command handles repo-level Freesolo agent workflows. Install it
+with `pip install freesolo-agent`, then run `freesolo setup` to connect a
+Freesolo API key, choose an operation (`draft`, `optimize`, `training`, or
+`poll`), and submit or follow a backend training-agent job.
 
-Use `flash` for managed model post-training and serving. Use `freesolo` only
-when you are working with the separate repository-agent workflow.
+Use `flash` for managed model post-training and serving.

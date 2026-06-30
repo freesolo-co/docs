@@ -4,9 +4,9 @@ description: "Package task records and data files with Freesolo environments."
 ---
 
 Datasets live inside the environment. A Flash config points at one published
-environment id; it does not take a separate dataset path. The environment's
-`load_environment()` function returns the dataset, prompt builder, and reward
-logic that Flash uses for SFT, GRPO, and local validation.
+environment id, and the environment's `load_environment()` function returns the
+dataset, prompt builder, and reward logic that Flash uses for SFT, GRPO, and
+local validation.
 
 ```toml
 [environment]
@@ -111,9 +111,9 @@ split = "eval"
 ```
 
 <Note>
-  `[environment.params]` only changes dataset selection if your
+  `[environment.params]` changes dataset selection when your
   `load_environment(**kwargs)` reads those values. The `split` example above is
-  a convention inside the environment code, not a separate Flash dataset switch.
+  a convention inside the environment code.
 </Note>
 
 ## What gets uploaded

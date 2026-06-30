@@ -7,8 +7,8 @@ Once a run reaches `done`, deploy its adapter and chat with it, from the CLI or
 any OpenAI-compatible client.
 
 `flash deploy` registers your adapter with Freesolo's **managed multi-LoRA
-serving service**. There is no serving mode to choose: you register the adapter,
-send requests to it, and pay per token (see [Billing](#billing)).
+serving service**. Register the adapter, send requests to it, and pay per token
+(see [Billing](#billing)).
 
 ## Deploy
 
@@ -24,8 +24,8 @@ flash deploy <run-id> --dry-run
 
 ## Deploy a specific checkpoint
 
-Every training step that saved an adapter is independently deployable — not just
-the run's final one. List a run's deployable checkpoints:
+Every training step that saved an adapter is independently deployable. List a
+run's deployable checkpoints:
 
 ```bash
 flash checkpoints <run-id>
@@ -37,28 +37,23 @@ Then serve a specific step instead of the final adapter:
 flash deploy <run-id> --step <N>
 ```
 
-This also rescues a run that stopped mid-RL. If you cancelled a GRPO run (or it
-failed) after some good steps, its intermediate checkpoints are still deployable
-by step. Deploying a `cancelled` or `failed` run's checkpoint attaches the
-serving deployment **without** changing the run's terminal training state, and a
-later `flash undeploy` leaves that state untouched.
+You can deploy a checkpoint while a run is still training, or after a GRPO run
+stops with useful intermediate steps. Checkpoint deployments attach serving
+metadata to the run while preserving the run's training state.
 
 ## Billing
 
-Serving is **billed per token**. Prompt and completion tokens use the same
-per-model rate in the Freesolo billing backend, and cached prompt tokens receive
-a discount. See the actual per-model prices in
-[Supported models](/reference/models#serving-prices). There is no separate
-per-day idle or warm-GPU charge.
+Serving is **billed per token**. Prompt and completion tokens have per-model
+rates, and cached prompt tokens use the model's cached-input rate. See the actual prices in
+[Supported models](/reference/models#serving-prices).
 
-**Cached prompt tokens are billed at a 75% discount.** Prefix caching is always
-on: when a request's prompt shares a leading prefix with a recent one — a shared
-system prompt, or the growing context of a multi-turn chat — the serving engine
-reuses that prefix from cache instead of recomputing it, so those tokens bill at
-**25% of the prompt-token rate**. This is automatic; there is nothing to deploy
-or configure. Only the input prefix can be cached, so completion tokens always
-bill at the full per-token rate. When a request hits the prefix cache, the response
-reports how many prompt tokens were served from cache in
+**Cached prompt tokens are cheaper than uncached prompt tokens.** Prefix caching
+is always on: when a request's prompt shares a leading prefix with a recent one
+— a shared system prompt, or the growing context of a multi-turn chat — the
+serving engine reuses that prefix from cache instead of recomputing it. Only the
+input prefix can be cached, so completion tokens always bill at the full
+per-token rate. When a request hits the prefix cache, the response reports how
+many prompt tokens were served from cache in
 `usage.prompt_tokens_details.cached_tokens`.
 
 ## Chat from the CLI
