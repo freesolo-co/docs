@@ -56,7 +56,9 @@ inline help.
 <ResponseField name="flash env push --name NAME [PATH]">
   Publish a local Freesolo environment to Freesolo's managed Environments Hub
   (private) and print its id (`your-org/name`). `--name` is required and is
-  normalized to a lowercase hyphen slug; `PATH` defaults to the current
+  normalized to a lowercase hyphen slug. You can also pass an explicit
+  `namespace/name`; the namespace is validated server-side and must match your
+  Freesolo org namespace (a mismatch is rejected); `PATH` defaults to the current
   directory. Pass `.` or any folder with `environment.py` at its root so helper
   modules, `datasets/`, `README.md`, and common sibling sidecars (`.jsonl`,
   `.json`, `.csv`, `.txt`, `.md`, `.parquet`, `.tsv`, `.yaml`, `.yml`) are
@@ -119,7 +121,8 @@ inline help.
 </ResponseField>
 
 <ResponseField name="flash cancel RUN_ID">
-  Cancel a run.
+  Cancel a run. The CLI waits for the server to tear down the worker and GPU
+  instance before returning, which can take several minutes.
 </ResponseField>
 
 ## Serving
@@ -132,12 +135,19 @@ inline help.
   | --- | --- | --- |
   | `--step` | (final adapter) | Deploy a specific [checkpoint step](/guides/deploy-and-chat#deploy-a-specific-checkpoint) instead of the run's final adapter |
   | `--dry-run` | - | Preview the deploy without creating it |
+
+  If the run has no final adapter (for example it was cancelled or preempted
+  before finalizing) but saved per-step checkpoints, a run-level deploy fails
+  with a clear error listing the available steps and the exact
+  `flash deploy RUN_ID --step N` command to use instead.
 </ResponseField>
 
 <ResponseField name="flash checkpoints RUN_ID">
   List a run's per-step checkpoints that are available to deploy — including
   intermediate checkpoints from a live or stopped RL run. Serve one with
-  `flash deploy RUN_ID --step N`.
+  `flash deploy RUN_ID --step N`. When output is not a styled terminal, each
+  line is single-space separated (`step N repo:subfolder`), so it splits
+  cleanly in scripts (`awk`, `grep "step N"`).
 </ResponseField>
 
 <ResponseField name="flash chat RUN_ID -m MESSAGE [flags]">
@@ -146,6 +156,7 @@ inline help.
   | Flag | Default | Effect |
   | --- | --- | --- |
   | `-m`, `--message` | (required) | The user message |
+  | `--system` | - | Optional system prompt sent ahead of the user message (transient — used for this request only). Useful for training-prompt parity in evals |
   | `--max-tokens` | `512` | Max tokens to generate |
   | `--temperature` | `0.0` | Sampling temperature |
 </ResponseField>

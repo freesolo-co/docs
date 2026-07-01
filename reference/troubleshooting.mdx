@@ -138,6 +138,16 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
     48 GB card for SFT but needs an 80 GB-class card for GRPO. Pick a smaller
     model or use `sft`. See [Supported models](/reference/models).
   </Accordion>
+
+  <Accordion title="GRPO pre-flight demands a bigger GPU than I expected">
+    The GRPO pre-flight also checks that the rollout engine's KV cache fits: on
+    a card sized only for the training peak, a long-context or large
+    `group_size` rollout can leave vLLM no room for cache blocks and the worker
+    dies at startup ("No available memory for the cache blocks"). Flash now
+    catches that shape at submit time and sizes onto a bigger GPU class
+    instead. To stay on a smaller (cheaper) card, reduce `max_length`,
+    `max_tokens`, or `group_size`.
+  </Accordion>
 </AccordionGroup>
 
 ## Training runs
@@ -211,6 +221,13 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
 
   </Accordion>
 
+  <Accordion title="flash cancel takes a long time to return">
+    Expected. Cancellation waits for the server to stop the worker, destroy the
+    GPU instance, and clean up the endpoint before confirming, which can take
+    several minutes. The CLI waits this teardown out; the run is marked
+    `cancelled` when it completes.
+  </Accordion>
+
   <Accordion title="A GPU hiccup or unavailability interrupted training">
     Runs are supervised server-side: a stall watchdog plus bounded auto-retry that
     **resumes from the last streamed checkpoint**, and the allocator walks to the
@@ -223,6 +240,19 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
 ## Serving
 
 <AccordionGroup>
+  <Accordion title="Deploy fails: run has no run-level adapter">
+    A run cancelled or preempted before finalizing has no final adapter, so a
+    plain `flash deploy <run-id>` cannot serve it. The error lists the run's
+    saved checkpoint steps and the exact command to use — deploy one of them
+    instead:
+
+    ```bash
+    flash checkpoints <run-id>
+    flash deploy <run-id> --step <N>
+    ```
+
+  </Accordion>
+
   <Accordion title="Deploy or the first request is slow">
     Deploy registers and warms the adapter on Freesolo's managed serving
     service. Large models can take a few minutes before the endpoint is ready.

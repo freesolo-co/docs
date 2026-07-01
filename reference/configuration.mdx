@@ -33,7 +33,7 @@ lora_rank = 32
 | Key | Type | Default | Description |
 | --- | --- | --- | --- |
 | `id` | string | (required) | Published Freesolo environment id, `your-org/your-env`. |
-| `params` | table | `{}` | Keyword arguments passed to the env's `load_environment(**kwargs)`. |
+| `params` | table | `{}` | Keyword arguments passed to the env's `load_environment(**kwargs)`. `split` is also honored by Flash for packaged env datasets — see [Datasets](/guides/datasets#load-sidecars): it selects `datasets/<split>.jsonl`, and a missing split file is an error (no silent `train.jsonl` fallback). |
 | `pip` | list[string] | `[]` | Extra third-party pip requirements the worker installs before importing your environment (an escape hatch for deps your `environment.py` imports). |
 | `secrets` | list[string] | `[]` | Environment variable names to forward to the worker as runtime secrets. Values are read from your shell, `.env`, or `.env.local` at submit time. |
 
@@ -66,8 +66,8 @@ Reserved platform secret names such as `FREESOLO_API_KEY`, `HF_TOKEN`,
 | `learning_rate` | float | recipe default | Optimizer learning rate. |
 | `batch_size` | int | recipe default | Training batch size. |
 | `max_length` | int | recipe default | Max sequence length. |
-| `save_every` | int | recipe default | Checkpoint cadence (steps). |
-| `init_from_adapter` | string | - | Warm-start from an existing adapter. Must be the full adapter ref `flash status` prints, `<owner>/<repo>:<phase>/<run-id>` (phase is `sft` or `rl`) — a bare run id is rejected. |
+| `save_every` | int | recipe default | Checkpoint cadence (steps). Every save is uploaded: if a save fires while a previous upload is still in flight it is queued (newest wins) and uploaded next, and the final checkpoint is flushed at train end — saves are not skipped on a slow uplink. |
+| `init_from_adapter` | string | - | Warm-start from an existing adapter. Must be the full adapter ref `flash status` prints, `<owner>/<repo>:<phase>/<run-id>` (phase is `sft` or `rl`) — a bare run id is rejected. Append `/checkpoints/step-<N>` (a step listed by `flash checkpoints`) to warm-start from that saved checkpoint instead of the run-level adapter, e.g. to continue GRPO from the best step. |
 
 ### GRPO-specific
 
