@@ -31,6 +31,11 @@ The same environment drives **SFT** (learn from gold answers), **GRPO** (learn
 from reward scores), **and eval**: you swap one line in the config and the
 environment stays put.
 
+For SFT, each row's `output` is the gold completion. It can be a simple scalar
+answer or a message trajectory (`{"messages": [...]}`) for multi-turn/tool-use
+imitation. Flash trains on the environment's initial episode plus that
+completion, so system prompts and tool transcripts stay part of the example.
+
 ## The one thing you write
 
 You write `environment.py`; Flash owns the rest of the loop.
@@ -71,7 +76,8 @@ of the loop.
 The interaction model is set by which base class you subclass:
 
 - **`EnvironmentSingleTurn`:** prompt in, completion out, reward computed. Most
-  tasks start here.
+  tasks start here. If your prompt messages do not include a `system` message,
+  the SDK prepends the run's prompt text as one.
 - **`EnvironmentMultiTurn`:** for conversations or tool use, where the model takes
   several steps before the whole sequence (its trajectory) is scored. You
   implement the episode hooks — `start_episode` (opening messages),

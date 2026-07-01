@@ -166,6 +166,19 @@ At runtime, read the same values from `example.record["input"]` and
 `load_task_examples(...)` exposes each record's `input` as `example.input` and
 `output` as `example.output`.
 
+For SFT, the SDK builds the training conversation as the environment's
+`start_episode(example, prompt_text)` plus `sft_completion(example)`. The default
+`sft_completion` converts `example.output` into completion messages: scalar
+outputs become one assistant turn, and message-shaped outputs preserve
+multi-turn or tool-call trajectories. Override `sft_completion` only when the
+gold completion needs to be synthesized from other fields.
+
+Single-turn environments usually implement `build_prompt_messages`. The SDK's
+default `start_episode` calls it and prepends the run's prompt text as a
+`system` message when your messages do not already include one, so local eval,
+SFT, and GRPO see the same policy prompt. Multi-turn environments own
+`start_episode`; include any task-specific initial system message there.
+
 When a run uses `thinking = true`, `score_response` receives answer text by
 default. The `response_text` value is still string-compatible and also exposes
 `response_text.completion`, `response_text.thinking`, and `response_text.raw` for

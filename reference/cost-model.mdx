@@ -18,10 +18,11 @@ illustrative example; your run's preview comes from `flash train --cost`, and
 the GPU class snapshot comes from [`flash gpus`](/reference/cli#discovery).
 
 <Note>
-  The estimate is a preview, not the charge. A run is
-  [billed when it finishes](/guides/training#cost-and-billing), for the measured
-  training-loop GPU time it used. Failed and cancelled runs that never reach a
-  successful terminal state are not charged for training.
+  The estimate is the quote for a completed run. Flash checks your balance
+  against that quote at submit time and
+  [bills when the run finishes](/guides/training#cost-and-billing). A cancelled
+  run is repriced to the training steps it reached; a run cancelled before
+  training starts is not charged for training.
 </Note>
 
 ## What drives your cost
@@ -64,8 +65,10 @@ the current catalog. The submit-time allocator uses current managed capacity.
 | --- | ---: | ---: | ---: |
 | RTX 4090 | 24 GB | $0.69 | 165 |
 | RTX 5090 | 32 GB | $0.99 | 210 |
+| A10 | 24 GB | $1.29 | 125 |
 | A100 PCIe | 80 GB | $1.39 | 312 |
 | A100 SXM | 80 GB | $1.49 | 312 |
+| A100 SXM 40GB | 40 GB | $1.99 | 312 |
 | RTX Pro 6000 | 96 GB | $2.09 | 250 |
 | H100 | 80 GB | $3.29 | 990 |
 | H200 | 141 GB | $4.39 | 990 |
@@ -167,8 +170,8 @@ whole job:
   environment locally to count.
 - **Wall cap.** A run is bounded by a 24h wall-clock cap (a platform default; see
   [GPU & infrastructure](/reference/configuration#gpu-infrastructure-managed)).
-  Setup consumes wall-clock budget first; only the training-loop time that
-  actually runs is billable.
+  Setup consumes wall-clock budget first; only the estimated training loop inside
+  the cap contributes to the quote.
 
 ## Worked example
 
@@ -240,17 +243,17 @@ Each lever maps back to a term above:
 - **A faster card** can be cheaper overall when it finishes enough sooner to
   offset a higher `$/hr`; the allocator picks the cheapest fitting class.
 
-## Why your bill can differ from the estimate
+## Why your charge can differ from a preview
 
-The estimate is a deterministic forecast; the final charge is measured. They can
-diverge because:
+The estimate is a deterministic quote for the config and catalog snapshot used
+when Flash prices the run. The actual charge can still differ from an earlier
+preview because:
 
-- **The bill is measured, not estimated.** You are charged for the actual
-  training-loop GPU time the successful run used, not the setup time.
-- **A different card may be provisioned.** The estimate prices the cheapest
-  fitting class; managed capacity can change between preview and submit.
-- **Pricing can drift.** The estimate uses a GPU `$/hr` snapshot; the final run
-  uses the platform rate in effect when the run completed.
+- **A cancelled run is repriced.** Flash uses the same cost model but prices the
+  steps the run reached instead of the planned full run.
+- **The submit-time quote can replace an old preview.** Environment row counts,
+  catalog data, rates, or capacity can change between a local `--cost` preview
+  and the submitted run.
 - **MFU and setup are calibrated approximations.** Real utilization, boot time,
   model load, and dependency install time vary with the model and environment.
 - **Reward latency is an estimate.** GRPO uses a default per-completion grading

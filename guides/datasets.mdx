@@ -20,7 +20,7 @@ Author dataset rows with `input` and `output`:
 | Dataset key | Description |
 | --- | --- |
 | `input` | Prompt text for the model. |
-| `output` | Target answer or gold output. |
+| `output` | Target answer or gold completion. For SFT this can be a scalar answer, `{ "messages": [...] }`, or a bare list of chat messages. |
 | `id` | Optional stable identifier for the row, exposed as `example.id`. |
 | `metadata` | Optional dict preserved on `example.metadata` and available to scoring. |
 
@@ -42,6 +42,25 @@ available as `example.record`.
 {"input":"What is 2 + 2?","output":"4"}
 {"input":"What is 3 + 5?","output":"8"}
 ```
+
+Keep the public row shape to `input` plus optional `output`; alternate prompt
+or target keys are not accepted.
+
+### Message-shaped SFT targets
+
+For SFT, `output` is the gold completion appended after the environment's
+prompt messages. A scalar output becomes one assistant message. If you need to
+teach a multi-turn trajectory or native tool calling, set `output` to
+`{"messages": [...]}` or to a bare list of chat messages. Flash preserves those
+assistant, tool-call, tool-result, and reply messages when it builds the SFT
+example.
+
+```jsonl datasets/train.jsonl
+{"input":"Refund my last order.","output":{"messages":[{"role":"assistant","content":null,"tool_calls":[{"id":"call_refund","type":"function","function":{"name":"refund_order","arguments":"{\"order\":\"last\"}"}}]},{"role":"tool","tool_call_id":"call_refund","content":"{\"ok\":true}"},{"role":"assistant","content":"Your last order has been refunded."}]}}
+```
+
+Use `Environment.sft_completion(example)` if your environment needs to
+synthesize or transform the gold completion before SFT.
 
 ## Package layout
 

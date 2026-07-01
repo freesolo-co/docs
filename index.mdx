@@ -60,7 +60,8 @@ command that talks to the platform is authenticated with your Freesolo API key.
   </Accordion>
   <Accordion title="See the cost before you spend" icon="dollar-sign">
     `--cost` prints the pre-flight estimate without submitting. You pay for the
-    training-loop GPU time you use and for the tokens you serve.
+    quoted training run cost and for the tokens you serve. Cancelled runs are
+    repriced to the training steps they actually reached.
 
     ```bash
     flash train config.toml --cost
