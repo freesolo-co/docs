@@ -67,7 +67,7 @@ Reserved platform secret names such as `FREESOLO_API_KEY`, `HF_TOKEN`,
 | `batch_size` | int | recipe default | Training batch size. |
 | `max_length` | int | recipe default | Max sequence length. |
 | `save_every` | int | recipe default | Checkpoint cadence (steps). Every save is uploaded: if a save fires while a previous upload is still in flight it is queued (newest wins) and uploaded next, and the final checkpoint is flushed at train end — saves are not skipped on a slow uplink. |
-| `init_from_adapter` | string | - | Warm-start from an existing adapter. Must be the full adapter ref `flash status` prints, `<owner>/<repo>:<phase>/<run-id>` (phase is `sft` or `rl`) — a bare run id is rejected. Append `/checkpoints/step-<N>` (a step listed by `flash checkpoints`) to warm-start from that saved checkpoint instead of the run-level adapter, e.g. to continue GRPO from the best step. |
+| `init_from_adapter` | string | - | Warm-start from an existing adapter. Use the run id that `flash status` prints, e.g. `init_from_adapter = "<run-id>"`. To warm-start from a saved checkpoint instead of the run-level adapter, use the exact short ref listed by `flash checkpoints`: `"<run-id>/step-N"`. Full storage refs like `<owner>/<repo>:<phase>/<run-id>` are internal and are rejected in config. |
 
 ### GRPO-specific
 

@@ -34,7 +34,7 @@ flash checkpoints <run-id>
 Then serve a specific step instead of the final adapter:
 
 ```bash
-flash deploy <run-id> --step <N>
+flash deploy <run-id>/step-<N>
 ```
 
 You can deploy a checkpoint while a run is still training, or after a GRPO run
@@ -44,7 +44,7 @@ metadata to the run while preserving the run's training state.
 <Note>
   A run that never finalized (cancelled or preempted mid-training) has no final
   adapter, so a plain `flash deploy <run-id>` fails with an error that lists the
-  saved checkpoint steps and the exact `flash deploy <run-id> --step N` command
+  saved checkpoint steps and the exact `flash deploy <run-id>/step-N` command
   to deploy one of them instead.
 </Note>
 
@@ -150,7 +150,7 @@ client.chat_completion("<run-id>", messages, timeout_seconds=120.0)
 ### Pin and verify the serving checkpoint
 
 Redeploying an adapter id (for example sweeping over checkpoint steps with
-`flash deploy <run-id> --step N`) replaces what that id serves. When requests
+`flash deploy <run-id>/step-N`) replaces what that id serves. When requests
 and redeploys can race, the inference endpoints support two headers so you
 always know — and can require — which checkpoint answered:
 
@@ -186,8 +186,7 @@ flash export --adapter-id <run-id> --repository <owner>/<name>
 
 | Flag | Default | Effect |
 | --- | --- | --- |
-| `--adapter-id` | (required) | The Freesolo adapter id (the run id) to export |
+| `--adapter-id` | (required) | The Freesolo adapter id to export: `RUN_ID` for the final adapter, or `RUN_ID/step-N` for a saved checkpoint |
 | `--repository` | (required) | Destination HuggingFace repo `owner/name` (created if it doesn't exist) |
 | `--api-key` | `HF_TOKEN` | HuggingFace token with write access to `--repository` (read from your shell or a local `.env` / `.env.local`) |
-| `--step` | (final adapter) | Export a specific intermediate checkpoint (see `flash checkpoints <run-id>`) instead of the final adapter; works even for a run cancelled mid-RL |
 | `--public` | private | Create the destination repo as public |
