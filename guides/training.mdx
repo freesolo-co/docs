@@ -111,9 +111,11 @@ flash train config.toml --set train.steps=300 --set train.lora_rank=16
 ## Cost and billing
 
 Flash checks your org's prepaid balance against the pre-flight estimate before a
-run is submitted. A successful run is billed for measured training-loop GPU time.
-Setup and cold start time are shown so you understand wall clock. Once the run
-reaches `done`, Flash posts the final training charge to your org balance.
+run is submitted. A successful run is billed at the quoted Flash cost for the
+planned training loop, while a run cancelled after training starts is repriced to
+the steps it reached. Setup and cold start time are shown so you understand wall
+clock, but are not billed. Once a run completes, or is cancelled after training
+starts, Flash posts the training charge to your org balance.
 Preview the estimate before you submit with `flash train --cost`:
 
 ```bash
@@ -148,8 +150,9 @@ For how each line of the pre-flight estimate is computed, see
 ```bash
 flash runs                # all your runs: state, cost, GPU, model
 flash status <run-id>     # status JSON, including the cost record
-flash status <run-id> --logs    # print logs, then status
-flash status <run-id> --follow  # stream logs until completion, then status
+flash status <run-id> --follow  # poll status until completion, without replaying logs
+flash log <run-id>              # print the full log snapshot
+flash log <run-id> --follow     # stream logs until completion
 flash cancel <run-id>     # cancel a run
 ```
 

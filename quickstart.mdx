@@ -138,9 +138,9 @@ flash train configs/rl.toml
 
 <Note>
   This is the first step that can spend money. At submit time Flash checks your
-  org balance against the pre-flight estimate, then bills successful runs for
-  measured training-loop GPU time. Setup and cold start time are reported
-  separately for observability.
+  org balance against the pre-flight estimate, then bills successful runs at the
+  quoted Flash cost. Setup and cold start time are reported separately for
+  observability and are not billed.
 </Note>
 
 Flash then follows the logs live. Press `Ctrl-C` to detach. The run keeps going
@@ -150,7 +150,7 @@ on the server, and you can
 ```bash
 flash runs                # list your runs and their state/cost
 flash status <run-id>     # status JSON, including the cost record
-flash status <run-id> -f  # stream logs until the run finishes
+flash log <run-id> -f     # stream logs until the run finishes
 ```
 
 The run reaches `done` when training finishes.
@@ -195,7 +195,8 @@ The commands you used above, plus the ones you'll reach for next. Run
 | `flash train`        | Submit a run and follow its logs           | `flash train configs/rl.toml`          |
 | `flash train --cost` | Preview the pre-flight cost, no submit     | `flash train configs/rl.toml --cost`   |
 | `flash runs`         | List your runs with state, cost, GPU       | `flash runs`                           |
-| `flash status`       | Show run status, or stream its logs        | `flash status <run-id> -f`             |
+| `flash status`       | Show run status and cost                   | `flash status <run-id>`                |
+| `flash log`          | Print or follow worker logs                | `flash log <run-id> -f`                |
 | `flash deploy`       | Serve a trained adapter                    | `flash deploy <run-id>`                |
 | `flash chat`         | Send a message to a deployment             | `flash chat <run-id> -m "hi"`          |
 | `flash undeploy`     | Tear a deployment down                     | `flash undeploy <run-id>`              |

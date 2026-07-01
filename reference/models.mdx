@@ -25,12 +25,12 @@ Every catalog model supports **both SFT and GRPO**, and all are hybrid reasoning
 
 | Model (`model =`) | Parameters | Training class | Serving tier | Reasoning |
 | --- | ---: | --- | --- | --- |
-| `Qwen/Qwen3.5-0.8B` | 0.9B | RTX 4090 | L4 | Hybrid |
-| `openbmb/MiniCPM5-1B` | 1.2B | RTX 4090 SFT / RTX 5090 GRPO | L4 | Hybrid |
-| `Qwen/Qwen3.5-2B` | 2.3B | RTX 4090 SFT / RTX 5090 GRPO | L4 | Hybrid |
-| `Qwen/Qwen3.5-4B` | 4.7B | RTX 4090 SFT / A100-80GB GRPO | L4 FP8 | Hybrid |
-| `Qwen/Qwen3.5-9B` | 9.7B | RTX 5090 SFT / A100-80GB GRPO | L4 FP8 | Hybrid |
-| `Qwen/Qwen3.6-35B-A3B` | 35B total / ~3B active | H200 SFT / B200 GRPO | A100-80GB FP8 | Hybrid |
+| `Qwen/Qwen3.5-0.8B` | 0.9B | RTX 4090 | L4 FP8 | Hybrid |
+| `openbmb/MiniCPM5-1B` | 1.2B | RTX 4090 | L4 FP8 | Hybrid |
+| `Qwen/Qwen3.5-2B` | 2.3B | RTX 4090 | L4 FP8 | Hybrid |
+| `Qwen/Qwen3.5-4B` | 4.7B | RTX 5090 | L40S FP8 | Hybrid |
+| `Qwen/Qwen3.5-9B` | 9.7B | A100 PCIe | L40S FP8 | Hybrid |
+| `Qwen/Qwen3.6-35B-A3B` | 35B total / ~3B active | H200 SFT / B200 GRPO | A100-80GB:2 FP8 | Hybrid |
 
 ## Serving prices
 
@@ -62,12 +62,15 @@ per-token rate. See [Billing](/guides/deploy-and-chat#billing).
 - **`openbmb/MiniCPM5-1B`**: an on-device-class small model on a standard Llama
   architecture.
 - **`Qwen/Qwen3.5-2B`**: a small, capable step up when 0.8B underfits.
-- **`Qwen/Qwen3.5-4B`**: a balanced starting point for most tasks.
-- **`Qwen/Qwen3.5-9B`**: the largest dense catalog model. GRPO uses an 80 GB-class
-  card, so use it when quality matters more than the run cost.
+- **`Qwen/Qwen3.5-4B`**: a balanced starting point for most tasks. Serving runs
+  on an FP8 L40S tier with rank-64 LoRA capacity.
+- **`Qwen/Qwen3.5-9B`**: the largest dense catalog model. Training uses an
+  80 GB-class card, and serving runs on an FP8 L40S tier, so use it when quality
+  matters more than the run cost.
 - **`Qwen/Qwen3.6-35B-A3B`**: a Mixture-of-Experts checkpoint (35B total, ~3B
   active per token) and the largest model in the catalog. SFT runs on an H200
-  class and GRPO runs on a B200 class.
+  class, GRPO runs on a B200 class, and serving uses a two-card A100-80GB FP8
+  tier.
 
 <Note>
   The Qwen3.5 entries are **text-only** fine-tunes: the checkpoints are natively

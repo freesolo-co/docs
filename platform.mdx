@@ -9,7 +9,7 @@ dashboard at [freesolo.co/platform](https://freesolo.co/platform). After sign-in
 `/platform` redirects you to your active org at `/{org-slug}/platform`.
 
 The dashboard mirrors the operational state behind the CLI: training runs,
-published environments, billing, and API keys.
+published environments, deployed models, billing, and API keys.
 
 ## API keys
 
@@ -47,6 +47,17 @@ mid-training. This is the same set you get from
 time, last use, and run count, and lets you inspect, pull, or delete environment
 source.
 
+## Models
+
+**Models** lists the org's deployed LoRA adapters from managed serving. It shows
+the adapter id, base model, serving URL, latest reward when the adapter came from
+a Flash run, per-token billing, and serving status. Rows that still have a
+matching Flash run link back to the run detail page.
+
+Model access is org-scoped: the serving endpoint authorizes external chat
+requests against the org that owns the adapter, and unattributed legacy adapters
+are not treated as user-authorizable until they are attributed.
+
 ## Billing
 
 Flash is prepaid. Billing settings show the org balance, activity, payment
@@ -59,8 +70,9 @@ Manual top-ups range from $50 to $10,000.
 
 The activity log itemizes:
 
-- Training runs, charged after successful completion for final
-  training-loop GPU time. Setup time is reported but not billed.
+- Training runs, charged after successful completion at the Flash cost quote.
+  Setup time is reported but not billed. Cancelled runs are repriced to the
+  training steps they reached.
 - Serving usage, charged per token.
 
 ## Freesolo agent CLI

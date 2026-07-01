@@ -87,7 +87,7 @@ inline help.
 <ResponseField name="flash train CONFIG [flags]">
   Submit a managed training run from a TOML config and follow its logs.
   Flash checks prepaid balance against the pre-flight estimate before submit, and
-  successful runs are billed for measured training-loop GPU time (see
+  successful runs are billed at the quoted Flash cost (see
   [Cost & billing](/guides/training#cost-and-billing)). The pre-flight `--cost`
   estimate is derived in
   [How cost is computed](/reference/cost-model).
@@ -107,10 +107,15 @@ inline help.
   List your runs with state, algorithm, cost, GPU, and model.
 </ResponseField>
 
-<ResponseField name="flash status RUN_ID [--logs] [-f]">
+<ResponseField name="flash status RUN_ID [-f]">
   Print a run's status, including its current or final cost record.
-  `--logs` prints current logs before the status JSON. `-f`/`--follow` streams
-  logs until the run ends, then prints final status.
+  `-f`/`--follow` polls status until the run reaches a terminal state without
+  replaying worker logs.
+</ResponseField>
+
+<ResponseField name="flash log RUN_ID [-f]">
+  Print a run's full logs, including worker console/error artifacts.
+  `-f`/`--follow` streams new logs until the run reaches a terminal state.
 </ResponseField>
 
 <ResponseField name="flash cancel RUN_ID">

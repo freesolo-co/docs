@@ -145,8 +145,9 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
 <AccordionGroup>
   <Accordion title="When am I charged for a run?">
     Flash checks your prepaid org balance against the pre-flight estimate before
-    submit, then bills successful runs for measured training-loop GPU time. Setup
-    time is reported separately. Preview the estimate before you submit:
+    submit, then bills successful runs at the quoted Flash cost. Cancelled runs
+    are repriced to the training steps they reached, and setup time is reported
+    separately without being billed. Preview the estimate before you submit:
 
     ```bash
     flash train config.toml --cost
@@ -203,7 +204,8 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
 
     ```bash
     flash runs              # state and cost of your runs
-    flash status <run-id> -f    # re-follow the logs
+    flash log <run-id> -f       # re-follow the logs
+    flash status <run-id>       # status and cost JSON
     flash cancel <run-id>       # stop it
     ```
 
@@ -213,8 +215,8 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
     Runs are supervised server-side: a stall watchdog plus bounded auto-retry that
     **resumes from the last streamed checkpoint**, and the allocator walks to the
     next-cheapest validated GPU class when capacity shifts. If the run ultimately
-    succeeds, the final charge is based on measured training-loop GPU time. Watch with
-    `flash status <run-id> -f`.
+    succeeds, the charge remains the quoted Flash cost. Watch logs with
+    `flash log <run-id> -f` or poll status with `flash status <run-id> -f`.
   </Accordion>
 </AccordionGroup>
 
