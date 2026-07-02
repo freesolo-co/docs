@@ -256,6 +256,26 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
   the judge silently scores 0.
 </Accordion>
 
+<Accordion title="Qwen3.5 thinking multi-turn SFT learns doubled thinking tags">
+  In Qwen3.5 thinking mode, the chat template treats prior and next assistant
+  turns differently: it strips literal `<think>` blocks from non-final assistant
+  history, then pre-opens `<think>\n` in the next generation prompt. A naive
+  multi-turn SFT transcript that puts `<think>...</think>` in every assistant
+  turn can therefore train on a tag layout that inference will never render.
+  The symptom is doubled, missing, or misplaced thinking tags, or an adapter that
+  behaves differently in training-style evals than it does when served.
+
+  Fixes:
+  - For message-shaped multi-turn SFT targets, keep intermediate assistant turns
+    as the actual code, tool, or action text only.
+  - Put `<think>...</think>` plus the final answer only in the final assistant
+    target.
+  - Do not add a second opener for the template's pre-opened `<think>\n`. Flash's
+    completion-only SFT masking uses the longest shared token prefix, so that
+    pre-opened tag is treated as prompt text.
+
+</Accordion>
+
   <Accordion title="Did pressing Ctrl-C kill my run?">
     No. `Ctrl-C` during `flash train` just **detaches** you; the run keeps going
     on Freesolo. Re-follow it any time, and cancel explicitly if you mean to:
