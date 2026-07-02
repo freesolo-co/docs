@@ -3,7 +3,7 @@
 	"theme": "mint",
 	"name": "Freesolo Docs",
 	"description": "Train, deploy, and chat with custom LoRA models on managed infrastructure.",
-	"favicon": "/favicon.ico",
+	"favicon": "/favicon.svg",
 	"colors": {
 		"primary": "#5f72ff",
 		"light": "#8b98ff",
