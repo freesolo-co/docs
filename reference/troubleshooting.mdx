@@ -95,7 +95,9 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
     pip = ["math-verify>=0.8.0"]
     ```
 
-    Only list packages your environment imports.
+    Only list packages your environment imports. Flash does not install worker
+    dependencies from a `pyproject.toml`, `requirements.txt`, or lockfile bundled
+    with the environment; keep managed-run dependencies in `[environment].pip`.
   </Accordion>
 
   <Accordion title="[environment].pip breaks training startup">

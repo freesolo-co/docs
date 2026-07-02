@@ -40,6 +40,7 @@ lora_rank = 32
 ```toml
 [environment]
 id = "your-org/your-env"
+pip = ["openai>=1.0.0"]
 secrets = ["SERVICE_API_KEY"]
 ```
 
@@ -50,6 +51,12 @@ import os
 
 service_api_key = os.environ["SERVICE_API_KEY"]
 ```
+
+`[environment].pip` is the worker install path for reward and environment
+dependencies. Do not rely on `pyproject.toml`, `requirements.txt`, or lockfiles
+inside the published environment artifact for managed training installs. Those
+files may describe your local development environment, but runtime packages
+belong in this config list.
 
 Never put secret values in `[environment.params]`; it becomes part of the run
 spec. Every name you list under `[environment].secrets` must
