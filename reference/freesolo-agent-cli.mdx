@@ -5,10 +5,10 @@ description: "The freesolo command for repository-agent workflows."
 
 The `freesolo` CLI runs repository-agent workflows.
 
-- Use **`flash`** to train LoRA adapters on managed GPUs, deploy them, and chat
+- Use **`flash`** to train LoRA adapters on managed infrastructure, deploy them, and chat
   with them.
 - Use **`freesolo`** for repository-agent workflows that draft, optimize, train,
-  or poll backend jobs against a source repo.
+  or poll jobs against a source repo.
 
 ## Install
 
@@ -32,8 +32,7 @@ Python 3.11 or newer is required.
 - The operation to run: `draft`, `optimize`, `training`, or `poll`.
 - A source repository URL for new draft jobs.
 - A prompt or description for the job.
-- Optional environment variables, saved as encrypted org secrets for the backend
-  job.
+- Optional environment variables, saved as encrypted org secrets for the job.
 
 For private GitHub repositories, install the Freesolo GitHub App when prompted:
 
@@ -45,12 +44,12 @@ https://github.com/apps/freesolo-agent/installations/new
 
 | Operation | What it does |
 | --- | --- |
-| `draft` | Start a new backend job from a repository URL and task description. |
+| `draft` | Start a new job from a repository URL and task description. |
 | `optimize` | Continue from a stored org job/project and run the optimization phase. |
 | `training` | Continue from a stored org job/project and run the training phase. |
 | `poll` | Follow an existing job until it reaches a terminal state. |
 
-The backend job states are `queued`, `running`, `succeeded`, `blocked`,
+The job states are `queued`, `running`, `succeeded`, `blocked`,
 `user_stopped`, and `failed`.
 
 ## Help

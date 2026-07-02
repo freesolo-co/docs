@@ -43,7 +43,7 @@ You write `environment.py`; Flash owns the rest of the loop.
 | You write                                                | Flash runs                                                                       |
 | -------------------------------------------------------- | -------------------------------------------------------------------------------- |
 | The dataset, interaction, and reward in `environment.py` | The training loop: sampling prompts, generating model attempts (rollouts), applying the algorithm |
-| (nothing)                                                | The GPU, batching, checkpointing, and auto-retry                                 |
+| (nothing)                                                | Managed compute, batching, checkpointing, and auto-retry                         |
 | (nothing)                                                | A versioned Environments Hub and per-token serving                               |
 
 The quality of the environment's dataset and reward sets the ceiling on what
@@ -117,7 +117,7 @@ output.
 ## From local file to managed run
 
 An environment is authored locally but has to be reachable by id when training
-runs on a managed GPU. The lifecycle is four steps:
+runs on managed infrastructure. The lifecycle is four steps:
 
 <Steps>
   <Step title="Author it locally">

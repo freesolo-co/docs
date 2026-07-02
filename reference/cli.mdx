@@ -38,12 +38,6 @@ inline help.
   [Supported models](/reference/models) for algorithms, reasoning, and pricing.
 </ResponseField>
 
-<ResponseField name="flash gpus">
-  List managed GPU classes with VRAM and the CLI's current estimated `$/hr`
-  snapshot. Submitted runs report the realized GPU class in `flash runs` and
-  `flash status`.
-</ResponseField>
-
 ## Environments
 
 <ResponseField name="flash env setup">
@@ -56,7 +50,9 @@ inline help.
 <ResponseField name="flash env push --name NAME [PATH]">
   Publish a local Freesolo environment to Freesolo's managed Environments Hub
   (private) and print its id (`your-org/name`). `--name` is required and is
-  normalized to a lowercase hyphen slug; `PATH` defaults to the current
+  normalized to a lowercase hyphen slug. You can also pass an explicit
+  `namespace/name`; the namespace is validated by Freesolo and must match your
+  Freesolo org namespace (a mismatch is rejected); `PATH` defaults to the current
   directory. Pass `.` or any folder with `environment.py` at its root so helper
   modules, `datasets/`, `README.md`, and common sibling sidecars (`.jsonl`,
   `.json`, `.csv`, `.txt`, `.md`, `.parquet`, `.tsv`, `.yaml`, `.yml`) are
@@ -89,8 +85,8 @@ inline help.
   Flash checks prepaid balance against the pre-flight estimate before submit, and
   successful runs are billed at the quoted Flash cost (see
   [Cost & billing](/guides/training#cost-and-billing)). The pre-flight `--cost`
-  estimate is derived in
-  [How cost is computed](/reference/cost-model).
+  estimate is explained in
+  [Cost and billing](/reference/cost-model).
 
   | Flag | Effect |
   | --- | --- |
@@ -104,7 +100,7 @@ inline help.
 ## Run management
 
 <ResponseField name="flash runs">
-  List your runs with state, algorithm, cost, GPU, and model.
+  List your runs with state, algorithm, cost, and model.
 </ResponseField>
 
 <ResponseField name="flash status RUN_ID [-f]">
@@ -119,25 +115,32 @@ inline help.
 </ResponseField>
 
 <ResponseField name="flash cancel RUN_ID">
-  Cancel a run.
+  Cancel a run. The CLI waits for the managed worker to stop before returning,
+  which can take several minutes.
 </ResponseField>
 
 ## Serving
 
 <ResponseField name="flash deploy RUN_ID [flags]">
-  Register a trained adapter with the managed multi-LoRA serving service.
+  Register a trained adapter with the managed serving service.
   Serving is [billed per token](/guides/deploy-and-chat#billing).
 
   | Flag | Default | Effect |
   | --- | --- | --- |
-  | `--step` | (final adapter) | Deploy a specific [checkpoint step](/guides/deploy-and-chat#deploy-a-specific-checkpoint) instead of the run's final adapter |
   | `--dry-run` | - | Preview the deploy without creating it |
+
+  If the run has no final adapter (for example it was cancelled or preempted
+  before finalizing) but saved per-step checkpoints, a run-level deploy fails
+  with a clear error listing the available steps and the exact
+  `flash deploy RUN_ID/step-N` command to use instead.
 </ResponseField>
 
 <ResponseField name="flash checkpoints RUN_ID">
   List a run's per-step checkpoints that are available to deploy — including
   intermediate checkpoints from a live or stopped RL run. Serve one with
-  `flash deploy RUN_ID --step N`.
+  `flash deploy RUN_ID/step-N`. When output is not a styled terminal, each
+  line is single-space separated (`step N RUN_ID/step-N`), so it splits
+  cleanly in scripts (`awk`, `grep "step N"`).
 </ResponseField>
 
 <ResponseField name="flash chat RUN_ID -m MESSAGE [flags]">
@@ -146,12 +149,13 @@ inline help.
   | Flag | Default | Effect |
   | --- | --- | --- |
   | `-m`, `--message` | (required) | The user message |
+  | `--system` | - | Optional system prompt sent ahead of the user message (transient — used for this request only). Useful for training-prompt parity in evals |
   | `--max-tokens` | `512` | Max tokens to generate |
   | `--temperature` | `0.0` | Sampling temperature |
 </ResponseField>
 
 <ResponseField name="flash deployments">
-  List active serving deployments with GPU and endpoint.
+  List active serving deployments and endpoints.
 </ResponseField>
 
 <ResponseField name="flash undeploy RUN_ID">
@@ -162,11 +166,11 @@ inline help.
 
 <ResponseField name="flash export --adapter-id ID --repository OWNER/NAME [flags]">
   Export a trained adapter to a HuggingFace repo you own (created if it doesn't
-  exist). `--adapter-id` (the run id) and `--repository` are both required.
+  exist). `--adapter-id` is either `RUN_ID` for the final adapter or
+  `RUN_ID/step-N` for a saved checkpoint. `--repository` is required.
 
   | Flag | Default | Effect |
   | --- | --- | --- |
   | `--api-key` | `HF_TOKEN` | HuggingFace token with write access to `--repository` (read from your shell or a local `.env` / `.env.local`) |
-  | `--step` | (final adapter) | Export a specific intermediate checkpoint (see `flash checkpoints`) instead of the run's final adapter; works even for a run cancelled mid-RL |
   | `--public` | private | Create the destination repo as public |
 </ResponseField>

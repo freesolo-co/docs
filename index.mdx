@@ -1,11 +1,11 @@
 ---
 title: "Flash"
 sidebarTitle: "Overview"
-description: "Train, deploy, and chat with custom LoRA models on managed GPUs, from one CLI."
+description: "Train, deploy, and chat with custom LoRA models on managed infrastructure, from one CLI."
 ---
 
 Flash is Freesolo's managed post-training service. You write a short config, run
-one command, and Flash fine-tunes a model on a managed GPU, then serves the
+one command, and Flash fine-tunes a model on managed infrastructure, then serves the
 result behind an OpenAI-compatible endpoint. There's nothing to host, and every
 command that talks to the platform is authenticated with your Freesolo API key.
 
@@ -20,7 +20,7 @@ command that talks to the platform is authenticated with your Freesolo API key.
   <Accordion title="Fine-tune a model on your own task" icon="dumbbell">
     Write a TOML config, run one command, and Flash trains a LoRA adapter (a
     small set of add-on weights) on top of a supported base model. You pick the
-    model and the task; the platform picks and runs the GPU. See
+    model and the task; Flash handles the training infrastructure. See
     [Training](/guides/training).
 
     ```bash
@@ -49,7 +49,7 @@ command that talks to the platform is authenticated with your Freesolo API key.
 
   </Accordion>
   <Accordion title="Serve it behind an OpenAI-compatible API" icon="comments">
-    `flash deploy` registers the adapter with managed multi-LoRA serving, then
+    `flash deploy` registers the adapter with managed serving, then
     `flash chat` or any OpenAI client can call it with your Freesolo key. See
     [Deploy & chat](/guides/deploy-and-chat).
 

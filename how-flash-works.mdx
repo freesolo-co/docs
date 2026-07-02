@@ -16,8 +16,8 @@ model into one that's reliably good at _your_ task, using _your_ data and _your_
 definition of a good answer.
 
 Flash is a managed post-training service. You describe the task and pick a base
-model, Flash fine-tunes the model on a GPU, and then serves the result behind an
-OpenAI-compatible API. Reach for post-training when you want consistent behavior,
+model, Flash fine-tunes it on managed infrastructure, and then serves the result
+behind an OpenAI-compatible API. Reach for post-training when you want consistent behavior,
 a smaller and cheaper model that matches a big one on a narrow task, or behavior
 that prompting alone does not reliably produce. More on when to use it below.
 
@@ -58,7 +58,7 @@ three practical payoffs:
   parameters.
 - **Small to store and move** (megabytes, not gigabytes).
 - **Efficient to serve**, because many adapters that share a base model can be
-  served together on one GPU.
+  served by the same managed service.
 
 Pick the base model with one line in your config. Browse the catalog with
 `flash models`, or see [Supported models](/reference/models).
@@ -116,7 +116,7 @@ attempts succeed.
 ### Serving the result
 
 A trained adapter isn't useful until you can call it. `flash deploy` registers
-your adapter with Freesolo's **managed multi-LoRA serving**. You talk to it over
+your adapter with Freesolo's **managed serving**. You talk to it over
 an OpenAI-compatible API, and serving is billed per token. See
 [Deploy & chat](/guides/deploy-and-chat).
 

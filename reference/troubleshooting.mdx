@@ -63,15 +63,16 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
     ```
 
     It prints the published id (`your-org/math`) to put in your config's
-    `[environment] id`.
+    `[environment] id`. If you pass `--name namespace/name`, the namespace must
+    match your Freesolo org; otherwise pass a bare name such as `math`.
 
   </Accordion>
 
   <Accordion title="ModuleNotFoundError: No module named 'freesolo' (local authoring)">
-    Training is managed, so the env's dependencies live server-side. But local
-    authoring needs them installed locally, as does a `flash train --cost`
-    that **loads** the environment (for example, to count examples for SFT
-    cost). `--dry-run` validates only the config and does not import the environment:
+    Training is managed, but local authoring still needs the SDK installed in
+    your local Python environment, as does a `flash train --cost` that **loads**
+    the environment (for example, to count examples for SFT cost). `--dry-run`
+    validates only the config and does not import the environment:
 
     ```bash
     uv pip install freesolo
@@ -82,11 +83,58 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
 
   </Accordion>
 
-<Accordion title="Environment won't import / name collision">
-  If your environment module shares a name with an installed Python package, it
-  can shadow or be shadowed by that package. Keep helper module names distinct
-  from installed packages.
-</Accordion>
+  <Accordion title="Worker import fails with ModuleNotFoundError">
+    `flash train --dry-run` validates the config, but it does not prove every
+    remote environment dependency is installed. If `flash log <run-id>` shows
+    your `environment.py` failed while importing a task library, add that
+    package to `[environment].pip`, publish the environment, and submit again:
+
+    ```toml
+    [environment]
+    id = "your-org/your-env"
+    pip = ["math-verify>=0.8.0"]
+    ```
+
+    Only list packages your environment imports.
+  </Accordion>
+
+  <Accordion title="[environment].pip breaks training startup">
+    `[environment].pip` is for task dependencies imported by your environment.
+    Do not pin Flash's managed training stack there, such as `torch`, `trl`,
+    `vllm`, `peft`, `bitsandbytes`, or `liger-kernel`, unless your environment
+    directly imports that package. Extra pins can conflict with the worker's
+    tested training recipe. Remove the pin and resubmit.
+  </Accordion>
+
+  <Accordion title="flash env pull says the archive is too large">
+    Pull the specific file you need instead of the whole environment:
+
+    ```bash
+    flash env pull your-org/your-env environment.py -o environment.py
+    flash env pull your-org/your-env datasets/eval.jsonl -o eval.jsonl
+    ```
+
+    Keep published environments focused on source, small sidecars, and datasets
+    needed by the run. Do not publish virtualenvs, local caches, model weights,
+    or generated artifacts.
+  </Accordion>
+
+  <Accordion title="I republished an environment and want to verify the data">
+    Use `flash env pull` to inspect the exact packaged file:
+
+    ```bash
+    flash env pull your-org/your-env datasets/train.jsonl -o train.jsonl
+    ```
+
+    For clean A/B experiments, publish changed datasets under a fresh env name
+    so old runs, new runs, and local files are easy to tell apart.
+  </Accordion>
+
+  <Accordion title="Environment won't import / name collision">
+    If your environment module shares a name with an installed Python package, it
+    can shadow or be shadowed by that package. Keep helper module names distinct
+    from installed packages.
+  </Accordion>
 
   <Accordion title="What id do I reference in my config?">
     The `[environment] id` must be a published Freesolo environment id, produced
@@ -128,15 +176,23 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
   </Accordion>
 </AccordionGroup>
 
-## GPUs & fit
+## Run fit and resource use
 
 <AccordionGroup>
-  <Accordion title="GRPO needs a bigger GPU than SFT for the same model">
-    Expected. As it trains, GRPO also generates [rollouts](/how-flash-works), so
-    it runs a generation engine that holds a second copy of the weights plus a
-    KV cache. That needs more VRAM than SFT. The 9B model, for instance, fits a
-    48 GB card for SFT but needs an 80 GB-class card for GRPO. Pick a smaller
-    model or use `sft`. See [Supported models](/reference/models).
+  <Accordion title="GRPO costs or fits differently than SFT">
+    Expected. GRPO samples multiple completions, scores them, and updates from
+    that group of attempts. For the same model, it usually needs more room and
+    costs more than SFT. If a GRPO run is too expensive or too large, use a
+    smaller model, reduce `group_size`, reduce `max_tokens`, reduce `max_length`,
+    or start with SFT.
+  </Accordion>
+
+  <Accordion title="Pre-flight says the run is too large">
+    The usual causes are long context, long generated completions, a large GRPO
+    `group_size`, or a larger base model than the task needs. Reduce
+    `max_length`, `max_tokens`, or `group_size`, or switch to a smaller model.
+    If you recently enabled `thinking = true`, remember that reasoning and the
+    final answer share the same token budget.
   </Accordion>
 </AccordionGroup>
 
@@ -200,7 +256,7 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
 
   <Accordion title="Did pressing Ctrl-C kill my run?">
     No. `Ctrl-C` during `flash train` just **detaches** you; the run keeps going
-    server-side. Re-follow it any time, and cancel explicitly if you mean to:
+    on Freesolo. Re-follow it any time, and cancel explicitly if you mean to:
 
     ```bash
     flash runs              # state and cost of your runs
@@ -211,18 +267,38 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
 
   </Accordion>
 
-  <Accordion title="A GPU hiccup or unavailability interrupted training">
-    Runs are supervised server-side: a stall watchdog plus bounded auto-retry that
-    **resumes from the last streamed checkpoint**, and the allocator walks to the
-    next-cheapest validated GPU class when capacity shifts. If the run ultimately
-    succeeds, the charge remains the quoted Flash cost. Watch logs with
-    `flash log <run-id> -f` or poll status with `flash status <run-id> -f`.
+  <Accordion title="flash cancel takes a long time to return">
+    Expected. Cancellation waits for the managed worker to stop and clean up
+    before confirming, which can take several minutes. The CLI waits this
+    teardown out; the run is marked `cancelled` when it completes.
+  </Accordion>
+
+  <Accordion title="A capacity or resource-fit issue interrupted training">
+    Runs are supervised by Flash: a stall watchdog plus bounded auto-retry that
+    **resumes from the last streamed checkpoint** when possible. If the run
+    ultimately succeeds, the charge remains the quoted Flash cost. Watch logs
+    with `flash log <run-id> -f` or poll status with `flash status <run-id> -f`.
+    If the same shape repeatedly fails before useful metrics, reduce
+    `max_length`, `max_tokens`, or `group_size`.
   </Accordion>
 </AccordionGroup>
 
 ## Serving
 
 <AccordionGroup>
+  <Accordion title="Deploy fails: run has no run-level adapter">
+    A run cancelled or preempted before finalizing has no final adapter, so a
+    plain `flash deploy <run-id>` cannot serve it. The error lists the run's
+    saved checkpoint steps and the exact command to use — deploy one of them
+    instead:
+
+    ```bash
+    flash checkpoints <run-id>
+    flash deploy <run-id>/step-<N>
+    ```
+
+  </Accordion>
+
   <Accordion title="Deploy or the first request is slow">
     Deploy registers and warms the adapter on Freesolo's managed serving
     service. Large models can take a few minutes before the endpoint is ready.

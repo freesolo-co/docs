@@ -46,6 +46,20 @@ available as `example.record`.
 Keep the public row shape to `input` plus optional `output`; alternate prompt
 or target keys are not accepted.
 
+<Warning>
+  Records are canonicalized to `input`/`output`/`id`/`metadata`. Any other
+  top-level key (say `initial_state` or `minimal_solutions`) is **dropped**
+  before the record reaches a training worker — the SDK raises a `UserWarning`
+  naming the record, and Flash prints a warning naming the dropped keys. Nest
+  task data under `metadata` to preserve it.
+</Warning>
+
+Records without an `id` get a deterministic positional one, `example_NNNNNN`
+(`example_000000`, `example_000001`, ...), assigned by source position. Local
+loading and remote workers derive the same id for the same row, so selecting
+examples by id behaves identically in both places. The helper is exported as
+`freesolo.datasets.stable_example_id(index)`.
+
 ### Message-shaped SFT targets
 
 For SFT, `output` is the gold completion appended after the environment's
@@ -61,6 +75,22 @@ example.
 
 Use `Environment.sft_completion(example)` if your environment needs to
 synthesize or transform the gold completion before SFT.
+
+### Validate thinking-model SFT targets
+
+SFT on a thinking model (`thinking = true`) expects each gold completion to
+literally contain a `<think>...</think>` block. Catch missing blocks locally
+before submitting a run:
+
+```python
+from freesolo.datasets import load_dataset, warn_missing_think_tags
+
+dataset = load_dataset("datasets/train.jsonl")
+missing = warn_missing_think_tags(dataset.examples)  # UserWarning + list of offending ids
+```
+
+It returns the ids of offending examples and emits a `UserWarning` naming the
+first few. Unlabeled records (no `output`) are skipped.
 
 ## Package layout
 
@@ -130,9 +160,14 @@ split = "eval"
 ```
 
 <Note>
-  `[environment.params]` changes dataset selection when your
-  `load_environment(**kwargs)` reads those values. The `split` example above is
-  a convention inside the environment code.
+  `[environment.params]` values are passed to your `load_environment(**kwargs)`.
+  `split` is also honored by Flash itself: for an environment packaged with
+  dataset files, `split = "eval"` selects `datasets/eval.jsonl` (or `.json`) as
+  the dataset Flash trains on — SFT targets and GRPO problem selection alike.
+  If the environment packages a default train split but the requested split
+  file does not exist, the run fails at load time instead of silently falling
+  back to `train.jsonl`. An explicit `dataset_path` param takes precedence over
+  `split`.
 </Note>
 
 ## What gets uploaded

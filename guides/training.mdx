@@ -4,9 +4,10 @@ description: "Write a config, submit a managed run, and follow it to completion.
 ---
 
 A training run is described by a single TOML config and submitted with
-`flash train`. Flash allocates a GPU, supervises the job, and streams checkpoints
-and logs back to you. This guide covers the config and the run lifecycle; see
-the [configuration reference](/reference/configuration) for every field.
+`flash train`. Flash runs the job on managed infrastructure, supervises it, and
+streams checkpoints and logs back to you. This guide covers the config and the
+run lifecycle; see the [configuration reference](/reference/configuration) for
+every field.
 
 ## Pick a base model
 
@@ -68,15 +69,11 @@ lora_alpha = 64
 # project = "my-project"             # optional Weights & Biases logging
 ```
 
-## GPU selection is automatic
+## Infrastructure is managed
 
-At submit time the allocator picks the cheapest validated managed GPU class
-that fits your run, and retry uses the next fitting class when capacity shifts.
-To see the managed GPU classes, VRAM, and representative `$/hr` snapshot:
-
-```bash
-flash gpus
-```
+You choose the model, algorithm, environment, and `[train]` settings. Flash
+chooses the training resources, retry path, checkpointing, and artifact storage
+for the run.
 
 ## Validate before you submit
 
@@ -124,8 +121,7 @@ flash train config.toml --cost
 
 ```text
 Run        : Qwen/Qwen3.5-0.8B  [GRPO, 100 steps]
-GPU        : RTX 4090 (24 GB; run needs >= 24 GB) @ $0.69/hr
-Setup      : 9.5 min (cold start: boot + deps + model load + vLLM init; not billed)
+Setup      : 9.5 min (not billed)
 Per step   : 11.06 s
 Train      : 18.4 min
 Wall clock : 0.47 h
@@ -137,18 +133,17 @@ TOTAL      : $0.21
   The cost is catalog-deterministic and runs locally; for an uncapped SFT run
   it loads the environment to count its training examples. Once a run starts,
   `flash status <run-id>` includes the current or final cost record. The numbers
-  above are an example for one config and use Flash's GPU rate snapshot.
+  above are an example for one config.
 </Note>
 
-For how each line of the pre-flight estimate is computed, see
-[How cost is computed](/reference/cost-model).
+For more billing guidance, see [Cost and billing](/reference/cost-model).
 
 ## Monitor a run
 
-`Ctrl-C` during `flash train` just detaches you. The run keeps going server-side.
+`Ctrl-C` during `flash train` just detaches you. The run keeps going on Freesolo.
 
 ```bash
-flash runs                # all your runs: state, cost, GPU, model
+flash runs                # all your runs: state, cost, model
 flash status <run-id>     # status JSON, including the cost record
 flash status <run-id> --follow  # poll status until completion, without replaying logs
 flash log <run-id>              # print the full log snapshot
@@ -158,6 +153,5 @@ flash cancel <run-id>     # cancel a run
 
 ## After training
 
-When a run reaches `done`, its adapter lives in a private environment-scoped
-artifact repo with the code snapshot used for the run. Serve it with
+When a run reaches `done`, serve it with
 [`flash deploy`](/guides/deploy-and-chat) and talk to it with `flash chat`.

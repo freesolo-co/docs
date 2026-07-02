@@ -1,229 +1,53 @@
 ---
-title: "How cost is computed"
-description: "Reconstruct the flash train --cost estimate by hand: training-loop GPU hours times GPU $/hr, line by line."
+title: "Cost and billing"
+description: "How to preview Flash training cost, what affects it, and how charges are applied."
 ---
 
-`flash train --cost` prints a pre-flight estimate of what a run will cost before
-you submit it. At its core the number is simple:
+`flash train --cost` prints a pre-flight estimate before you submit a run:
 
-```text
-total = billable training-loop hours x GPU $/hr
+```bash
+flash train config.toml --cost
 ```
 
-Setup and cold start time are still reported because they affect wall clock, but
-they are **not billed**. The estimate is computed locally from Flash's catalog
-of model sizes, GPU compute, setup constants, and GPU rate snapshots, so the
-same config prices the same way. Every dollar amount and time here is an
-illustrative example; your run's preview comes from `flash train --cost`, and
-the GPU class snapshot comes from [`flash gpus`](/reference/cli#discovery).
+Use it before any non-trivial run. It validates the config, estimates the
+training loop, prints the quoted USD cost, and exits without submitting.
 
 <Note>
-  The estimate is the quote for a completed run. Flash checks your balance
-  against that quote at submit time and
-  [bills when the run finishes](/guides/training#cost-and-billing). A cancelled
-  run is repriced to the training steps it reached; a run cancelled before
-  training starts is not charged for training.
+  The submit-time quote is the amount Flash checks against your prepaid org
+  balance. Successful runs are billed at the quoted Flash cost. Cancelled runs
+  are repriced to the training progress they actually reached.
 </Note>
 
-## What drives your cost
+## What affects training cost
 
-Three things matter:
+The main levers are the ones you control in the config:
 
-- **The training loop.** For GRPO each step samples completions, grades them with
-  your reward, then updates the policy; cost scales with the number and length of
-  completions. For SFT each step is one forward/backward pass over a batch; cost
-  scales with batch size and sequence length.
-- **GPU class.** The allocator picks the cheapest validated managed GPU class
-  that fits your run. A faster card costs more per hour but may finish sooner.
-- **Setup time.** Container boot, dependency install, model load, and vLLM init
-  are included in wall-clock reporting and the wall-time cap, but not in the
-  customer training charge.
+- **Base model.** Smaller models are cheaper and faster for smoke tests.
+- **Algorithm.** GRPO usually costs more than SFT because it samples and scores
+  model completions before each update.
+- **Steps or epochs.** More GRPO `steps`, more SFT `epochs`, or a higher
+  `max_steps` cap increases cost.
+- **Sequence length.** Larger `max_length` and `max_tokens` increase work per
+  example. Keep them large enough for your prompt and answer, but do not
+  oversize them by default.
+- **GRPO group size.** `group_size` controls how many completions are sampled per
+  prompt. Larger groups give a stronger advantage estimate but cost more.
+- **Batch size and dataset size.** For SFT, cost scales with the number of
+  examples trained over and the batch/epoch settings.
+- **Reward latency.** If your GRPO reward calls an external model or service,
+  slow grading can increase wall-clock time.
 
-## The master equation
+Setup and cold start time are shown for observability, but the training charge
+is based on the billable training loop.
 
-Everything below expands these lines:
+## Reading the preview
 
-```text
-total       = billable_hours x gpu_hourly_usd
-billable    = train_seconds / 3600
-wall_clock  = setup + train
-setup       = cold start (boot + deps + model load, + vLLM init for GRPO)
-train       = steps x per_step_seconds
-per_step    = step FLOPs / (gpu_peak_flops x MFU)
-```
-
-`MFU` is model-FLOPs utilization, the fraction of a GPU's peak compute a real run
-sustains. It is below 1 because LoRA on small batches never saturates the card;
-the values are calibrated against observed run time.
-
-## GPU class and price
-
-The estimator sizes the run's VRAM, then prices the cheapest fitting class in
-the current catalog. The submit-time allocator uses current managed capacity.
-
-| GPU class | VRAM | Estimated $/hr | Peak bf16 TFLOPS |
-| --- | ---: | ---: | ---: |
-| RTX 4090 | 24 GB | $0.69 | 165 |
-| RTX 5090 | 32 GB | $0.99 | 210 |
-| A10 | 24 GB | $1.29 | 125 |
-| A100 PCIe | 80 GB | $1.39 | 312 |
-| A100 SXM | 80 GB | $1.49 | 312 |
-| A100 SXM 40GB | 40 GB | $1.99 | 312 |
-| RTX Pro 6000 | 96 GB | $2.09 | 250 |
-| H100 | 80 GB | $3.29 | 990 |
-| H200 | 141 GB | $4.39 | 990 |
-| B200 | 180 GB | $5.89 | 2250 |
-
-Run [`flash gpus`](/reference/cli#discovery) for the CLI's current GPU table.
-Submitted runs record the realized GPU class in `flash runs` and `flash status`.
-
-<Warning>
-  **The estimate is a local forecast.** It prices the cheapest fitting class from
-  the local snapshot. The card actually used can differ from the estimate when
-  managed capacity changes.
-</Warning>
-
-## Setup (cold start)
-
-Setup is fixed wall time before the first optimizer step. It is reported, but it
-is not part of billable training time:
-
-```text
-setup = boot(120s) + deps(90s) + model_load   (+ vLLM init for GRPO)
-
-  model_load = 235s + download_gb / 0.4 GB/s   # fixed init, then the download
-  download_gb = params_b x 2                    # bf16 weights, 2 bytes/param
-  vLLM init  = 120s                             # GRPO only
-```
-
-| Component | Value | Covers |
-| --- | --- | --- |
-| Container boot | 120 s | image pull + start |
-| Dependency install | 90 s | resolving and installing worker deps |
-| Model load (base) | 235 s | checkpoint deserialize, GPU placement, CUDA init |
-| Model download | `params_b x 2 / 0.4` s | pulling the bf16 checkpoint from the hub |
-| vLLM init | 120 s (GRPO only) | spinning up the rollout engine |
-
-<Tip>
-  Setup can dominate a short run's wall clock, even though it is not billed. The
-  cheapest way to iterate quickly is still to start with a smaller base model and
-  a short run.
-</Tip>
-
-## Per-step time
-
-One step's wall time is its compute divided by the GPU's effective throughput,
-`per_step = FLOPs / (peak x MFU)`.
-
-| Phase | FLOPs / token / param | MFU |
-| --- | ---: | ---: |
-| SFT forward + backward | 6 | 0.25 |
-| GRPO rollout (decode) | 2 | 0.12 |
-| GRPO policy update | 8 | 0.35 |
-
-Decode has the lowest MFU because autoregressive generation is
-memory-bandwidth-bound, not compute-bound. The factors come from counting passes:
-a forward is 2, a backward is 4, and the GRPO update is a policy
-forward+backward (6) plus a frozen-reference forward (2).
-
-<CodeGroup>
-
-```text SFT
-per_step = (6 x P x batch_size x seq_len) / (peak x 0.25)
-
-  P    = model parameters
-  peak = GPU peak bf16 FLOP/s
-```
-
-```text GRPO
-per_step = gen + reward + update
-
-  N    = batch_size x group_size      # completions sampled this step
-  D    = N x completion_len           # total generated tokens (max_tokens each)
-
-  gen     = (2 x P x D) / (peak x 0.12)   # vLLM rollout
-  update  = (8 x P x D) / (peak x 0.35)   # policy + frozen-reference update
-  reward  = ceil(N / 16) x latency        # grading, 16 concurrent slots
-```
-
-</CodeGroup>
-
-<Tip>
-  Reward grading runs concurrently in 16 slots, so its wall time is the number
-  of waves, `ceil(N / 16)`, not the completion count `N`. `latency` is the
-  reward seconds per completion (default 1.0 s; graders range from fast regex to
-  slower LLM judges).
-</Tip>
-
-## Steps and the wall cap
-
-Steps turn per-step time into the training total, and a wall cap bounds the
-whole job:
-
-- **Steps (GRPO).** `train = steps x per_step`, where `steps` is
-  your `train.steps`.
-- **Steps (SFT).** SFT has no `train.steps`. The estimator derives the step count
-  from the dataset as `epochs x ceil(num_examples / batch)`, capped by
-  `max_steps`, where `batch` is the run's realized effective batch (32 by
-  default, unless you set `batch_size`). `num_examples` is `max_examples` if you
-  pin it, otherwise the real environment size, which the estimator loads your
-  environment locally to count.
-- **Wall cap.** A run is bounded by a 24h wall-clock cap (a platform default; see
-  [GPU & infrastructure](/reference/configuration#gpu-infrastructure-managed)).
-  Setup consumes wall-clock budget first; only the estimated training loop inside
-  the cap contributes to the quote.
-
-## Worked example
-
-Take a GRPO run on the smallest catalog model with explicit knobs:
-
-```toml
-model = "Qwen/Qwen3.5-0.8B"   # ~0.9B params (from flash models)
-algorithm = "grpo"
-
-[train]
-steps = 100
-batch_size = 8
-group_size = 8
-max_tokens = 512
-```
-
-For this config, the estimator chooses an **RTX 4090** (24 GB, peak 165 TFLOPS)
-at `$0.69/hr`. Then `P = 0.9e9`, `peak = 165e12`, `N = 8 x 8 = 64`
-completions, and `D = 64 x 512 = 32,768` generated tokens.
-
-**Per step:**
-
-```text
-gen      = (2 x 0.9e9 x 32768) / (165e12 x 0.12) = 2.979 s
-update   = (8 x 0.9e9 x 32768) / (165e12 x 0.35) = 4.087 s
-reward   = ceil(64 / 16) x 1.0 = 4 x 1.0         = 4.000 s
-per_step = 2.979 + 4.087 + 4.000                 = 11.06 s
-```
-
-**Setup** (GRPO, so vLLM init applies; download = 0.9 x 2 = 1.8 GB):
-
-```text
-model_load = 235 + 1.8 / 0.4 = 239.5 s
-setup      = 120 + 90 + 239.5 + 120 = 569.5 s = 9.5 min
-```
-
-**Total:**
-
-```text
-train    = 100 x 11.06 s = 1106 s = 18.4 min
-wall     = 569.5 + 1106  = 1675.5 s = 0.47 h
-billable = 1106 / 3600   = 0.31 h
-total    = 0.31 h x $0.69/hr = $0.21
-```
-
-`flash train --cost` prints the same distinction between wall clock and billable
-time:
+A preview includes the model, algorithm, setup estimate, training estimate,
+billable training time, and total:
 
 ```text
 Run        : Qwen/Qwen3.5-0.8B  [GRPO, 100 steps]
-GPU        : RTX 4090 (24 GB; run needs >= 24 GB) @ $0.69/hr
-Setup      : 9.5 min (cold start: boot + deps + model load + vLLM init; not billed)
+Setup      : 9.5 min (not billed)
 Per step   : 11.06 s
 Train      : 18.4 min
 Wall clock : 0.47 h
@@ -231,40 +55,48 @@ Billable   : 0.31 h (training only)
 TOTAL      : $0.21
 ```
 
-## How to make a run cheaper
+Treat the preview as the quote for the config you submit. If you edit the
+environment, dataset, model, algorithm, or `[train]` settings, run `--cost`
+again.
 
-Each lever maps back to a term above:
+## Charges and cancellations
 
-- **A smaller base model.** Smaller `P` cuts every per-step term and shrinks the
-  cold-start download. See [Supported models](/reference/models).
-- **Fewer or shorter completions (GRPO).** `group_size` and `max_tokens` both
-  scale generation and the policy update linearly through `D`.
-- **Fewer steps.** `train` is linear in `steps`.
-- **A faster card** can be cheaper overall when it finishes enough sooner to
-  offset a higher `$/hr`; the allocator picks the cheapest fitting class.
+- A run that completes successfully is billed at the submitted quote.
+- A run cancelled before training starts is not charged for training.
+- A run cancelled after training starts is repriced to the steps it reached.
+- Setup time is reported separately and is not billed as training time.
+- `flash status <run-id>` shows the current or final cost record.
 
-## Why your charge can differ from a preview
+## Serving billing
 
-The estimate is a deterministic quote for the config and catalog snapshot used
-when Flash prices the run. The actual charge can still differ from an earlier
-preview because:
+Serving is billed per token after deployment. Prompt, completion, and cached
+prompt token rates are listed in [Supported models](/reference/models#serving-prices).
 
-- **A cancelled run is repriced.** Flash uses the same cost model but prices the
-  steps the run reached instead of the planned full run.
-- **The submit-time quote can replace an old preview.** Environment row counts,
-  catalog data, rates, or capacity can change between a local `--cost` preview
-  and the submitted run.
-- **MFU and setup are calibrated approximations.** Real utilization, boot time,
-  model load, and dependency install time vary with the model and environment.
-- **Reward latency is an estimate.** GRPO uses a default per-completion grading
-  latency unless your run overrides it; a slow [reward](/guides/environments)
-  costs more wall time than the default assumes.
+Prefix caching is automatic. If a request shares a leading prompt prefix with a
+recent request, the cached prompt-token rate applies to the reused prefix.
+Completion tokens always bill at the completion-token rate.
 
-<Card
-  title="Preview a run's cost"
-  icon="calculator"
-  href="/reference/cli#training"
->
-  Run `flash train config.toml --cost` to print this breakdown for your own
-  config without submitting.
-</Card>
+Tear down deployments you are done using:
+
+```bash
+flash undeploy <run-id>
+```
+
+## Lowering cost
+
+- Start with a smaller base model while validating the environment and reward.
+- Run short smoke tests before scaling steps or epochs.
+- For GRPO, lower `group_size` and `max_tokens` until the reward/data wiring is
+  proven.
+- For thinking runs, raise `max_tokens` only enough for reasoning plus the final
+  answer.
+- For SFT, keep a held-out split and avoid extra epochs once held-out quality
+  stops improving.
+- Use `flash checkpoints <run-id>` and deploy a good intermediate checkpoint
+  instead of assuming the final step is always best.
+
+## Why a later quote can change
+
+The quote can change when you change the config, publish different environment
+contents, update dataset size, or submit after catalog/pricing updates. The
+authoritative number is the quote returned for the run you actually submit.
