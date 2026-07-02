@@ -114,6 +114,11 @@ id = "your-org/your-env"
 pip = ["rapidfuzz>=3.0", "pydantic"]
 ```
 
+Only list packages your environment imports. Flash manages the training stack
+itself, so do not pin packages such as `torch`, `trl`, `vllm`, `peft`,
+`bitsandbytes`, or `liger-kernel` here unless your environment directly imports
+them.
+
 ## Use the SDK
 
 Your environment code imports from the `freesolo` package. For local authoring —
@@ -245,7 +250,7 @@ from freesolo.environments.types import EnvironmentEpisode, EnvironmentStepResul
 TOOL_CALL = re.compile(r"<tool_call>\s*(.*?)\s*</tool_call>", re.DOTALL)
 
 def run_tool(name: str, args: dict) -> dict:
-    ...  # your stateful backend / API
+    ...  # your task-specific tool or service
 
 class AgentEnv(EnvironmentMultiTurn):
     def __init__(self, *, split: str = "train") -> None:
@@ -285,10 +290,10 @@ def load_environment(split: str = "train", **kwargs) -> AgentEnv:
 
 The SDK doesn't hand you a per-episode scratch object, and GRPO runs **many
 rollouts of the same example concurrently** — so don't stash mutable world-state
-on the env keyed by example. If your task has state (a backend that changes as
-tools run), make the **transcript the source of truth** and rebuild state by
-replaying `messages` inside `step_episode` / `score_episode`. Replay is
-reproducible as long as your backend is deterministic given the same calls (seed
+on the env keyed by example. If your task has state (an API or service that
+changes as tools run), make the **transcript the source of truth** and rebuild
+state by replaying `messages` inside `step_episode` / `score_episode`. Replay is
+reproducible as long as your service is deterministic given the same calls (seed
 any ids; avoid wall-clock-dependent logic in the reward).
 
 ### Score behaviours, not a script
@@ -313,7 +318,7 @@ matters in `[train]`:
 
 ## Publish it
 
-Training runs on managed GPUs, so the environment has to be reachable by id.
+Training runs on managed infrastructure, so the environment has to be reachable by id.
 Publish your local environment folder to the managed Environments Hub:
 
 ```bash

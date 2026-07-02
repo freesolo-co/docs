@@ -26,7 +26,7 @@ prefix/last-four display fields, so the full key cannot be recovered later.
 
 **Training Runs** lists the runs submitted with
 [`flash train`](/guides/training), with status filters and columns for state,
-model, environment, GPU, and cost. Open a run for the same detail exposed by
+model, environment, and cost. Open a run for the same detail exposed by
 `flash status`: the run spec, checkpoints, artifact/deployment metadata, error
 state, and current or final cost record.
 
@@ -55,8 +55,7 @@ a Flash run, per-token billing, and serving status. Rows that still have a
 matching Flash run link back to the run detail page.
 
 Model access is org-scoped: the serving endpoint authorizes external chat
-requests against the org that owns the adapter, and unattributed legacy adapters
-are not treated as user-authorizable until they are attributed.
+requests against the org that owns the adapter.
 
 ## Billing
 
@@ -80,6 +79,6 @@ The activity log itemizes:
 The `freesolo` command handles repo-level Freesolo agent workflows. Install it
 with `pip install freesolo-agent`, then run `freesolo setup` to connect a
 Freesolo API key, choose an operation (`draft`, `optimize`, `training`, or
-`poll`), and submit or follow a backend training-agent job.
+`poll`), and submit or follow a repository-agent job.
 
 Use `flash` for managed model post-training and serving.

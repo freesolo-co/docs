@@ -6,8 +6,8 @@ description: "Serve a trained adapter and talk to it over an OpenAI-compatible A
 Once a run reaches `done`, deploy its adapter and chat with it, from the CLI or
 any OpenAI-compatible client.
 
-`flash deploy` registers your adapter with Freesolo's **managed multi-LoRA
-serving service**. Register the adapter, send requests to it, and pay per token
+`flash deploy` registers your adapter with Freesolo's **managed serving
+service**. Register the adapter, send requests to it, and pay per token
 (see [Billing](#billing)).
 
 ## Deploy
@@ -51,9 +51,8 @@ metadata to the run while preserving the run's training state.
 ## Billing
 
 Serving is **billed per token**. Prompt and completion tokens have per-model
-rates, and cached prompt tokens use the model's cached-input rate. Listed prices
-include Freesolo's 1.2 serving markup over typical provider rates. See the
-actual prices in [Supported models](/reference/models#serving-prices).
+rates, and cached prompt tokens use the model's cached-input rate. Prices are
+listed in [Supported models](/reference/models#serving-prices).
 
 **Cached prompt tokens are cheaper than uncached prompt tokens.** Prefix caching
 is always on: when a request's prompt shares a leading prefix with a recent one
@@ -80,7 +79,7 @@ Options:
 | `--temperature` | 0.0 | Sampling temperature |
 
 ```bash
-flash chat <run-id> -m "Write a haiku about GPUs" --temperature 0.8 --max-tokens 128
+flash chat <run-id> -m "Write a haiku about mountain weather" --temperature 0.8 --max-tokens 128
 ```
 
 `--system` is transient — it applies to that one request and is not stored with
@@ -94,7 +93,7 @@ flash chat <run-id> -m "What is 6*7?" --system "Answer with just the number."
 ## Manage deployments
 
 ```bash
-flash deployments        # list active deployments: GPU and endpoint
+flash deployments        # list active deployments and endpoints
 flash undeploy <run-id>  # deregister the adapter from serving
 ```
 

@@ -4,7 +4,7 @@ description: "Install the CLI, log in, and train, deploy, and chat with your fir
 ---
 
 This quickstart takes you from an empty directory to a deployed model: you'll
-train a LoRA adapter on a managed GPU, serve it, and chat with it from the CLI.
+train a LoRA adapter on managed infrastructure, serve it, and chat with it from the CLI.
 
 ## Prerequisites
 
@@ -194,7 +194,7 @@ The commands you used above, plus the ones you'll reach for next. Run
 | `flash env push`     | Publish an environment and print its id    | `flash env push --name starter .`      |
 | `flash train`        | Submit a run and follow its logs           | `flash train configs/rl.toml`          |
 | `flash train --cost` | Preview the pre-flight cost, no submit     | `flash train configs/rl.toml --cost`   |
-| `flash runs`         | List your runs with state, cost, GPU       | `flash runs`                           |
+| `flash runs`         | List your runs with state, cost, and model | `flash runs`                           |
 | `flash status`       | Show run status and cost                   | `flash status <run-id>`                |
 | `flash log`          | Print or follow worker logs                | `flash log <run-id> -f`                |
 | `flash deploy`       | Serve a trained adapter                    | `flash deploy <run-id>`                |

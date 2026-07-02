@@ -37,7 +37,7 @@ reference/
   cli.mdx                 # every flash command + flag
   freesolo-agent-cli.mdx  # the separate freesolo command
   configuration.mdx       # every config TOML field
-  cost-model.mdx          # Flash training cost estimate details
+  cost-model.mdx          # Flash cost and billing guidance
   troubleshooting.mdx
 ```
 

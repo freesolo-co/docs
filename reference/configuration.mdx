@@ -61,13 +61,13 @@ Reserved platform secret names such as `FREESOLO_API_KEY`, `HF_TOKEN`,
 
 | Key | Type | Default | Description |
 | --- | --- | --- | --- |
-| `lora_rank` | int | `32` | LoRA rank; higher means a larger adapter with more capacity and cost. Deployment validates the trained adapter against the serving rank cap for the selected base model. |
+| `lora_rank` | int | `32` | LoRA rank; higher means a larger adapter with more capacity and cost. Use the default unless you have a reason to increase it; Flash validates deployability for the selected base model. |
 | `lora_alpha` | int | `64` | LoRA alpha. |
 | `learning_rate` | float | recipe default | Optimizer learning rate. |
 | `batch_size` | int | recipe default | Training batch size. |
 | `max_length` | int | recipe default | Max sequence length. |
 | `save_every` | int | recipe default | Checkpoint cadence (steps). Every save is uploaded: if a save fires while a previous upload is still in flight it is queued (newest wins) and uploaded next, and the final checkpoint is flushed at train end — saves are not skipped on a slow uplink. |
-| `init_from_adapter` | string | - | Warm-start from an existing adapter. Use the run id that `flash status` prints, e.g. `init_from_adapter = "<run-id>"`. To warm-start from a saved checkpoint instead of the run-level adapter, use the exact short ref listed by `flash checkpoints`: `"<run-id>/step-N"`. Full storage refs like `<owner>/<repo>:<phase>/<run-id>` are internal and are rejected in config. |
+| `init_from_adapter` | string | - | Warm-start from an existing adapter. Use the run id that `flash status` prints, e.g. `init_from_adapter = "<run-id>"`. To warm-start from a saved checkpoint instead of the run-level adapter, use the exact short ref listed by `flash checkpoints`: `"<run-id>/step-N"`. Longer storage refs are rejected in config; use the short refs printed by Flash. |
 
 ### GRPO-specific
 
@@ -90,16 +90,12 @@ Reserved platform secret names such as `FREESOLO_API_KEY`, `HF_TOKEN`,
 | `max_steps` | int | cap on optimizer steps (`0` = no cap). |
 | `max_examples` | int | Truncate the training dataset to N examples (`0` = no cap). |
 
-## GPU & infrastructure (managed)
+## Managed infrastructure
 
-GPU class selection is automatic. At submit time the allocator picks the
-cheapest validated managed GPU class that fits your run, and retry uses the next
-fitting class when capacity shifts. Disk, the wall-clock cap, the auto-retry
-budget, and run artifact storage are platform-managed fields that may appear in
-resolved specs and run status.
-
-Run artifacts are written to a private environment-scoped repo with the
-content-addressed Flash code snapshot used for that run.
+Flash chooses the training resources, retry path, wall-clock limits,
+checkpointing, and run artifact storage. Those platform-managed fields may
+appear in resolved specs and run status for observability, but they are not
+config knobs.
 
 ## `[worker_env]` (advanced)
 

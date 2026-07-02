@@ -23,22 +23,25 @@ current catalog.
 Every catalog model supports **both SFT and GRPO**, and all are hybrid reasoning
 ("thinking") capable.
 
-| Model (`model =`) | Parameters | Training class | Serving tier | Reasoning |
-| --- | ---: | --- | --- | --- |
-| `Qwen/Qwen3.5-0.8B` | 0.9B | RTX 4090 | L4 FP8 | Hybrid |
-| `openbmb/MiniCPM5-1B` | 1.2B | RTX 4090 | L4 FP8 | Hybrid |
-| `Qwen/Qwen3.5-2B` | 2.3B | RTX 4090 | L4 FP8 | Hybrid |
-| `Qwen/Qwen3.5-4B` | 4.7B | RTX 5090 | L40S FP8 | Hybrid |
-| `Qwen/Qwen3.5-9B` | 9.7B | A100 PCIe | L40S FP8 | Hybrid |
-| `Qwen/Qwen3.6-35B-A3B` | 35B total / ~3B active | H200 SFT / B200 GRPO | A100-80GB:2 FP8 | Hybrid |
+| Model (`model =`) | Parameters | Algorithms | Reasoning |
+| --- | ---: | --- | --- |
+| `Qwen/Qwen3.5-0.8B` | 0.9B | SFT, GRPO | Hybrid |
+| `openbmb/MiniCPM5-1B` | 1.2B | SFT, GRPO | Hybrid |
+| `Qwen/Qwen3.5-2B` | 2.3B | SFT, GRPO | Hybrid |
+| `Qwen/Qwen3.5-4B` | 4.7B | SFT, GRPO | Hybrid |
+| `Qwen/Qwen3.5-9B` | 9.7B | SFT, GRPO | Hybrid |
+| `Qwen/Qwen3.6-35B-A3B` | 35B total / ~3B active | SFT, GRPO | Hybrid |
+
+The default `train.lora_rank = 32` is the safest choice across the catalog. If
+you raise the rank, validate before a long run: Flash checks that the resulting
+adapter can be deployed for the selected base model.
 
 ## Serving prices
 
 Serving is billed per token after deployment. Prompt and completion tokens have
 separate per-model rates, and cached prompt tokens use the model's cached-input
-rate. The prices below are **per 1M tokens** and include Freesolo's 1.2 serving
-markup over typical provider rates; your Freesolo billing dashboard shows the
-charges you actually accrue.
+rate. The prices below are **per 1M tokens**; your Freesolo billing dashboard
+shows the charges you actually accrue.
 
 | Model | Prompt / 1M | Completion / 1M | Cached prompt / 1M |
 | --- | ---: | ---: | ---: |
@@ -62,15 +65,11 @@ per-token rate. See [Billing](/guides/deploy-and-chat#billing).
 - **`openbmb/MiniCPM5-1B`**: an on-device-class small model on a standard Llama
   architecture.
 - **`Qwen/Qwen3.5-2B`**: a small, capable step up when 0.8B underfits.
-- **`Qwen/Qwen3.5-4B`**: a balanced starting point for most tasks. Serving runs
-  on an FP8 L40S tier with rank-64 LoRA capacity.
-- **`Qwen/Qwen3.5-9B`**: the largest dense catalog model. Training uses an
-  80 GB-class card, and serving runs on an FP8 L40S tier, so use it when quality
+- **`Qwen/Qwen3.5-4B`**: a balanced starting point for most tasks.
+- **`Qwen/Qwen3.5-9B`**: the largest dense catalog model, useful when quality
   matters more than the run cost.
 - **`Qwen/Qwen3.6-35B-A3B`**: a Mixture-of-Experts checkpoint (35B total, ~3B
-  active per token) and the largest model in the catalog. SFT runs on an H200
-  class, GRPO runs on a B200 class, and serving uses a two-card A100-80GB FP8
-  tier.
+  active per token) and the largest model in the catalog.
 
 <Note>
   The Qwen3.5 entries are **text-only** fine-tunes: the checkpoints are natively
