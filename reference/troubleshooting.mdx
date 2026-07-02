@@ -69,10 +69,12 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
   </Accordion>
 
   <Accordion title="ModuleNotFoundError: No module named 'freesolo' (local authoring)">
-    Training is managed, but local authoring still needs the SDK installed in
-    your local Python environment, as does a `flash train --cost` that **loads**
-    the environment (for example, to count examples for SFT cost). `--dry-run`
-    validates only the config and does not import the environment:
+    Managed training workers have the Freesolo SDK available when they import a
+    published environment. Your local Python environment does not get that SDK
+    automatically from the `flash` CLI. Install it locally when you run or test
+    `environment.py` directly, or when you use a command such as
+    `flash train --cost` that **loads** the environment to count examples.
+    `--dry-run` validates only the config and does not import the environment:
 
     ```bash
     uv pip install freesolo
