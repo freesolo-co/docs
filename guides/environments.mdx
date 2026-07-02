@@ -114,10 +114,39 @@ id = "your-org/your-env"
 pip = ["rapidfuzz>=3.0", "pydantic"]
 ```
 
+This is the supported worker dependency mechanism. A `pyproject.toml`,
+`requirements.txt`, or lockfile beside `environment.py` may be useful for local
+development, but Flash does not use those files to install packages for a
+managed training run. Put runtime packages in the training config that references
+the published environment.
+
 Only list packages your environment imports. Flash manages the training stack
 itself, so do not pin packages such as `torch`, `trl`, `vllm`, `peft`,
 `bitsandbytes`, or `liger-kernel` here unless your environment directly imports
 them.
+
+For example, an environment whose reward calls an OpenRouter judge should
+declare the OpenAI client library and the key it reads:
+
+```toml
+[environment]
+id = "your-org/search-reward"
+pip = ["openai>=1.0.0"]
+secrets = ["OPENROUTER_API_KEY"]
+```
+
+If that same reward executes MongoDB queries, declare `pymongo` and the exact
+environment variable name your code reads:
+
+```toml
+[environment]
+id = "your-org/search-reward"
+pip = ["openai>=1.0.0", "pymongo>=4.17.0"]
+secrets = ["OPENROUTER_API_KEY", "MONGO_URL"]
+```
+
+Do not declare unused packages or secrets. If the active reward only calls the
+LLM judge and no longer executes MongoDB, leave out `pymongo` and `MONGO_URL`.
 
 ## Use the SDK
 
