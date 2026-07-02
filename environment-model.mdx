@@ -89,7 +89,7 @@ The interaction model is set by which base class you subclass:
 A minimal single-turn environment:
 
 ```python environment.py
-from freesolo.datasets.types import TaskExample
+from freesolo.datasets import TaskExample
 from freesolo.environments import EnvironmentSingleTurn, RewardResult
 
 class CustomEnv(EnvironmentSingleTurn):

@@ -30,7 +30,7 @@ point at the project. The starter `load_environment()` returns a Freesolo
 import json
 from pathlib import Path
 
-from freesolo.datasets.types import TaskExample
+from freesolo.datasets import TaskExample
 from freesolo.environments import EnvironmentSingleTurn, RewardResult
 
 DEFAULT_DATASET_PATH = Path(__file__).parent / "datasets" / "train.jsonl"
@@ -121,13 +121,29 @@ them.
 
 ## Use the SDK
 
-Your environment code imports from the `freesolo` package. For local authoring —
-running or testing your `environment.py` directly, or `flash train --cost`, which
-imports it to count training rows — install it in the same Python
-environment you use for Flash:
+Your environment code imports from the `freesolo` package. Managed training
+workers already have that SDK available when they import your published
+environment. Your local Python environment does not get it automatically from
+the `flash` CLI, so install it locally if you run or test `environment.py`
+directly, or if you use a command such as `flash train --cost` that imports the
+environment to count training rows:
 
 ```bash
 uv pip install freesolo
+```
+
+Use the public imports below in environment code:
+
+```python
+from freesolo.datasets import TaskExample
+from freesolo.datasets.records import load_task_examples
+from freesolo.environments import (
+    EnvironmentEpisode,
+    EnvironmentMultiTurn,
+    EnvironmentStepResult,
+    EnvironmentSingleTurn,
+    RewardResult,
+)
 ```
 
 For a single-turn task, subclass `EnvironmentSingleTurn`:
@@ -135,8 +151,8 @@ For a single-turn task, subclass `EnvironmentSingleTurn`:
 ```python environment.py
 from pathlib import Path
 
+from freesolo.datasets import TaskExample
 from freesolo.datasets.records import load_task_examples
-from freesolo.datasets.types import TaskExample
 from freesolo.environments import EnvironmentSingleTurn, RewardResult
 
 ROOT = Path(__file__).parent
@@ -203,7 +219,7 @@ trajectory.
 | Single-turn (`EnvironmentSingleTurn`) | Multi-turn (`EnvironmentMultiTurn`) |
 | ------------------------------------- | ----------------------------------- |
 | `build_prompt_messages` → one prompt  | `start_episode` → opening messages  |
-| `score_response` → reward one reply   | `step_episode` → react to each action; `max_episode_turns` → bound the episode; `score_episode` → reward the trajectory |
+| `score_response` → reward one reply   | `step_episode` → react to each action; `max_episode_turns` → bound the episode; `score_episode` / `score_episodes` → reward trajectories |
 
 ### The episode loop
 
@@ -211,29 +227,117 @@ During training the trainer drives your hooks in a loop and scores the result:
 
 ```text
 messages = env.start_episode(example, prompt_text)      # opening system/user messages
+response_text = ""
 for _ in range(env.max_episode_turns(example)):
     action = policy.sample(messages)                    # one assistant message
     messages.append({"role": "assistant", "content": action})
     result = env.step_episode(example, messages, action)
+    if result.final_response_text is not None:
+        response_text = result.final_response_text
+    else:
+        response_text = action
     messages.extend(result.messages)                    # the env's response (tool result, next user turn)
     if result.done:
         break
-reward = env.score_episode(example, EnvironmentEpisode(messages=..., response_text=...))
+episode = EnvironmentEpisode(messages=tuple(messages), response_text=response_text)
+reward = env.score_episode(example, episode)
+# Flash batches completed rollouts by calling env.score_episodes(example, episodes).
 ```
 
 - **`start_episode(example, prompt_text)`** returns the initial messages (e.g. a
   system prompt plus the first user message).
-- **`step_episode(example, messages, assistant_response)`** is the core. `messages`
-  already includes the assistant action being stepped as its last element. Return
-  an `EnvironmentStepResult`:
+- **`max_episode_turns(example)`** returns the maximum number of assistant
+  actions Flash may sample before forcing the episode terminal. The value is
+  per example.
+- **`step_episode(example, messages, assistant_response)`** is the core.
+  `messages` already includes the assistant action being stepped as its last
+  element. Return an `EnvironmentStepResult`:
   - `done=False, messages=(...)` keeps the episode open and injects the
     environment's response (a tool result, the next user turn);
-  - `done=True, final_response_text=...` ends it.
-- **`max_episode_turns(example)`** caps how many assistant actions the trainer
-  samples before forcing the episode terminal.
-- **`score_episode(example, episode)`** grades the completed transcript
-  (`episode.messages`) and returns a `RewardResult`, exactly like `score_response`
-  but over the whole trajectory.
+  - `done=True, final_response_text=...` ends it. `final_response_text`
+    overrides the last assistant message as the text passed to scoring.
+- **`score_episode(example, episode)`** grades one completed transcript
+  (`episode.messages`) and returns a `RewardResult`, exactly like
+  `score_response` but over the whole trajectory.
+- **`score_episodes(example, episodes)`** is the batch wrapper Flash calls for a
+  GRPO group. You normally do not implement it; the SDK default runs your
+  singular `score_episode` for each item, using `max_score_concurrency`.
+
+### Full multi-turn contract
+
+This is the worker-facing surface Flash expects:
+
+```python
+from dataclasses import dataclass, field
+from typing import Any
+
+from freesolo.datasets import TaskExample
+from freesolo.environments import RewardResult
+
+ChatMessage = dict[str, Any]
+
+
+class EnvironmentMultiTurn:
+    def start_episode(
+        self,
+        example: TaskExample,
+        prompt_text: str,
+    ) -> list[ChatMessage]: ...
+
+    def max_episode_turns(self, example: TaskExample) -> int: ...
+
+    def step_episode(
+        self,
+        example: TaskExample,
+        messages: list[ChatMessage],
+        assistant_response: str,
+    ) -> "EnvironmentStepResult": ...
+
+    def score_episode(
+        self,
+        example: TaskExample,
+        episode: "EnvironmentEpisode",
+    ) -> RewardResult: ...
+
+    def score_episodes(
+        self,
+        example: TaskExample,
+        episodes: list["EnvironmentEpisode"],
+    ) -> list[RewardResult]: ...
+
+
+@dataclass(frozen=True)
+class EnvironmentStepResult:
+    done: bool = True
+    messages: tuple[ChatMessage, ...] = ()
+    final_response_text: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class EnvironmentTurn:
+    role: str
+    content: str
+    name: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class EnvironmentEpisode:
+    messages: tuple[ChatMessage, ...]
+    response_text: str
+    turns: tuple[EnvironmentTurn, ...] = ()
+    metadata: dict[str, Any] = field(default_factory=dict)
+    latency_ms: int | None = None
+    total_tokens: int | None = None
+```
+
+`EnvironmentStepResult.messages` should contain only new environment-side
+messages to append after the assistant action. Do not repeat the assistant
+message Flash just sampled. `metadata` is appended to the completed episode's
+metadata under `steps`, so it is available to `score_episode` and logs. Keep
+durable episode state in the transcript rather than in hidden mutable
+attributes.
 
 ### An action protocol the model can emit as text
 
@@ -243,9 +347,13 @@ tool-call block versus a final reply:
 
 ```python environment.py
 import json, re
-from freesolo.datasets.types import TaskExample
-from freesolo.environments import EnvironmentMultiTurn, RewardResult
-from freesolo.environments.types import EnvironmentEpisode, EnvironmentStepResult
+from freesolo.datasets import TaskExample
+from freesolo.environments import (
+    EnvironmentEpisode,
+    EnvironmentMultiTurn,
+    EnvironmentStepResult,
+    RewardResult,
+)
 
 TOOL_CALL = re.compile(r"<tool_call>\s*(.*?)\s*</tool_call>", re.DOTALL)
 
@@ -285,6 +393,30 @@ class AgentEnv(EnvironmentMultiTurn):
 def load_environment(split: str = "train", **kwargs) -> AgentEnv:
     return AgentEnv(split=split)
 ```
+
+### SFT targets for multi-turn
+
+SFT does not execute the multi-turn loop. It builds one supervised row as:
+
+```text
+prompt_messages = env.start_episode(example, prompt_text)
+target_messages = env.sft_completion(example)
+training_text = chat_template(prompt_messages + target_messages)
+```
+
+The default `sft_completion(example)` reads `example.output`:
+
+- a scalar output becomes one assistant target message;
+- a bare list of chat messages, or `{"messages": [...]}`, becomes the full target
+  transcript.
+
+Flash uses completion-only loss for SFT. It masks the token prefix rendered from
+`start_episode(...)` and trains on every token in `sft_completion(...)`. For a
+multi-turn target transcript, that means any interleaved assistant, user, and
+tool/environment messages in `output` are part of the supervised completion. If
+a multi-turn environment has only scalar outputs, SFT collapses to one assistant
+turn per row and does not run `step_episode`; provide full target transcripts or
+override `sft_completion` when you need multi-turn SFT.
 
 ### Keep `step_episode` stateless
 
