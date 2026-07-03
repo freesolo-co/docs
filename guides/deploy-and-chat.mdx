@@ -22,6 +22,13 @@ Preview what a deploy would do without creating it:
 flash deploy <run-id> --dry-run
 ```
 
+Skip the server-side post-deploy smoke check. Registration alone does not
+guarantee the adapter serves, so use this only when you'll verify separately:
+
+```bash
+flash deploy <run-id> --no-verify
+```
+
 ## Deploy a specific checkpoint
 
 Every training step that saved an adapter is independently deployable. List a

@@ -12,7 +12,7 @@ exists is left untouched.
 ```
 ./
 ├── environment.py        # the task + reward (a Freesolo environment)
-├── datasets/
+├── dataset/
 │   └── train.jsonl       # a tiny starter dataset (input/output rows)
 ├── configs/
 │   ├── rl.toml           # a GRPO (RL) training config
@@ -31,7 +31,7 @@ exists is left untouched.
     **When Flash reads it:** `flash env push` packages and uploads it;
     `flash train --cost` may import it locally to count training examples; and on
     every run the worker imports it and calls `load_environment(**params)`. The scaffolded
-    starter loads its rows from `datasets/train.jsonl`.
+    starter loads its rows from `dataset/train.jsonl`.
 
     ```python environment.py
     import json
@@ -40,7 +40,7 @@ exists is left untouched.
     from freesolo.datasets import TaskExample
     from freesolo.environments import EnvironmentSingleTurn, RewardResult
 
-    DEFAULT_DATASET_PATH = Path(__file__).parent / "datasets" / "train.jsonl"
+    DEFAULT_DATASET_PATH = Path(__file__).parent / "dataset" / "train.jsonl"
 
     def load_jsonl(path):
         with Path(path).open() as f:
@@ -65,7 +65,7 @@ exists is left untouched.
 
   </Accordion>
 
-  <Accordion title="datasets/train.jsonl" icon="table">
+  <Accordion title="dataset/train.jsonl" icon="table">
     **What it is:** a tiny starter dataset of `input`/`output` rows that the
     scaffolded `environment.py` loads. Replace it with your real training rows
     before a real run. See [Datasets](/guides/datasets).
@@ -73,9 +73,9 @@ exists is left untouched.
     **When Flash reads it:** your `environment.py` reads it on the worker at run
     time (and locally when `flash train --cost` counts its rows; `--dry-run`
     validates only the config and does not read it); `flash env push`
-    uploads the `datasets/` folder with the environment.
+    uploads the `dataset/` folder with the environment.
 
-    ```jsonl datasets/train.jsonl
+    ```jsonl dataset/train.jsonl
     {"input":"What is 2 + 2?","output":"4"}
     {"input":"What is 3 + 5?","output":"8"}
     ```
@@ -144,7 +144,7 @@ grows data files or helper modules, move it into a folder with
 math/
 ├── environment.py        # defines load_environment()
 ├── helpers.py            # optional sibling modules, imported by environment.py
-└── datasets/
+└── dataset/
     ├── train.jsonl       # input/output records
     └── eval.jsonl
 ```
@@ -159,16 +159,16 @@ math/
 
   </Accordion>
 
-  <Accordion title="datasets/" icon="table">
+  <Accordion title="dataset/" icon="table">
     **What it is:** sidecar data files (`.jsonl`, `.json`, `.csv`, `.txt`,
     `.md`, `.parquet`, `.tsv`, `.yaml`, `.yml`, and more) that your environment
     loads. See [Datasets](/guides/datasets).
 
     **When Flash reads it:** your environment code reads it (for example via
-    `load_task_examples(...)`); `flash env push` includes the `datasets/` folder
+    `load_task_examples(...)`); `flash env push` includes the `dataset/` folder
     in the uploaded artifact.
 
-    ```jsonl datasets/train.jsonl
+    ```jsonl dataset/train.jsonl
     {"input":"What is 2 + 2?","output":"4"}
     {"input":"What is 3 + 5?","output":"8"}
     ```
