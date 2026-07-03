@@ -92,31 +92,6 @@ missing = warn_missing_think_tags(dataset.examples)  # UserWarning + list of off
 It returns the ids of offending examples and emits a `UserWarning` naming the
 first few. Unlabeled records (no `output`) are skipped.
 
-## Package layout
-
-Put dataset files beside `environment.py` so they are included when you publish:
-
-```text
-math/
-  environment.py
-  helpers.py
-  dataset/
-    train.jsonl
-    eval.jsonl
-```
-
-Publish the folder with an explicit name. `flash env push` publishes a compact
-environment artifact to the managed Environments Hub and prints the Freesolo id
-you use in configs:
-
-```bash
-flash env push --name math math
-```
-
-```text Output
-published your-org/math
-```
-
 ## Load sidecars
 
 Read packaged files relative to `__file__`. That works locally and when the
