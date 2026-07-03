@@ -38,11 +38,16 @@ inline help.
   [Supported models](/reference/models) for algorithms, reasoning, and pricing.
 </ResponseField>
 
+<ResponseField name="flash gpus">
+  List the managed GPU classes with VRAM and estimated $/hr. GPU selection is
+  automatic — you don't pick one.
+</ResponseField>
+
 ## Environments
 
 <ResponseField name="flash env setup">
   Scaffold a starter project into the current directory: `environment.py`, a tiny
-  `datasets/train.jsonl`, `configs/rl.toml` (GRPO) plus `configs/sft.toml` (SFT),
+  `dataset/train.jsonl`, `configs/rl.toml` (GRPO) plus `configs/sft.toml` (SFT),
   and a `TRAINING.md` playbook for coding agents with current CLI usage, reward
   guidance, and common run mitigations. Existing files are preserved.
 </ResponseField>
@@ -54,7 +59,7 @@ inline help.
   `namespace/name`; the namespace is validated by Freesolo and must match your
   Freesolo org namespace (a mismatch is rejected); `PATH` defaults to the current
   directory. Pass `.` or any folder with `environment.py` at its root so helper
-  modules, `datasets/`, `README.md`, and common sibling sidecars (`.jsonl`,
+  modules, `dataset/`, `README.md`, and common sibling sidecars (`.jsonl`,
   `.json`, `.csv`, `.txt`, `.md`, `.parquet`, `.tsv`, `.yaml`, `.yml`) are
   uploaded. A single `.py` file or a folder with one top-level `.py` file also
   works for small smoke tests.
@@ -62,8 +67,8 @@ inline help.
 
 <ResponseField name="flash env pull ENV_ID [PATH] [-o OUTPUT] [-f]">
   Download a published environment, or one file from it, to local disk. `ENV_ID`
-  can be a managed slug such as `your-org/your-env`, a
-  `github:owner/repo@ref:path` ref, or a GitHub URL. Without `PATH`, the whole
+  must be a managed Freesolo hub slug `your-org/your-env`; the package is
+  downloaded through the Flash control plane. Without `PATH`, the whole
   environment is written to a directory. With `PATH`, only that file is fetched.
   `-o` chooses the output path and `-f` allows overwriting an existing output.
 </ResponseField>
@@ -128,6 +133,7 @@ inline help.
   | Flag | Default | Effect |
   | --- | --- | --- |
   | `--dry-run` | - | Preview the deploy without creating it |
+  | `--no-verify` | - | Skip the server-side post-deploy smoke check. Registration alone does not guarantee the adapter serves, so use this only when you'll verify separately. |
 
   If the run has no final adapter (for example it was cancelled or preempted
   before finalizing) but saved per-step checkpoints, a run-level deploy fails

@@ -105,7 +105,7 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
   <Accordion title="[environment].pip breaks training startup">
     `[environment].pip` is for task dependencies imported by your environment.
     Do not pin Flash's managed training stack there, such as `torch`, `trl`,
-    `vllm`, `peft`, `bitsandbytes`, or `liger-kernel`, unless your environment
+    `vllm`, `peft`, or `bitsandbytes`, unless your environment
     directly imports that package. Extra pins can conflict with the worker's
     tested training recipe. Remove the pin and resubmit.
   </Accordion>
@@ -115,7 +115,7 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
 
     ```bash
     flash env pull your-org/your-env environment.py -o environment.py
-    flash env pull your-org/your-env datasets/eval.jsonl -o eval.jsonl
+    flash env pull your-org/your-env dataset/eval.jsonl -o eval.jsonl
     ```
 
     Keep published environments focused on source, small sidecars, and datasets
@@ -127,7 +127,7 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
     Use `flash env pull` to inspect the exact packaged file:
 
     ```bash
-    flash env pull your-org/your-env datasets/train.jsonl -o train.jsonl
+    flash env pull your-org/your-env dataset/train.jsonl -o train.jsonl
     ```
 
     For clean A/B experiments, publish changed datasets under a fresh env name
