@@ -4,19 +4,20 @@ description: "Every field in a Flash training config (TOML)."
 ---
 
 A run is described by a TOML config passed to `flash train`. The only required
-fields are `model` and `environment.id`. `algorithm` defaults to `grpo`, and
+fields are `model` and `environment.id`. `algorithm` defaults to `sft`, and
 everything else has a sensible default. Validate any config locally with
 `flash train config.toml --dry-run`.
 
 ```toml
 model = "Qwen/Qwen3.5-4B"
-algorithm = "grpo"
+algorithm = "sft"
 
 [environment]
 id = "your-org/your-env"
 
 [train]
-steps = 150
+epochs = 3
+max_examples = 1000
 lora_rank = 32
 ```
 
@@ -25,7 +26,7 @@ lora_rank = 32
 | Key | Type | Default | Description |
 | --- | --- | --- | --- |
 | `model` | string | (required) | Base model to train a LoRA adapter on, e.g. `Qwen/Qwen3.5-4B`. See [`flash models`](/reference/models). |
-| `algorithm` | string | `grpo` | `grpo` (RL): learns from a reward you define. `sft` (supervised): learns by imitating example completions you provide. See [SFT vs GRPO](/guides/training#choose-sft-or-grpo). |
+| `algorithm` | string | `sft` | `sft` (supervised): learns by imitating example completions you provide. `grpo` (RL): learns from a reward you define. See [SFT vs GRPO](/guides/training#choose-sft-or-grpo). |
 | `thinking` | bool | `false` | Enable reasoning mode (thinking-capable models only). The reasoning trace shares the `max_tokens` budget with the answer, so raise `max_tokens` (and `max_length`) when enabling it — see [Troubleshooting](/reference/troubleshooting). |
 
 ## `[environment]`
@@ -76,6 +77,14 @@ Reserved platform secret names such as `FREESOLO_API_KEY`, `HF_TOKEN`,
 | `save_every` | int | recipe default | Checkpoint cadence (steps). Every save is uploaded: if a save fires while a previous upload is still in flight it is queued (newest wins) and uploaded next, and the final checkpoint is flushed at train end — saves are not skipped on a slow uplink. |
 | `init_from_adapter` | string | - | Warm-start from an existing adapter. Use the run id that `flash status` prints, e.g. `init_from_adapter = "<run-id>"`. To warm-start from a saved checkpoint instead of the run-level adapter, use the exact short ref listed by `flash checkpoints`: `"<run-id>/step-N"`. Longer storage refs are rejected in config; use the short refs printed by Flash. |
 
+### SFT-specific
+
+| Key | Type | Description |
+| --- | --- | --- |
+| `epochs` | int | Number of epochs (alternative to GRPO `steps`). |
+| `max_steps` | int | cap on optimizer steps (`0` = no cap). |
+| `max_examples` | int | Truncate the training dataset to N examples (`0` = no cap). |
+
 ### GRPO-specific
 
 | Key | Type | Description |
@@ -88,14 +97,6 @@ Reserved platform secret names such as `FREESOLO_API_KEY`, `HF_TOKEN`,
 | `advantage_clip` | float | Recorded for recipe parity but currently a no-op (TRL clips the importance ratio, not the advantage value). |
 | `thinking_length_penalty_coef` | float | Penalty on reasoning length. |
 | `stop_sequences` | list[string] | Stop sequences for generation. |
-
-### SFT-specific
-
-| Key | Type | Description |
-| --- | --- | --- |
-| `epochs` | int | Number of epochs (alternative to GRPO `steps`). |
-| `max_steps` | int | cap on optimizer steps (`0` = no cap). |
-| `max_examples` | int | Truncate the training dataset to N examples (`0` = no cap). |
 
 ## Managed infrastructure
 

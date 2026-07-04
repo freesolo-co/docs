@@ -21,8 +21,8 @@ flash env setup
 ```
 
 This scaffolds a starter project in the current directory: `environment.py`, a
-tiny `dataset/train.jsonl`, two configs (`configs/rl.toml` for GRPO and
-`configs/sft.toml` for SFT), and a `TRAINING.md` playbook for the coding agent you
+tiny `dataset/train.jsonl`, two configs (`configs/sft.toml` for SFT and
+`configs/rl.toml` for GRPO), and a `TRAINING.md` playbook for the coding agent you
 point at the project. The starter `load_environment()` returns a Freesolo
 `EnvironmentSingleTurn` with a sample dataset and reward.
 
@@ -573,7 +573,7 @@ Set the value in your shell before submitting:
 
 ```bash
 export SERVICE_API_KEY="..."
-flash train configs/rl.toml
+flash train configs/sft.toml
 ```
 
 You can also put local development values in `.env` or `.env.local`:
