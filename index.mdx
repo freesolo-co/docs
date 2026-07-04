@@ -16,59 +16,56 @@ command that talks to the platform is authenticated with your Freesolo API key.
 
 ## What you can do
 
-<AccordionGroup>
-  <Accordion title="Fine-tune a model on your own task" icon="dumbbell">
-    Write a TOML config, run one command, and Flash trains a LoRA adapter (a
-    small set of add-on weights) on top of a [supported base model](/reference/models). You pick the
-    model and the task; Flash handles the training infrastructure. See
-    [Training](/guides/training).
+### Fine-tune a model on your own task
 
-    ```bash
-    flash train config.toml
-    ```
+Write a TOML config, run one command, and Flash trains a LoRA adapter (a
+small set of add-on weights) on top of a [supported base model](/reference/models). You pick the
+model and the task; Flash handles the training infrastructure. See
+[Training](/guides/training).
 
-  </Accordion>
-  <Accordion title="Reward the behavior you want with GRPO" icon="trophy">
-    Reinforcement learning scores the model's own completions with your
-    [environment's](/guides/environments/overview) reward and updates toward higher
-    reward (see [How Flash works](/how-flash-works)). Use it when you can score
-    an output but can't hand-write the perfect one.
+```bash
+flash train config.toml
+```
 
-    ```toml
-    algorithm = "grpo"
-    ```
+### Reward the behavior you want with GRPO
 
-  </Accordion>
-  <Accordion title="Teach a format from examples with SFT" icon="copy">
-    Supervised fine-tuning learns from the prompt/answer pairs in your [dataset](/guides/datasets).
-    Use it when you already have examples of the output you want.
+Reinforcement learning scores the model's own completions with your
+[environment's](/guides/environments/overview) reward and updates toward higher
+reward (see [How Flash works](/how-flash-works)). Use it when you can score
+an output but can't hand-write the perfect one.
 
-    ```toml
-    algorithm = "sft"
-    ```
+```toml
+algorithm = "grpo"
+```
 
-  </Accordion>
-  <Accordion title="Serve it behind an OpenAI-compatible API" icon="comments">
-    `flash deploy` registers the adapter with managed serving, then
-    `flash chat` or any OpenAI client can call it with your Freesolo key. See
-    [Deploy & chat](/guides/deploy-and-chat).
+### Teach a format from examples with SFT
 
-    ```bash
-    flash deploy <run-id>
-    ```
+Supervised fine-tuning learns from the prompt/answer pairs in your [dataset](/guides/datasets).
+Use it when you already have examples of the output you want.
 
-  </Accordion>
-  <Accordion title="See the cost before you spend" icon="dollar-sign">
-    `--cost` prints the pre-flight estimate without submitting. You pay for the
-    quoted training run cost and for the tokens you serve. Cancelled runs are
-    repriced to the training steps they actually reached.
+```toml
+algorithm = "sft"
+```
 
-    ```bash
-    flash train config.toml --cost
-    ```
+### Serve it behind an OpenAI-compatible API
 
-  </Accordion>
-</AccordionGroup>
+`flash deploy` registers the adapter with managed serving, then
+`flash chat` or any OpenAI client can call it with your Freesolo key. See
+[Deploy & chat](/guides/deploy-and-chat).
+
+```bash
+flash deploy <run-id>
+```
+
+### See the cost before you spend
+
+`--cost` prints the pre-flight estimate without submitting. You pay for the
+quoted training run cost and for the tokens you serve. Cancelled runs are
+repriced to the training steps they actually reached.
+
+```bash
+flash train config.toml --cost
+```
 
 ## Where Flash fits
 

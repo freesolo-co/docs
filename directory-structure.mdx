@@ -20,92 +20,85 @@ exists is left untouched.
 └── TRAINING.md           # a playbook for the AI agent driving your runs
 ```
 
-<AccordionGroup>
-  <Accordion title="environment.py" icon="python">
-    **What it is:** your [environment](/environment-model), the single source of
-    truth for what the model practices on and how it's graded. It defines
-    `load_environment()`, which returns a Freesolo `EnvironmentSingleTurn` (or
-    `EnvironmentMultiTurn`) carrying a dataset and a `score_response` reward. This
-    is the file you edit first.
+### environment.py
 
-    **When Flash reads it:** `flash env push` packages and uploads it;
-    `flash train --cost` may import it locally to count training examples; and on
-    every run the worker imports it and calls `load_environment(**params)`. The scaffolded
-    starter loads its rows from `dataset/train.jsonl`.
+**What it is:** your [environment](/environment-model), the single source of
+truth for what the model practices on and how it's graded. It defines
+`load_environment()`, which returns a Freesolo `EnvironmentSingleTurn` (or
+`EnvironmentMultiTurn`) carrying a dataset and a `score_response` reward. This
+is the file you edit first.
 
-    See the scaffolded file in full — `StarterEnv` with `build_prompt_messages`
-    and `score_response` — in [Environments](/guides/environments/overview#scaffold-one).
+**When Flash reads it:** `flash env push` packages and uploads it;
+`flash train --cost` may import it locally to count training examples; and on
+every run the worker imports it and calls `load_environment(**params)`. The scaffolded
+starter loads its rows from `dataset/train.jsonl`.
 
-  </Accordion>
+See the scaffolded file in full — `StarterEnv` with `build_prompt_messages`
+and `score_response` — in [Environments](/guides/environments/overview#scaffold-one).
 
-  <Accordion title="dataset/train.jsonl" icon="table">
-    **What it is:** a tiny starter dataset of `input`/`output` rows that the
-    scaffolded `environment.py` loads. Replace it with your real training rows
-    before a real run. See [Datasets](/guides/datasets).
+### dataset/train.jsonl
 
-    **When Flash reads it:** your `environment.py` reads it on the worker at run
-    time (and locally when `flash train --cost` counts its rows; `--dry-run`
-    validates only the config and does not read it); `flash env push`
-    uploads the `dataset/` folder with the environment.
+**What it is:** a tiny starter dataset of `input`/`output` rows that the
+scaffolded `environment.py` loads. Replace it with your real training rows
+before a real run. See [Datasets](/guides/datasets).
 
-    ```jsonl dataset/train.jsonl
-    {"input":"What is 2 + 2?","output":"4"}
-    {"input":"What is 3 + 5?","output":"8"}
-    ```
+**When Flash reads it:** your `environment.py` reads it on the worker at run
+time (and locally when `flash train --cost` counts its rows; `--dry-run`
+validates only the config and does not read it); `flash env push`
+uploads the `dataset/` folder with the environment.
 
-  </Accordion>
+```jsonl dataset/train.jsonl
+{"input":"What is 2 + 2?","output":"4"}
+{"input":"What is 3 + 5?","output":"8"}
+```
 
-  <Accordion title="configs/rl.toml" icon="gear">
-    **What it is:** a [GRPO training config](/guides/training#choose-sft-or-grpo).
-    You set `model`, the `[environment] id`, and the `[train]` knobs (steps,
-    lora_rank); the
-    training infrastructure and artifact storage are [managed for you](/reference/configuration). Copy
-    it per experiment.
+### configs/rl.toml
 
-    **When Flash reads it:** every `flash train`, `--dry-run`, and `--cost` parses
-    this file into the resolved job spec.
+**What it is:** a [GRPO training config](/guides/training#choose-sft-or-grpo).
+You set `model`, the `[environment] id`, and the `[train]` knobs (steps,
+lora_rank); the
+training infrastructure and artifact storage are [managed for you](/reference/configuration). Copy
+it per experiment.
 
-    ```toml configs/rl.toml
-    model = "Qwen/Qwen3.5-4B"
-    algorithm = "grpo"
+**When Flash reads it:** every `flash train`, `--dry-run`, and `--cost` parses
+this file into the resolved job spec.
 
-    [environment]
-    id = ""   # paste the id returned by `flash env push --name my-env .`
+```toml configs/rl.toml
+model = "Qwen/Qwen3.5-4B"
+algorithm = "grpo"
 
-    [train]
-    steps = 150
-    lora_rank = 32
-    ```
+[environment]
+id = ""   # paste the id returned by `flash env push --name my-env .`
 
-  </Accordion>
+[train]
+steps = 150
+lora_rank = 32
+```
 
-  <Accordion title="configs/sft.toml" icon="copy">
-    **What it is:** the same config shape with `algorithm = "sft"`, for supervised
-    fine-tuning on the `input`/`output` pairs in your environment's dataset. Keep
-    both and pick one at train time.
+### configs/sft.toml
 
-    **When Flash reads it:** same as `rl.toml`; pass it to `flash train` to run
-    SFT instead of GRPO.
+**What it is:** the same config shape with `algorithm = "sft"`, for supervised
+fine-tuning on the `input`/`output` pairs in your environment's dataset. Keep
+both and pick one at train time.
 
-    ```bash
-    flash train configs/sft.toml
-    ```
+**When Flash reads it:** same as `rl.toml`; pass it to `flash train` to run
+SFT instead of GRPO.
 
-  </Accordion>
+```bash
+flash train configs/sft.toml
+```
 
-  <Accordion title="TRAINING.md" icon="book">
-    **What it is:** a playbook for the AI coding agent you point at this project —
-    how to design the reward, what to read in a run's output, and how to decide a
-    run actually improved the model. It includes current CLI usage and common
-    Flash issue mitigations.
+### TRAINING.md
 
-    **When it travels:** if you publish the whole scaffolded folder,
-    `flash env push` includes `.md` sidecars, so
-    `TRAINING.md` can travel with the environment source in the Hub for humans
-    and coding agents.
+**What it is:** a playbook for the AI coding agent you point at this project —
+how to design the reward, what to read in a run's output, and how to decide a
+run actually improved the model. It includes current CLI usage and common
+Flash issue mitigations.
 
-  </Accordion>
-</AccordionGroup>
+**When it travels:** if you publish the whole scaffolded folder,
+`flash env push` includes `.md` sidecars, so
+`TRAINING.md` can travel with the environment source in the Hub for humans
+and coding agents.
 
 ## Packaging an environment as a folder
 
@@ -122,29 +115,26 @@ math/
     └── eval.jsonl
 ```
 
-<AccordionGroup>
-  <Accordion title="helpers.py" icon="python">
-    **What it is:** any sibling Python modules your `environment.py` imports. Keep
-    imports either from installed packages or from files in the folder you publish.
+### helpers.py
 
-    **When Flash reads it:** uploaded with the folder by `flash env push` and
-    importable on the worker.
+**What it is:** any sibling Python modules your `environment.py` imports. Keep
+imports either from installed packages or from files in the folder you publish.
 
-  </Accordion>
+**When Flash reads it:** uploaded with the folder by `flash env push` and
+importable on the worker.
 
-  <Accordion title="dataset/" icon="table">
-    **What it is:** sidecar data files (`.jsonl`, `.json`, `.csv`, and more)
-    that your environment loads. See
-    [Datasets](/guides/datasets#what-gets-uploaded) for the full list.
+### dataset/
 
-    **When Flash reads it:** your environment code reads it (for example via
-    `load_task_examples(...)`); `flash env push` includes the `dataset/` folder
-    in the uploaded artifact.
+**What it is:** sidecar data files (`.jsonl`, `.json`, `.csv`, and more)
+that your environment loads. See
+[Datasets](/guides/datasets#what-gets-uploaded) for the full list.
 
-    ```jsonl dataset/train.jsonl
-    {"input":"What is 2 + 2?","output":"4"}
-    {"input":"What is 3 + 5?","output":"8"}
-    ```
+**When Flash reads it:** your environment code reads it (for example via
+`load_task_examples(...)`); `flash env push` includes the `dataset/` folder
+in the uploaded artifact.
 
-  </Accordion>
-</AccordionGroup>
+```jsonl dataset/train.jsonl
+{"input":"What is 2 + 2?","output":"4"}
+{"input":"What is 3 + 5?","output":"8"}
+```
+
