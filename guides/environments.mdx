@@ -120,9 +120,11 @@ development, but Flash does not use those files to install packages for a
 managed training run. Put runtime packages in the [training config](/reference/configuration) that references
 the published environment.
 
-Only list packages your environment imports. Flash manages the training stack
-itself, so do not pin packages such as `torch`, `trl`, `vllm`, `peft`, or
-`bitsandbytes` here unless your environment directly imports them.
+<Warning>
+  Only list packages your environment imports. Flash manages the training stack
+  itself, so do not pin packages such as `torch`, `trl`, `vllm`, `peft`, or
+  `bitsandbytes` here unless your environment directly imports them.
+</Warning>
 
 For example, an environment whose reward calls a judge model should declare the
 client library and the secret it reads. Here the judge is reached through an
