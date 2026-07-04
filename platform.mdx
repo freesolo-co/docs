@@ -49,8 +49,8 @@ source.
 
 ## Models
 
-**Models** lists the org's deployed LoRA adapters from managed serving. It shows
-the adapter id, base model, serving URL, latest reward when the adapter came from
+**Models** lists the org's deployed LoRA adapters from [managed serving](/guides/deploy-and-chat). It shows
+the adapter id, [base model](/reference/models), serving URL, latest reward when the adapter came from
 a Flash run, per-token billing, and serving status. Rows that still have a
 matching Flash run link back to the run detail page.
 
@@ -69,10 +69,10 @@ Manual top-ups range from $50 to $10,000.
 
 The activity log itemizes:
 
-- Training runs, charged after successful completion at the Flash cost quote.
+- Training runs, [charged after successful completion](/reference/cost-model#charges-and-cancellations) at the Flash cost quote.
   Setup time is reported but not billed. Cancelled runs are repriced to the
   training steps they reached.
-- Serving usage, charged per token.
+- Serving usage, [charged per token](/reference/cost-model#serving-billing).
 
 ## Freesolo agent CLI
 

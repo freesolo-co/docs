@@ -25,15 +25,15 @@ lora_rank = 32
 
 | Key | Type | Default | Description |
 | --- | --- | --- | --- |
-| `model` | string | (required) | Base model to train a LoRA adapter on, e.g. `Qwen/Qwen3.5-4B`. See `flash models`. |
-| `algorithm` | string | `sft` | `sft` (supervised): learns by imitating example completions you provide. `grpo` (RL): learns from a reward you define. |
+| `model` | string | (required) | Base model to train a LoRA adapter on, e.g. `Qwen/Qwen3.5-4B`. See [`flash models`](/reference/models). |
+| `algorithm` | string | `sft` | `sft` (supervised): learns by imitating example completions you provide. `grpo` (RL): learns from a reward you define. See [SFT vs GRPO](/guides/training#choose-sft-or-grpo). |
 | `thinking` | bool | `false` | Enable reasoning mode (thinking-capable models only). The reasoning trace shares the `max_tokens` budget with the answer, so raise `max_tokens` (and `max_length`) when enabling it — see [Troubleshooting](/reference/troubleshooting). |
 
 ## `[environment]`
 
 | Key | Type | Default | Description |
 | --- | --- | --- | --- |
-| `id` | string | (required) | Published Freesolo environment id, `your-org/your-env`. |
+| `id` | string | (required) | [Published Freesolo environment](/guides/environments#publish-it) id, `your-org/your-env`. |
 | `params` | table | `{}` | Keyword arguments passed to the env's `load_environment(**kwargs)`. `split` is also honored by Flash for packaged env datasets — see [Datasets](/guides/datasets#load-sidecars): it selects `dataset/<split>.jsonl`, and a missing split file is an error (no silent `train.jsonl` fallback). |
 | `pip` | list[string] | `[]` | Extra third-party pip requirements the worker installs before importing your environment (an escape hatch for deps your `environment.py` imports). |
 | `secrets` | list[string] | `[]` | Environment variable names to forward to the worker as runtime secrets. Values are read from your shell, `.env`, or `.env.local` at submit time. |
