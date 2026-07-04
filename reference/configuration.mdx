@@ -3,9 +3,9 @@ title: "Configuration reference"
 description: "Every field in a Flash training config (TOML)."
 ---
 
-A run is described by a TOML config passed to `flash train`. The only required
-fields are `model` and `environment.id`. `algorithm` defaults to `sft`, and
-everything else has a sensible default. Validate any config locally with
+Describe a run in a TOML config, then pass it to `flash train`. Only
+`model` and `environment.id` are required. `algorithm` defaults to `sft`;
+everything else has a default. Validate a config locally with
 `flash train config.toml --dry-run`.
 
 ```toml
@@ -26,15 +26,15 @@ lora_rank = 32
 | Key | Type | Default | Description |
 | --- | --- | --- | --- |
 | `model` | string | (required) | Base model to train a LoRA adapter on, e.g. `Qwen/Qwen3.5-4B`. See [`flash models`](/reference/models). |
-| `algorithm` | string | `sft` | `sft` (supervised): learns by imitating example completions you provide. `grpo` (RL): learns from a reward you define. See [SFT vs GRPO](/guides/training#choose-sft-or-grpo). |
-| `thinking` | bool | `false` | Enable reasoning mode (thinking-capable models only). The reasoning trace shares the `max_tokens` budget with the answer, so raise `max_tokens` (and `max_length`) when enabling it — see [Troubleshooting](/reference/troubleshooting). |
+| `algorithm` | string | `sft` | `sft` (supervised): imitates example completions you provide. `grpo` (RL): learns from a reward you define. See [SFT vs GRPO](/guides/training#choose-sft-or-grpo). |
+| `thinking` | bool | `false` | Enable reasoning mode (thinking-capable models only). The reasoning trace shares the `max_tokens` budget with the answer, so raise `max_tokens` (and `max_length`) when you enable it. See [Troubleshooting](/reference/troubleshooting). |
 
 ## `[environment]`
 
 | Key | Type | Default | Description |
 | --- | --- | --- | --- |
 | `id` | string | (required) | [Published Freesolo environment](/guides/environments/package#publish-it) id, `your-org/your-env`. |
-| `params` | table | `{}` | Keyword arguments passed to the env's `load_environment(**kwargs)`. `split` is also honored by Flash for packaged env datasets — see [Datasets](/guides/datasets#load-sidecars): it selects `dataset/<split>.jsonl`, and a missing split file is an error (no silent `train.jsonl` fallback). |
+| `params` | table | `{}` | Keyword arguments passed to the env's `load_environment(**kwargs)`. Flash also honors `split` for packaged env datasets. See [Datasets](/guides/datasets#load-sidecars): it selects `dataset/<split>.jsonl`, and a missing split file is an error (no silent `train.jsonl` fallback). |
 | `pip` | list[string] | `[]` | Extra third-party pip requirements the worker installs before importing your environment (an escape hatch for deps your `environment.py` imports). |
 | `secrets` | list[string] | `[]` | Environment variable names to forward to the worker as runtime secrets. Values are read from your shell, `.env`, or `.env.local` at submit time. |
 
@@ -56,8 +56,8 @@ service_api_key = os.environ["SERVICE_API_KEY"]
 `[environment].pip` is the worker install path for reward and environment
 dependencies. Do not rely on `pyproject.toml`, `requirements.txt`, or lockfiles
 inside the published environment artifact for managed training installs. Those
-files may describe your local development environment, but runtime packages
-belong in this config list.
+files may describe your local development environment; runtime packages belong
+in this config list.
 
 Never put secret values in `[environment.params]`; it becomes part of the run
 spec. Every name you list under `[environment].secrets` must
@@ -130,8 +130,8 @@ to enable logging to your own W&B account.
 
 ## Overrides & composition
 
-Any value can be set at submit time without editing the file. The override flag
-is `--set` (repeatable, dotted keys):
+Set any value at submit time without editing the file. The override flag is
+`--set` (repeatable, dotted keys):
 
 ```bash
 flash train config.toml --set train.steps=300 --set train.lora_rank=16

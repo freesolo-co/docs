@@ -3,17 +3,17 @@ title: "Training"
 description: "Write a config, submit a managed run, and follow it to completion."
 ---
 
-A training run is described by a single TOML config and submitted with
-`flash train`. Flash runs the job on managed infrastructure, supervises it, and
-streams checkpoints and logs back to you. This guide covers the config and the
-run lifecycle; see the [configuration reference](/reference/configuration) for
-every field.
+A training run is one TOML config, submitted with `flash train`. Flash runs the
+job on managed infrastructure, supervises it, and streams checkpoints and logs
+back to you. The config and run lifecycle follow; the
+[configuration reference](/reference/configuration) lists every field.
 
 ## Pick a base model
 
 Flash trains a [LoRA adapter](/how-flash-works) on top of a supported base
-model. List the catalog of base model ids and their parameter sizes (see
-[Supported models](/reference/models) for algorithms, reasoning, and pricing):
+model. List base model ids and their parameter sizes
+([Supported models](/reference/models) covers algorithms, reasoning, and
+pricing):
 
 ```bash
 flash models
@@ -39,9 +39,9 @@ algorithm = "grpo"
 
 </CodeGroup>
 
-- **`sft`**: supervised fine-tuning, for when you already have the answers. The
+- **`sft`**: supervised fine-tuning, when you already have the answers. The
   model imitates the prompt/answer pairs in your environment's [dataset](/guides/datasets).
-- **`grpo`**: reinforcement learning, for when there's no fixed answer to copy.
+- **`grpo`**: reinforcement learning, when there's no fixed answer to copy.
   Your environment's reward scores each completion.
 
 Both are driven by the same [environment](/guides/environments/overview). See
@@ -108,10 +108,10 @@ flash train config.toml --set train.steps=300 --set train.lora_rank=16
 
 ## Cost and billing
 
-Flash checks your org's prepaid balance against the pre-flight estimate before a
-run is submitted, then bills a successful run at the quoted Flash cost; a run
-cancelled after training starts is repriced to the steps it reached, and setup
-time is reported but not billed. Preview the estimate before you submit:
+Before submitting, Flash checks your org's prepaid balance against the pre-flight
+estimate. A successful run bills at the quoted Flash cost. A run cancelled after
+training starts is repriced to the steps it reached. Setup time is reported but
+not billed. Preview the estimate before you submit:
 
 ```bash
 flash train config.toml --cost
@@ -122,7 +122,7 @@ the preview output, and how cancellations are repriced.
 
 ## Monitor a run
 
-`Ctrl-C` during `flash train` just detaches you. The run keeps going on Freesolo.
+`Ctrl-C` during `flash train` detaches you. The run keeps going on Freesolo.
 
 ```bash
 flash runs                # all your runs: state, cost, model

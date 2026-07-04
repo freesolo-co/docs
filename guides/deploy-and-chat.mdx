@@ -3,12 +3,11 @@ title: "Deploy & chat"
 description: "Serve a trained adapter and talk to it over an OpenAI-compatible API."
 ---
 
-Once a [training run](/guides/training) reaches `done`, deploy its adapter and chat with it, from the CLI or
-any OpenAI-compatible client.
+Deploy a trained adapter and chat with it from the CLI or any OpenAI-compatible
+client, once its [training run](/guides/training) reaches `done`.
 
 `flash deploy` registers your adapter with Freesolo's **managed serving
-service**. Register the adapter, send requests to it, and pay per token
-(see [Billing](#billing)).
+service**. Send requests to it and pay per token (see [Billing](#billing)).
 
 ## Deploy
 
@@ -44,9 +43,9 @@ Then serve a specific step instead of the final adapter:
 flash deploy <run-id>/step-<N>
 ```
 
-You can deploy a checkpoint while a run is still training, or after a GRPO run
+Deploy a checkpoint while a run is still training, or after a GRPO run
 stops with useful intermediate steps. Checkpoint deployments attach serving
-metadata to the run while preserving the run's training state.
+metadata to the run without altering its training state.
 
 <Note>
   A run that never finalized (cancelled or preempted mid-training) has no final
@@ -58,8 +57,8 @@ metadata to the run while preserving the run's training state.
 ## Billing
 
 Serving is **billed per token**. Prompt and completion tokens have per-model
-rates, and cached prompt tokens use the model's cached-input rate. Prices are
-listed in [Supported models](/reference/models#serving-prices).
+rates, and cached prompt tokens use the model's cached-input rate. See prices
+in [Supported models](/reference/models#serving-prices).
 
 **Cached prompt tokens are cheaper than uncached prompt tokens.** Prefix caching
 is always on: when a request's prompt shares a leading prefix with a recent one
@@ -101,7 +100,7 @@ flash undeploy <run-id>  # deregister the adapter from serving
 
 ## Use it from your own code
 
-Deployments are OpenAI-compatible, so you can point any OpenAI SDK at the
+Deployments are OpenAI-compatible. Point any OpenAI SDK at the
 endpoint from `flash deployments`. The `model` is your run id:
 
 ```python
@@ -119,67 +118,10 @@ resp = client.chat.completions.create(
 print(resp.choices[0].message.content)
 ```
 
-### Call it with the freesolo SDK
-
-The `freesolo` SDK ships a small hosted-LoRA client if you'd rather not pull in
-an OpenAI SDK:
-
-```python
-from freesolo.utils.hosting import HostedLoraClient, chat_completion_with_lora
-
-client = HostedLoraClient(hosting_url="https://<your-endpoint>")
-resp = client.chat_completion("<run-id>", [{"role": "user", "content": "Hello!"}])
-
-# or the one-shot module helper
-resp = chat_completion_with_lora(
-    "<run-id>",
-    [{"role": "user", "content": "Hello!"}],
-    hosting_url="https://<your-endpoint>",
-)
-```
-
-Every call — `chat_completion`, `generate`, and the module-level
-`chat_completion_with_lora` / `generate_with_lora` helpers — accepts a per-call
-`timeout_seconds` override, so a single slow request can be given its own
-budget (or a tight one) without changing the client-wide timeout set at
-construction:
-
-```python
-client.chat_completion("<run-id>", messages, timeout_seconds=120.0)
-```
-
-### Pin and verify the serving checkpoint
-
-Redeploying an adapter id (for example sweeping over checkpoint steps with
-`flash deploy <run-id>/step-N`) replaces what that id serves. When requests
-and redeploys can race, the inference endpoints support two headers so you
-always know — and can require — which checkpoint answered:
-
-- **`X-Freesolo-Checkpoint`** (response): echoes the checkpoint that actually
-  served the request. The header is omitted entirely when the adapter has no
-  checkpoint (a plain final-adapter deployment).
-- **`X-Freesolo-Expected-Checkpoint`** (request): pins the request to an
-  expected checkpoint. If the adapter is currently serving a different one
-  (e.g. a parallel sweep redeployed another step in between), the request fails
-  with **409 Conflict** — naming the checkpoint that is live — instead of
-  silently generating from the wrong checkpoint. The value is compared after
-  stripping whitespace; send an empty value to require "no checkpoint".
-
-Both headers work on streaming and non-streaming requests.
-
-```python
-resp = client.chat.completions.with_raw_response.create(
-    model="<run-id>",
-    messages=[{"role": "user", "content": "Hello!"}],
-    extra_headers={"X-Freesolo-Expected-Checkpoint": "<checkpoint>"},
-)
-print(resp.headers.get("X-Freesolo-Checkpoint"))
-```
-
 ## Export to your own HuggingFace repo
 
-To take a trained adapter out of Freesolo's managed storage, copy it into a
-HuggingFace repo you own:
+Copy a trained adapter out of Freesolo's managed storage into a HuggingFace
+repo you own:
 
 ```bash
 flash export --adapter-id <run-id> --repository <owner>/<name>

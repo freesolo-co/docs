@@ -4,28 +4,21 @@ sidebarTitle: "Dashboard"
 description: "What you can see and manage in the Freesolo web app when you sign in."
 ---
 
-Flash runs from the `flash` CLI, and the same account has an org-scoped web
-dashboard at [freesolo.co/platform](https://freesolo.co/platform). After sign-in,
-`/platform` redirects you to your active org at `/{org-slug}/platform`.
-
-The dashboard mirrors the operational state behind the CLI: training runs,
-published environments, deployed models, billing, and API keys.
+Flash runs from the `flash` CLI. The same account has an org-scoped web
+dashboard at [freesolo.co/platform](https://freesolo.co/platform).
 
 ## API keys
 
 Every `flash` command authenticates with a Freesolo API key. Create and revoke
-keys in **API Keys**. Keys are org-wide, any org member can manage them, and a
+keys in **API Keys**. Keys are org-wide; any org member can manage them. A
 new key is shown once. Use it with `flash login --api-key <key>` or the
 `FREESOLO_API_KEY` environment variable. See
 [Quickstart](/quickstart#step-2-log-in).
 
-API keys start with `fslo_`; Freesolo stores only hashed key material plus the
-prefix/last-four display fields, so the full key cannot be recovered later.
-
 ## Training runs
 
 **Training Runs** lists the runs submitted with
-[`flash train`](/guides/training), with status filters and columns for state,
+[`flash train`](/guides/training). Filter by status; columns cover state,
 model, environment, and cost. Open a run for the same detail exposed by
 `flash status`: the run spec, checkpoints, artifact/deployment metadata, error
 state, and current or final cost record.
@@ -44,8 +37,8 @@ mid-training. This is the same set you get from
 **Environments** lists the private Hub environments you publish with
 [`flash env push`](/guides/environments/package#publish-it). A managed environment id is
 `namespace/name`, where `namespace` is your org slug. The page tracks publish
-time, last use, and run count, and lets you inspect, pull, or delete environment
-source.
+time, last use, and run count. From it you can inspect, pull, or delete
+environment source.
 
 ## Models
 
@@ -73,15 +66,6 @@ The activity log itemizes:
   Setup time is reported but not billed. Cancelled runs are repriced to the
   training steps they reached.
 - Serving usage, [charged per token](/reference/cost-model#serving-billing).
-
-## Freesolo agent CLI
-
-The `freesolo` command handles repo-level Freesolo agent workflows. Install it
-with `pip install freesolo-agent`, then run `freesolo setup` to connect a
-Freesolo API key, choose an operation (`draft`, `optimize`, `training`, or
-`poll`), and submit or follow a repository-agent job.
-
-Use `flash` for managed model post-training and serving.
 
 ## Next steps
 

@@ -16,11 +16,35 @@ the environment to count its training examples.
 
 The submit-time quote is the amount Flash checks against your prepaid org
 balance. Successful runs are billed at the quoted Flash cost. Cancelled runs are
-repriced to the training progress they actually reached.
+repriced to the training progress they reached.
+
+## How cost is calculated
+
+`flash train --cost` reprices a run the same way the platform bills it:
+
+```text
+total = billable training hours × GPU $/hr
+```
+
+Billable training time is the training loop only — `steps × per-step time`.
+Setup (container boot, dependency install, model load, and, for GRPO,
+inference-engine warmup) is reported as wall-clock time but is **not billed**.
+Per-step time reflects the work in a step: a GRPO step samples a group of
+completions, grades them with your reward, and updates the policy, so it scales
+with how many and how long those completions are (`batch_size × group_size ×
+max_tokens`); an SFT step is one forward/backward pass, priced on the training
+tokens counted from your environment. The estimator sizes the run's memory and
+prices the cheapest GPU class that fits — it does not pin a specific card, so the
+one actually provisioned (and its live `flash gpus` rate) can differ from the
+estimate.
+
+Serving is priced separately, per token: `(prompt − cached) × input + completion
+× output + cached × cached`, at the per-model rates in
+[Supported models](/reference/models#serving-prices).
 
 ## What affects training cost
 
-The main levers are the ones you control in the config:
+You control the main levers in the config:
 
 - **[Base model](/reference/models).** Smaller models are cheaper and faster for smoke tests.
 - **[Algorithm](/guides/training#choose-sft-or-grpo).** SFT usually costs less than GRPO, which samples and scores
@@ -28,8 +52,9 @@ The main levers are the ones you control in the config:
 - **Steps or epochs.** More SFT `epochs`, more GRPO `steps`, or a higher
   `max_steps` cap increases cost.
 - **Sequence length.** Larger `max_length` and `max_tokens` increase work per
-  example. Keep them large enough for your prompt and answer, but do not
-  oversize them by default.
+  example. Keep them large enough for your prompt and answer, but do not oversize them by default.
+- **GRPO group size.** `group_size` controls how many completions are sampled per
+  prompt. Larger groups give a stronger advantage estimate but cost more.
 - **Batch size and dataset size.** For SFT, cost scales with the number of
   examples trained over and the batch/epoch settings.
 - **GRPO group size.** `group_size` controls how many completions are sampled per
@@ -37,8 +62,8 @@ The main levers are the ones you control in the config:
 - **Reward latency.** If your GRPO reward calls an external model or service,
   slow grading can increase wall-clock time.
 
-Setup and cold start time are shown for observability, but the training charge
-is based on the billable training loop.
+Setup and cold start time are shown for observability, but the training charge is based on the
+billable training loop.
 
 ## Reading the preview
 
@@ -96,9 +121,9 @@ flash undeploy <run-id>
 
 ## Why a later quote can change
 
-The quote can change when you change the config, publish different environment
-contents, update dataset size, or submit after catalog/pricing updates. The
-authoritative number is the quote returned for the run you actually submit.
+The quote can change when you edit the config, publish different environment
+contents, change the dataset size, or submit after catalog/pricing updates. The
+authoritative number is the quote returned for the run you submit.
 
 ## Next steps
 

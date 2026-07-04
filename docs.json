@@ -30,17 +30,17 @@
 						"group": "Core concepts",
 						"pages": ["how-flash-works", "environment-model", "directory-structure"]
 					},
-					"guides/training",
 					{
 						"group": "Environments",
 						"pages": [
 							"guides/environments/overview",
 							"guides/environments/package",
-							"guides/environments/authoring",
+							"guides/environments/single-turn",
 							"guides/environments/multi-turn"
 						]
 					},
 					"guides/datasets",
+					"guides/training",
 					"guides/deploy-and-chat"
 				]
 			},
@@ -54,6 +54,10 @@
 		{
 			"source": "/guides/environments",
 			"destination": "/guides/environments/overview"
+		},
+		{
+			"source": "/guides/environments/authoring",
+			"destination": "/guides/environments/single-turn"
 		},
 		{
 			"source": "/conventions",

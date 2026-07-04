@@ -1,19 +1,13 @@
 ---
-title: "Author with the SDK"
-description: "Write the environment class - datasets, prompts, and rewards - and pass it parameters and secrets."
+title: "Single-turn environments"
+description: "Write an EnvironmentSingleTurn class: dataset, prompt builder, and reward."
 ---
 
-Your environment code imports from the `freesolo` package. **You don't need to
-install anything for the managed flow** — training workers already have the SDK
-when they import your published environment. Install it locally only if you plan
-to run or test `environment.py` yourself, or use a command like
-`flash train --cost` that imports the environment locally to count training rows:
+A single-turn environment resolves each example in one model response - prompt
+in, completion out, reward computed. You implement a prompt builder and a reward
+on an `EnvironmentSingleTurn` subclass.
 
-```bash
-uv pip install freesolo
-```
-
-Use the public imports below in environment code:
+Import these public names in environment code:
 
 ```python
 from freesolo.datasets import TaskExample
@@ -38,7 +32,6 @@ from freesolo.environments import EnvironmentSingleTurn, RewardResult
 
 ROOT = Path(__file__).parent
 
-
 class MathEnv(EnvironmentSingleTurn):
     def __init__(self, *, split: str = "train") -> None:
         self.dataset = load_task_examples(ROOT / "dataset" / f"{split}.jsonl")
@@ -51,7 +44,6 @@ class MathEnv(EnvironmentSingleTurn):
         score = 1.0 if expected and expected in response_text else 0.0
         return RewardResult(score=score, threshold=1.0)
 
-
 def load_environment(split: str = "train", **kwargs) -> MathEnv:
     return MathEnv(split=split)
 ```
@@ -61,26 +53,26 @@ records](/guides/datasets#task-records)). `load_task_examples(...)` exposes each
 record's `input`/`output` as `example.input`/`example.output`, with the raw row
 available as `example.record`.
 
-For SFT, the SDK builds the training conversation as the environment's
+For SFT, the SDK builds the training conversation from the environment's
 `start_episode(example, prompt_text)` plus `sft_completion(example)`. The default
-`sft_completion` converts `example.output` into completion messages — see
+`sft_completion` converts `example.output` into completion messages. See
 [Datasets](/guides/datasets#message-shaped-sft-targets) for the scalar and
 message-shaped output forms. Override `sft_completion` only when the gold
-completion needs to be synthesized from other fields.
+completion must be synthesized from other fields.
 
 Single-turn environments usually implement `build_prompt_messages`. The SDK's
 default `start_episode` calls it and prepends the run's prompt text as a
-`system` message when your messages do not already include one, so local eval,
-SFT, and GRPO see the same policy prompt. Multi-turn environments own
-`start_episode`; include any task-specific initial system message there. On
-managed runs Flash applies the same guarantee to every episode's opening
-messages, single- and multi-turn: if `start_episode` returns no system message
-(or an empty one), the run's prompt text is inserted as the system message.
+`system` message when your messages lack one, so local eval, SFT, and GRPO see
+the same policy prompt. Multi-turn environments own `start_episode`; put any
+task-specific initial system message there. On managed runs, Flash applies the
+same guarantee to every episode's opening messages, single- and multi-turn: if
+`start_episode` returns no system message (or an empty one), the run's prompt
+text becomes the system message.
 
 When a run uses `thinking = true`, `score_response` receives answer text by
-default. The `response_text` value is still string-compatible and also exposes
+default. `response_text` stays string-compatible and also exposes
 `response_text.completion`, `response_text.thinking`, and `response_text.raw` for
-rewards that intentionally inspect the reasoning trace.
+rewards that inspect the reasoning trace.
 
 ## Pass parameters
 
@@ -95,44 +87,6 @@ id = "your-org/your-env"
 difficulty = "hard"
 num_examples = 500
 ```
-
-## Use API keys
-
-If your environment needs an external service, read the key from `os.environ` in
-`environment.py`:
-
-```python environment.py
-import os
-
-SERVICE_API_KEY = os.environ["SERVICE_API_KEY"]
-```
-
-Then declare the environment variable names in your training config:
-
-```toml
-[environment]
-id = "your-org/your-env"
-secrets = ["SERVICE_API_KEY"]
-```
-
-Set the value in your shell before submitting:
-
-```bash
-export SERVICE_API_KEY="..."
-flash train configs/sft.toml
-```
-
-You can also put local development values in `.env` or `.env.local`:
-
-```bash
-SERVICE_API_KEY=...
-```
-
-Flash sends declared secret values to the worker out-of-band. Secret values are
-not stored in the TOML config, run spec, status JSON, logs, or environment
-artifact. Do not put API keys in `[environment.params]`.
-If a declared secret is missing when you submit, `flash train` fails before the
-run starts.
 
 ## Next steps
 

@@ -28,8 +28,8 @@ Every environment bundles three things behind one `load_environment()` entrypoin
 </CardGroup>
 
 The same environment drives **SFT** (learn from gold answers), **GRPO** (learn
-from reward scores), **and eval**: you swap one line in the config and the
-environment stays put.
+from reward scores), **and eval**. Swap one line in the config; the environment
+stays put.
 
 For SFT, each row's `output` is the gold completion Flash trains on, appended
 after the environment's initial episode so system prompts and tool transcripts
@@ -48,8 +48,8 @@ You write `environment.py`; Flash owns the rest of the loop.
 | (nothing)                                                | A versioned Environments Hub and [per-token serving](/guides/deploy-and-chat#billing)                               |
 
 The quality of the environment's dataset and reward sets the ceiling on what
-training can achieve. For the full split of responsibilities, see
-[How Flash works](/how-flash-works).
+training can achieve. See [How Flash works](/how-flash-works) for the full split
+of responsibilities.
 
 ## Where it sits in the training loop
 
@@ -74,7 +74,7 @@ of the loop.
 
 ## Single-turn and multi-turn
 
-The interaction model is set by which base class you subclass:
+The base class you subclass sets the interaction model:
 
 - **`EnvironmentSingleTurn`:** prompt in, completion out, reward computed. Most
   tasks start here. If your prompt messages do not include a `system` message,
@@ -87,37 +87,17 @@ The interaction model is set by which base class you subclass:
   See [Multi-turn environments](/guides/environments/multi-turn) for
   the full loop, an action protocol, and the stateless-step pattern.
 
-A minimal single-turn environment:
-
-```python environment.py
-from freesolo.datasets import TaskExample
-from freesolo.environments import EnvironmentSingleTurn, RewardResult
-
-class CustomEnv(EnvironmentSingleTurn):
-    dataset = [{"input": "What is 2 + 2?", "output": "4"}]
-
-    def build_prompt_messages(self, example: TaskExample, prompt_text: str):
-        return [{"role": "user", "content": example.input}]
-
-    def score_response(self, example: TaskExample, response_text: str) -> RewardResult:
-        expected = str(example.output or "").strip()
-        return RewardResult(score=1.0 if expected and expected in response_text else 0.0, threshold=1.0)
-
-def load_environment(**kwargs) -> CustomEnv:
-    return CustomEnv()
-```
-
 See [Environments](/guides/environments/overview) for the full SDK: prompt builders,
 loading dataset files, parameters, and secrets.
 
-With `thinking = true`, `response_text` is the answer text by default; it also
+With `thinking = true`, `response_text` is the answer text by default. It also
 exposes the separated reasoning trace and raw output when a reward needs them
-(see [Environments](/guides/environments/authoring)).
+(see [Environments](/guides/environments/single-turn)).
 
 ## From local file to managed run
 
-An environment is authored locally but has to be reachable by id when training
-runs on managed infrastructure. The lifecycle is four steps:
+You author an environment locally, but it must be reachable by id when training
+runs on managed infrastructure. The lifecycle has four steps:
 
 <Steps>
   <Step title="Author it locally">

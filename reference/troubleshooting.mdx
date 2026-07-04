@@ -10,7 +10,7 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
 
 <AccordionGroup>
   <Accordion title="flash: command not found">
-    The CLI installs a single `flash` command, but its install location has to be
+    The CLI installs a single `flash` command. Its install location must be
     on your `PATH`.
 
     - If you installed with `uv tool install freesolo-flash`, make sure uv's tool
@@ -21,7 +21,7 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
   </Accordion>
 
   <Accordion title="I installed `flash` but it's the wrong tool">
-    The CLI is published to PyPI as **`freesolo-flash`**, the bare `flash` name
+    The CLI is published to PyPI as **`freesolo-flash`**. The bare `flash` name
     belongs to an unrelated project. Reinstall the right one:
 
     ```bash
@@ -55,8 +55,8 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
 
 <AccordionGroup>
   <Accordion title="flash env push fails">
-    Make sure the folder you push contains an `environment.py` file with a
-    `load_environment()` function that returns a Freesolo environment, then:
+    The folder you push must contain an `environment.py` file with a
+    `load_environment()` function that returns a Freesolo environment. Then:
 
     ```bash
     flash env push --name math math
@@ -69,12 +69,12 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
   </Accordion>
 
   <Accordion title="ModuleNotFoundError: No module named 'freesolo' (local authoring)">
-    Managed training workers have the Freesolo SDK available when they import a
-    published environment. Your local Python environment does not get that SDK
-    automatically from the `flash` CLI. Install it locally when you run or test
-    `environment.py` directly, or when you use a command such as
-    `flash train --cost` that **loads** the environment to count examples.
-    `--dry-run` validates only the config and does not import the environment:
+    Managed training workers have the Freesolo SDK when they import a published
+    environment. Your local Python environment does not get that SDK automatically from the `flash`
+    CLI. Install it locally to run or test `environment.py` directly, or to run
+    a command such as `flash train --cost` that **loads** the environment to
+    count examples. `--dry-run` validates the config only and does not import
+    the environment:
 
     ```bash
     uv pip install freesolo
@@ -195,8 +195,8 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
     The usual causes are long context, long generated completions, a large GRPO
     `group_size`, or a larger base model than the task needs. Reduce
     `max_length`, `max_tokens`, or `group_size`, or switch to a smaller model.
-    If you recently enabled `thinking = true`, remember that reasoning and the
-    final answer share the same token budget.
+    If you recently enabled `thinking = true`, reasoning and the final answer
+    share the same token budget.
   </Accordion>
 </AccordionGroup>
 
@@ -223,9 +223,9 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
 
 <Accordion title="GRPO reward is stuck at 0">
   The task is too hard for the model at its current ability: if no rollout ever
-  scores, there's nothing for GRPO to reinforce. Try a stronger/larger base
-  model, make the task easier to get started, or double-check your reward
-  actually returns a positive reward for good answers.
+  scores, there's nothing for GRPO to reinforce. Try a stronger or larger base
+  model, make the task easier to start, or double-check that your reward
+  returns a positive reward for good answers.
 </Accordion>
 
 <Accordion title="Reward is stuck at 1 (or never moves)">
@@ -279,7 +279,7 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
 </Accordion>
 
   <Accordion title="Did pressing Ctrl-C kill my run?">
-    No. `Ctrl-C` during `flash train` just **detaches** you; the run keeps going
+    No. `Ctrl-C` during `flash train` **detaches** you; the run keeps going
     on Freesolo. Re-follow it any time, and cancel explicitly if you mean to:
 
     ```bash
@@ -338,8 +338,8 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
   <Accordion title="Calling the endpoint from my own code is rejected">
     Deployments are OpenAI-compatible. Use the endpoint from `flash deployments`
     as the `base_url` and the `<run-id>` as the `model`. The OpenAI SDK requires
-    an `api_key`, and the serving endpoint requires it — pass your Freesolo API key
-    (the same key `flash login` uses); serving authorizes every request against the
+    an `api_key`, and so does the serving endpoint — pass your Freesolo API key
+    (the same key `flash login` uses). Serving authorizes every request against the
     org that owns the adapter, so a placeholder key is rejected (401/403). See
     [Use it from your own code](/guides/deploy-and-chat#use-it-from-your-own-code).
   </Accordion>

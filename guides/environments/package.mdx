@@ -3,8 +3,8 @@ title: "Package & publish"
 description: "Lay out the environment folder, declare dependencies, and publish it to the managed Hub."
 ---
 
-Turn your local files into a published environment that training runs can reach
-by id - structure the folder, declare its dependencies, and push it to the managed
+Turn your local files into a published environment that training runs reach by
+id. Structure the folder, declare its dependencies, and push it to the managed
 Hub.
 
 ## Structure the package
@@ -30,7 +30,7 @@ Publish the folder:
 flash env push --name math math
 ```
 
-Single `.py` upload still works for tiny smoke tests, but push real environments
+A single `.py` upload still works for tiny smoke tests, but push real environments
 as folders. The `--name` value is normalized to a lowercase hyphen slug, and the
 published id uses your Freesolo org namespace, for example `your-org/math`.
 
@@ -51,9 +51,9 @@ pip = ["rapidfuzz>=3.0", "pydantic"]
 ```
 
 This is the supported worker dependency mechanism. A `pyproject.toml`,
-`requirements.txt`, or lockfile beside `environment.py` may be useful for local
-development, but Flash does not use those files to install packages for a
-managed training run. Put runtime packages in the [training config](/reference/configuration) that references
+`requirements.txt`, or lockfile beside `environment.py` can help local
+development, but Flash does not use those files to install packages for a managed
+training run. Put runtime packages in the [training config](/reference/configuration) that references
 the published environment.
 
 Only list packages your environment imports. Flash manages the training stack
@@ -89,7 +89,7 @@ its secret.
 
 ## Publish it
 
-Training runs on managed infrastructure, so the environment has to be reachable by id.
+Training runs on managed infrastructure, so the environment must be reachable by id.
 Publish your local environment folder to the managed Environments Hub:
 
 ```bash
@@ -110,8 +110,8 @@ it directly. You can also reference a GitHub environment source with a
 id = "your-org/your-env"
 ```
 
-If you want the source locally for editing or inspection, pull the whole
-environment into a directory:
+To edit or inspect the source locally, pull the whole environment into a
+directory:
 
 ```bash
 flash env pull your-org/your-env
@@ -143,10 +143,48 @@ flash env delete your-org/your-env
 flash env delete your-org/your-env -y   # skip the confirmation prompt
 ```
 
+## Use API keys
+
+If your environment needs an external service, read the key from `os.environ` in
+`environment.py`:
+
+```python environment.py
+import os
+
+SERVICE_API_KEY = os.environ["SERVICE_API_KEY"]
+```
+
+Then declare the environment variable names in your training config:
+
+```toml
+[environment]
+id = "your-org/your-env"
+secrets = ["SERVICE_API_KEY"]
+```
+
+Set the value in your shell before submitting:
+
+```bash
+export SERVICE_API_KEY="..."
+flash train configs/sft.toml
+```
+
+You can also put local development values in `.env` or `.env.local`:
+
+```bash
+SERVICE_API_KEY=...
+```
+
+Flash sends declared secret values to the worker out-of-band. Secret values are
+not stored in the TOML config, run spec, status JSON, logs, or environment
+artifact. Do not put API keys in `[environment.params]`.
+If a declared secret is missing when you submit, `flash train` fails before the
+run starts.
+
 ## Next steps
 
 <CardGroup cols={2}>
-  <Card title="Author with the SDK" icon="flask" href="/guides/environments/authoring">
+  <Card title="Single-turn environments" icon="flask" href="/guides/environments/single-turn">
     Fill in the environment class you just published.
   </Card>
   <Card title="Training" icon="dumbbell" href="/guides/training">

@@ -6,9 +6,9 @@ description: "What a Freesolo environment is, and how to scaffold your first one
 
 An [**environment**](/environment-model) is the task: the data your model sees and the reward, a
 numeric score your code assigns to each model output. Flash loads environments
-through the Freesolo environment SDK.
-You author one locally, publish it to Freesolo's managed Environments Hub, and
-reference it in config by its Freesolo environment id.
+through the Freesolo environment SDK. Author one locally, publish it to
+Freesolo's managed Environments Hub, and reference it in config by its Freesolo
+environment id.
 
 ```toml
 [environment]
@@ -70,7 +70,19 @@ Replace the dataset and reward with your task:
   works](/how-flash-works).
 
 For multi-turn tasks (conversations, tool use, agents), use `EnvironmentMultiTurn`
-and implement the episode hooks — see [Multi-turn environments](/guides/environments/multi-turn) below.
+and implement the episode hooks. See [Multi-turn environments](/guides/environments/multi-turn) below.
+
+## Use the SDK
+
+Your environment code imports from the `freesolo` package. **The managed flow
+needs no local install.** Training workers already have the SDK when they import
+your published environment. Install it locally only to run or test
+`environment.py` yourself, or to run a command like `flash train --cost`, which
+imports the environment locally to count training rows:
+
+```bash
+uv pip install freesolo
+```
 
 ## Next steps
 
@@ -78,7 +90,7 @@ and implement the episode hooks — see [Multi-turn environments](/guides/enviro
   <Card title="Package & publish" icon="box" href="/guides/environments/package">
     Structure the folder and push it to the Hub.
   </Card>
-  <Card title="Author with the SDK" icon="flask" href="/guides/environments/authoring">
+  <Card title="Single-turn environments" icon="flask" href="/guides/environments/single-turn">
     Write the dataset, prompts, and reward.
   </Card>
 </CardGroup>

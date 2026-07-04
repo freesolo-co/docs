@@ -3,23 +3,22 @@ title: "How Flash works"
 description: "Post-training in plain terms: the few concepts that matter, and how Flash runs them for you."
 ---
 
-If you've heard of "post-training" or "fine-tuning" but never shipped one, this
-page builds the intuition: the few concepts that matter, and how Flash runs the
-whole managed loop.
+Post-training turns a general model into one that is good at your task. This
+page covers the few concepts that matter and how Flash runs the managed loop
+for you.
 
 ## What post-training does
 
-A base model like Qwen3.5 arrives from **pre-training** already fluent, but
-generic: it has read a lot of the internet and is good at everything in general,
-nothing in particular. **Post-training** is the step that shapes that general
-model into one that's reliably good at _your_ task, using _your_ data and _your_
-definition of a good answer.
+A base model like Qwen3.5 arrives from **pre-training** fluent but generic:
+trained on much of the internet, good at everything in general and nothing in
+particular. **Post-training** shapes that general model into one that is reliably
+good at _your_ task, using _your_ data and _your_ definition of a good answer.
 
 Flash is a managed post-training service. You describe the task and pick a base
-model, Flash fine-tunes it on managed infrastructure, and then serves the result
-behind an OpenAI-compatible API. Reach for post-training when you want consistent behavior,
-a smaller and cheaper model that matches a big one on a narrow task, or behavior
-that prompting alone does not reliably produce. More on when to use it below.
+model. Flash fine-tunes it on managed infrastructure and serves the result behind
+an OpenAI-compatible API. Reach for post-training when you want consistent
+behavior, a small cheap model that matches a big one on a narrow task, or behavior
+that prompting alone does not reliably produce. More on when below.
 
 ## The training loop
 
@@ -51,8 +50,8 @@ algorithm** that improves the model from that score.
 ### Base models and LoRA adapters
 
 Flash trains a **LoRA adapter**: a small set of extra weights layered on top of
-the frozen base model. This is _parameter-efficient_ fine-tuning, and it has
-three practical payoffs:
+the frozen base model. This is _parameter-efficient_ fine-tuning, with three
+practical payoffs:
 
 - **Cheap and fast** to train, because you're updating a tiny fraction of the
   parameters.
@@ -74,8 +73,8 @@ An **environment** is the task, expressed as code. It bundles two things:
 The environment is the single source of truth for _what the model practices on_
 and _how it's graded_. Flash uses Freesolo environments. You author one locally,
 publish it to the managed Environments Hub, and reference it from your config by
-Freesolo id. See the [Environment model](/environment-model) for the mental
-model, or [Environments](/guides/environments/overview) and [Datasets](/guides/datasets)
+Freesolo id. See the [Environment model](/environment-model) for the concepts, or
+[Environments](/guides/environments/overview) and [Datasets](/guides/datasets)
 to build one.
 
 ### Two ways to teach: SFT and GRPO
@@ -115,14 +114,13 @@ attempts succeed.
 
 ### Serving the result
 
-A trained adapter isn't useful until you can call it. `flash deploy` registers
-your adapter with Freesolo's **managed serving**. You talk to it over
-an OpenAI-compatible API, and serving is billed per token. See
-[Deploy & chat](/guides/deploy-and-chat).
+Deploy the adapter to call it. `flash deploy` registers your adapter with
+Freesolo's **managed serving**. You talk to it over an OpenAI-compatible API,
+and serving is billed per token. See [Deploy & chat](/guides/deploy-and-chat).
 
 ## Is post-training right for your task?
 
-Post-training shines when the task is narrow and you can define success. Good
+Post-training fits when the task is narrow and you can define success. Good
 signs:
 
 - You have **examples** of the behavior you want (favor SFT), or a way to
