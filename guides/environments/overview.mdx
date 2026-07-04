@@ -72,13 +72,25 @@ Replace the dataset and reward with your task:
 For multi-turn tasks (conversations, tool use, agents), use `EnvironmentMultiTurn`
 and implement the episode hooks. See [Multi-turn environments](/guides/environments/multi-turn) below.
 
+## Use the SDK
+
+Your environment code imports from the `freesolo` package. **The managed flow
+needs no local install.** Training workers already have the SDK when they import
+your published environment. Install it locally only to run or test
+`environment.py` yourself, or to run a command like `flash train --cost`, which
+imports the environment locally to count training rows:
+
+```bash
+uv pip install freesolo
+```
+
 ## Next steps
 
 <CardGroup cols={2}>
   <Card title="Package & publish" icon="box" href="/guides/environments/package">
     Structure the folder and push it to the Hub.
   </Card>
-  <Card title="Author with the SDK" icon="flask" href="/guides/environments/authoring">
+  <Card title="Single-turn environments" icon="flask" href="/guides/environments/single-turn">
     Write the dataset, prompts, and reward.
   </Card>
 </CardGroup>

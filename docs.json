@@ -35,7 +35,7 @@
 						"pages": [
 							"guides/environments/overview",
 							"guides/environments/package",
-							"guides/environments/authoring",
+							"guides/environments/single-turn",
 							"guides/environments/multi-turn"
 						]
 					},
@@ -54,6 +54,10 @@
 		{
 			"source": "/guides/environments",
 			"destination": "/guides/environments/overview"
+		},
+		{
+			"source": "/guides/environments/authoring",
+			"destination": "/guides/environments/single-turn"
 		},
 		{
 			"source": "/conventions",

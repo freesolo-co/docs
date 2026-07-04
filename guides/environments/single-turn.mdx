@@ -1,17 +1,11 @@
 ---
-title: "Author with the SDK"
-description: "Write the environment class - datasets, prompts, and rewards - and pass it parameters and secrets."
+title: "Single-turn environments"
+description: "Write an EnvironmentSingleTurn class: dataset, prompt builder, and reward."
 ---
 
-Your environment code imports from the `freesolo` package. **The managed flow
-needs no local install.** Training workers already have the SDK when they import
-your published environment. Install it locally only to run or test
-`environment.py` yourself, or to run a command like `flash train --cost`, which
-imports the environment locally to count training rows:
-
-```bash
-uv pip install freesolo
-```
+A single-turn environment resolves each example in one model response - prompt
+in, completion out, reward computed. You implement a prompt builder and a reward
+on an `EnvironmentSingleTurn` subclass.
 
 Import these public names in environment code:
 
@@ -95,44 +89,6 @@ id = "your-org/your-env"
 difficulty = "hard"
 num_examples = 500
 ```
-
-## Use API keys
-
-If your environment needs an external service, read the key from `os.environ` in
-`environment.py`:
-
-```python environment.py
-import os
-
-SERVICE_API_KEY = os.environ["SERVICE_API_KEY"]
-```
-
-Then declare the environment variable names in your training config:
-
-```toml
-[environment]
-id = "your-org/your-env"
-secrets = ["SERVICE_API_KEY"]
-```
-
-Set the value in your shell before submitting:
-
-```bash
-export SERVICE_API_KEY="..."
-flash train configs/rl.toml
-```
-
-You can also put local development values in `.env` or `.env.local`:
-
-```bash
-SERVICE_API_KEY=...
-```
-
-Flash sends declared secret values to the worker out-of-band. Secret values are
-not stored in the TOML config, run spec, status JSON, logs, or environment
-artifact. Do not put API keys in `[environment.params]`.
-If a declared secret is missing when you submit, `flash train` fails before the
-run starts.
 
 ## Next steps
 
