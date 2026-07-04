@@ -87,26 +87,6 @@ The base class you subclass sets the interaction model:
   See [Multi-turn environments](/guides/environments/multi-turn) for
   the full loop, an action protocol, and the stateless-step pattern.
 
-A minimal single-turn environment:
-
-```python environment.py
-from freesolo.datasets import TaskExample
-from freesolo.environments import EnvironmentSingleTurn, RewardResult
-
-class CustomEnv(EnvironmentSingleTurn):
-    dataset = [{"input": "What is 2 + 2?", "output": "4"}]
-
-    def build_prompt_messages(self, example: TaskExample, prompt_text: str):
-        return [{"role": "user", "content": example.input}]
-
-    def score_response(self, example: TaskExample, response_text: str) -> RewardResult:
-        expected = str(example.output or "").strip()
-        return RewardResult(score=1.0 if expected and expected in response_text else 0.0, threshold=1.0)
-
-def load_environment(**kwargs) -> CustomEnv:
-    return CustomEnv()
-```
-
 See [Environments](/guides/environments/overview) for the full SDK: prompt builders,
 loading dataset files, parameters, and secrets.
 
