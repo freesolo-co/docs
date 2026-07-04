@@ -3,17 +3,17 @@ title: "Author with the SDK"
 description: "Write the environment class - datasets, prompts, and rewards - and pass it parameters and secrets."
 ---
 
-Your environment code imports from the `freesolo` package. **You don't need to
-install anything for the managed flow** — training workers already have the SDK
-when they import your published environment. Install it locally only if you plan
-to run or test `environment.py` yourself, or use a command like
-`flash train --cost` that imports the environment locally to count training rows:
+Your environment code imports from the `freesolo` package. **The managed flow
+needs no local install.** Training workers already have the SDK when they import
+your published environment. Install it locally only to run or test
+`environment.py` yourself, or to run a command like `flash train --cost`, which
+imports the environment locally to count training rows:
 
 ```bash
 uv pip install freesolo
 ```
 
-Use the public imports below in environment code:
+Import these public names in environment code:
 
 ```python
 from freesolo.datasets import TaskExample
@@ -61,26 +61,26 @@ records](/guides/datasets#task-records)). `load_task_examples(...)` exposes each
 record's `input`/`output` as `example.input`/`example.output`, with the raw row
 available as `example.record`.
 
-For SFT, the SDK builds the training conversation as the environment's
+For SFT, the SDK builds the training conversation from the environment's
 `start_episode(example, prompt_text)` plus `sft_completion(example)`. The default
-`sft_completion` converts `example.output` into completion messages — see
+`sft_completion` converts `example.output` into completion messages. See
 [Datasets](/guides/datasets#message-shaped-sft-targets) for the scalar and
 message-shaped output forms. Override `sft_completion` only when the gold
-completion needs to be synthesized from other fields.
+completion must be synthesized from other fields.
 
 Single-turn environments usually implement `build_prompt_messages`. The SDK's
 default `start_episode` calls it and prepends the run's prompt text as a
-`system` message when your messages do not already include one, so local eval,
-SFT, and GRPO see the same policy prompt. Multi-turn environments own
-`start_episode`; include any task-specific initial system message there. On
-managed runs Flash applies the same guarantee to every episode's opening
-messages, single- and multi-turn: if `start_episode` returns no system message
-(or an empty one), the run's prompt text is inserted as the system message.
+`system` message when your messages lack one, so local eval, SFT, and GRPO see
+the same policy prompt. Multi-turn environments own `start_episode`; put any
+task-specific initial system message there. On managed runs, Flash applies the
+same guarantee to every episode's opening messages, single- and multi-turn: if
+`start_episode` returns no system message (or an empty one), the run's prompt
+text becomes the system message.
 
 When a run uses `thinking = true`, `score_response` receives answer text by
-default. The `response_text` value is still string-compatible and also exposes
+default. `response_text` stays string-compatible and also exposes
 `response_text.completion`, `response_text.thinking`, and `response_text.raw` for
-rewards that intentionally inspect the reasoning trace.
+rewards that inspect the reasoning trace.
 
 ## Pass parameters
 

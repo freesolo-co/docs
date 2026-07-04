@@ -6,9 +6,9 @@ description: "What a Freesolo environment is, and how to scaffold your first one
 
 An [**environment**](/environment-model) is the task: the data your model sees and the reward, a
 numeric score your code assigns to each model output. Flash loads environments
-through the Freesolo environment SDK.
-You author one locally, publish it to Freesolo's managed Environments Hub, and
-reference it in config by its Freesolo environment id.
+through the Freesolo environment SDK. Author one locally, publish it to
+Freesolo's managed Environments Hub, and reference it in config by its Freesolo
+environment id.
 
 ```toml
 [environment]
@@ -70,7 +70,7 @@ Replace the dataset and reward with your task:
   works](/how-flash-works).
 
 For multi-turn tasks (conversations, tool use, agents), use `EnvironmentMultiTurn`
-and implement the episode hooks — see [Multi-turn environments](/guides/environments/multi-turn) below.
+and implement the episode hooks. See [Multi-turn environments](/guides/environments/multi-turn) below.
 
 ## Next steps
 

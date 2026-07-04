@@ -4,10 +4,10 @@ sidebarTitle: "Overview"
 description: "Train, deploy, and chat with custom LoRA models on managed infrastructure, from one CLI."
 ---
 
-Flash is Freesolo's managed post-training service. You write a short config, run
-one command, and Flash fine-tunes a model on managed infrastructure, then serves the
-result behind an OpenAI-compatible endpoint. There's nothing to host, and every
-command that talks to the platform is authenticated with your Freesolo API key.
+Flash is Freesolo's managed post-training service. Write a short config, run one
+command, and Flash fine-tunes a model on managed infrastructure, then serves the
+result behind an OpenAI-compatible endpoint. Nothing to host. Every command that
+talks to the platform authenticates with your Freesolo API key.
 
 <Card title="Get started in minutes" icon="rocket" href="/quickstart" horizontal>
   Install the CLI and go from an empty directory to a deployed model in a few
@@ -19,8 +19,7 @@ command that talks to the platform is authenticated with your Freesolo API key.
 ### Fine-tune a model on your own task
 
 Write a TOML config, run one command, and Flash trains a LoRA adapter (a
-small set of add-on weights) on top of a [supported base model](/reference/models). You pick the
-model and the task; Flash handles the training infrastructure. See
+small set of add-on weights) on top of a [supported base model](/reference/models). Pick the model and task; Flash handles the training infrastructure. See
 [Training](/guides/training).
 
 ```bash
@@ -30,9 +29,9 @@ flash train config.toml
 ### Reward the behavior you want with GRPO
 
 Reinforcement learning scores the model's own completions with your
-[environment's](/guides/environments/overview) reward and updates toward higher
-reward (see [How Flash works](/how-flash-works)). Use it when you can score
-an output but can't hand-write the perfect one.
+[environment's](/guides/environments/overview) reward, then updates toward
+higher-scoring completions (see [How Flash works](/how-flash-works)). Use it when
+you can score an output but can't hand-write the perfect one.
 
 ```toml
 algorithm = "grpo"
@@ -75,7 +74,7 @@ flash train config.toml --cost
 | Improve outputs I can score but can't hand-write | [Training: GRPO](/guides/training#choose-sft-or-grpo) and [Environments](/guides/environments/overview) |
 | Define the task and reward my model learns on    | [Environments](/guides/environments/overview)                                                           |
 | Call my model from my existing OpenAI code       | [Deploy & chat](/guides/deploy-and-chat#use-it-from-your-own-code)                             |
-| Understand how a run actually works              | [How Flash works](/how-flash-works)                                                            |
+| Understand how a run works              | [How Flash works](/how-flash-works)                                                            |
 
 ## Next steps
 

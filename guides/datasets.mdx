@@ -4,7 +4,7 @@ description: "Package task records and data files with Freesolo environments."
 ---
 
 Datasets live inside the [environment](/environment-model). A [Flash config](/reference/configuration) points at one published
-environment id, and the environment's `load_environment()` function returns the
+environment id. The environment's `load_environment()` function returns the
 dataset, prompt builder, and reward logic that Flash uses for [SFT, GRPO](/guides/training#choose-sft-or-grpo), and
 local validation.
 
@@ -23,11 +23,11 @@ Author dataset rows with `input` and `output`:
 | `output` | Target answer or gold completion. For SFT this can be a scalar answer, `{ "messages": [...] }`, or a bare list of chat messages. |
 | `metadata` | Optional dict preserved on `example.metadata` and available to scoring. |
 
-Which column the model learns from depends on the algorithm. **SFT** trains
+The algorithm decides which column the model learns from. **SFT** trains
 directly on `output`, the gold answer. **GRPO** (RL) uses only `input`: the
-model generates its own answers from the prompt and learns from your reward, so
-`output` is optional there and is read only if your `score_response` uses it as
-a reference.
+model generates its own answers from the prompt and learns from your reward.
+`output` is optional for GRPO, read only if your `score_response` uses it as a
+reference.
 
 `load_task_examples(...)` accepts a local file path or an iterable of records.
 For files, use `.jsonl`, `.json`, `.csv`, `.txt`, or `.bson`. It exposes each
@@ -54,9 +54,9 @@ or target keys are not accepted.
 ### Message-shaped SFT targets
 
 For SFT, `output` is the gold completion appended after the environment's
-prompt messages. A scalar output becomes one assistant message. If you need to
-teach a multi-turn trajectory or native tool calling, set `output` to
-`{"messages": [...]}` or to a bare list of chat messages. Flash preserves those
+prompt messages. A scalar output becomes one assistant message. To teach a
+multi-turn trajectory or native tool calling, set `output` to
+`{"messages": [...]}` or a bare list of chat messages. Flash preserves those
 assistant, tool-call, tool-result, and reply messages when it builds the SFT
 example.
 
@@ -64,7 +64,7 @@ example.
 {"input":"Refund my last order.","output":{"messages":[{"role":"assistant","content":null,"tool_calls":[{"id":"call_refund","type":"function","function":{"name":"refund_order","arguments":"{\"order\":\"last\"}"}}]},{"role":"tool","tool_call_id":"call_refund","content":"{\"ok\":true}"},{"role":"assistant","content":"Your last order has been refunded."}]}}
 ```
 
-Use `Environment.sft_completion(example)` if your environment needs to
+Use `Environment.sft_completion(example)` when your environment must
 synthesize or transform the gold completion before SFT.
 
 ### Validate thinking-model SFT targets

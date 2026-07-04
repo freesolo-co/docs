@@ -16,11 +16,11 @@ the environment to count its training examples.
 
 The submit-time quote is the amount Flash checks against your prepaid org
 balance. Successful runs are billed at the quoted Flash cost. Cancelled runs are
-repriced to the training progress they actually reached.
+repriced to the training progress they reached.
 
 ## What affects training cost
 
-The main levers are the ones you control in the config:
+You control the main levers in the config:
 
 - **[Base model](/reference/models).** Smaller models are cheaper and faster for smoke tests.
 - **[Algorithm](/guides/training#choose-sft-or-grpo).** GRPO usually costs more than SFT because it samples and scores
@@ -28,8 +28,7 @@ The main levers are the ones you control in the config:
 - **Steps or epochs.** More GRPO `steps`, more SFT `epochs`, or a higher
   `max_steps` cap increases cost.
 - **Sequence length.** Larger `max_length` and `max_tokens` increase work per
-  example. Keep them large enough for your prompt and answer, but do not
-  oversize them by default.
+  example. Keep them large enough for your prompt and answer, but do not oversize them by default.
 - **GRPO group size.** `group_size` controls how many completions are sampled per
   prompt. Larger groups give a stronger advantage estimate but cost more.
 - **Batch size and dataset size.** For SFT, cost scales with the number of
@@ -37,8 +36,8 @@ The main levers are the ones you control in the config:
 - **Reward latency.** If your GRPO reward calls an external model or service,
   slow grading can increase wall-clock time.
 
-Setup and cold start time are shown for observability, but the training charge
-is based on the billable training loop.
+Setup and cold start time are shown for observability, but the training charge is based on the
+billable training loop.
 
 ## Reading the preview
 
@@ -96,9 +95,9 @@ flash undeploy <run-id>
 
 ## Why a later quote can change
 
-The quote can change when you change the config, publish different environment
-contents, update dataset size, or submit after catalog/pricing updates. The
-authoritative number is the quote returned for the run you actually submit.
+The quote can change when you edit the config, publish different environment
+contents, change the dataset size, or submit after catalog/pricing updates. The
+authoritative number is the quote returned for the run you submit.
 
 ## Next steps
 

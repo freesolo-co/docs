@@ -17,8 +17,8 @@ inline help.
 ## Auth & identity
 
 <ResponseField name="flash login" type="[--api-key KEY] [--freesolo-url URL] [--api-url URL]">
-  Log in with your Freesolo API key. The key is verified against Freesolo and
-  saved locally, and the resolved identity is printed on success. Defaults:
+  Log in with your Freesolo API key. Flash verifies the key against Freesolo,
+  saves it locally, and prints the resolved identity on success. Defaults:
   `--api-key` from `FREESOLO_API_KEY`; `--freesolo-url` from `FREESOLO_BASE_URL`
   (else `https://api.freesolo.co`); `--api-url` from `FLASH_API_URL`.
 </ResponseField>
@@ -40,7 +40,7 @@ inline help.
 
 <ResponseField name="flash gpus">
   List the managed GPU classes with VRAM and estimated $/hr. GPU selection is
-  automatic — you don't pick one.
+  automatic. You don't pick one.
 </ResponseField>
 
 ## Environments
@@ -56,10 +56,9 @@ inline help.
   Publish a local Freesolo environment to Freesolo's [managed Environments Hub](/guides/environments/package#publish-it)
   (private) and print its id (`your-org/name`). `--name` is required and is
   normalized to a lowercase hyphen slug. You can also pass an explicit
-  `namespace/name`; the namespace is validated by Freesolo and must match your
-  Freesolo org namespace (a mismatch is rejected); `PATH` defaults to the current
-  directory. Pass `.` or any folder with `environment.py` at its root so helper
-  modules, `dataset/`, `README.md`, and common sibling sidecars are uploaded
+  `namespace/name`; Freesolo validates the namespace against your Freesolo
+  org namespace and rejects a mismatch. `PATH` defaults to the current directory. Pass `.` or any folder with `environment.py` at its root to upload helper
+  modules, `dataset/`, `README.md`, and common sibling sidecars
   ([what gets uploaded](/guides/datasets#what-gets-uploaded) lists the
   extensions). A single `.py` file or a folder with one top-level `.py` file also
   works for small smoke tests.
@@ -70,7 +69,7 @@ inline help.
   must be a managed Freesolo hub slug `your-org/your-env`; the package is
   downloaded through the Flash control plane. Without `PATH`, the whole
   environment is written to a directory. With `PATH`, only that file is fetched.
-  `-o` chooses the output path and `-f` allows overwriting an existing output.
+  `-o` sets the output path; `-f` overwrites an existing output.
 </ResponseField>
 
 <ResponseField name="flash env list">
@@ -87,11 +86,10 @@ inline help.
 
 <ResponseField name="flash train CONFIG [flags]">
   Submit a managed training run from a [TOML config](/reference/configuration) and follow its logs.
-  Flash checks prepaid balance against the pre-flight estimate before submit, and
-  successful runs are billed at the quoted Flash cost (see
-  [Cost & billing](/guides/training#cost-and-billing)). The pre-flight `--cost`
-  estimate is explained in
-  [Cost and billing](/reference/cost-model).
+  Before submit, Flash checks your prepaid balance against the pre-flight
+  estimate. Successful runs are billed at the quoted Flash cost (see
+  [Cost & billing](/guides/training#cost-and-billing)). [Cost and billing](/reference/cost-model) explains the pre-flight `--cost`
+  estimate.
 
   | Flag | Effect |
   | --- | --- |
@@ -142,7 +140,7 @@ inline help.
 </ResponseField>
 
 <ResponseField name="flash checkpoints RUN_ID">
-  List a run's per-step checkpoints that are available to deploy — including
+  List a run's per-step checkpoints available to deploy, including
   intermediate checkpoints from a live or stopped RL run. Serve one with
   `flash deploy RUN_ID/step-N`. When output is not a styled terminal, each
   line is single-space separated (`step N RUN_ID/step-N`), so it splits

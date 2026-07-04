@@ -3,15 +3,16 @@ title: "Quickstart"
 description: "Install the CLI, log in, and train, deploy, and chat with your first model."
 ---
 
-This quickstart takes you from an empty directory to a deployed model: you'll
-train a [LoRA adapter](/how-flash-works) on managed infrastructure, serve it, and chat with it from the CLI.
+Go from an empty directory to a deployed model. Train a
+[LoRA adapter](/how-flash-works) on managed infrastructure, serve it, and chat
+with it from the CLI.
 
 ## Prerequisites
 
 - **Python 3.11 or 3.12**, with `uv`, `pipx`, or `pip` to install the CLI.
 - **A Freesolo API key**, created in your dashboard at
-  [freesolo.co](https://freesolo.co). It's how every `flash` command
-  authenticates.
+  [freesolo.co](https://freesolo.co). Every `flash` command authenticates with
+  it.
 
 ## Step 1: Install the CLI
 
@@ -53,7 +54,7 @@ Already have a published environment id, yours or one shared with you? Set it as
 flash env setup
 ```
 
-This drops a ready-to-edit starter in the current directory:
+This writes a ready-to-edit starter into the current directory:
 
 ```
 environment.py            # a Freesolo environment (task + reward)
@@ -174,7 +175,7 @@ flash deploy <run-id>
 flash chat <run-id> -m "Hello! What can you do?"
 ```
 
-That's a full loop. When you're done,
+That completes the loop. When you're done,
 [tear the endpoint down](/guides/deploy-and-chat#manage-deployments):
 
 ```bash

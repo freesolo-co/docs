@@ -3,10 +3,10 @@ title: "Multi-turn environments"
 description: "Conversations, tool use, and agents with EnvironmentMultiTurn."
 ---
 
-Some tasks aren't resolved in a single response: a conversation, a tool-using
-agent, anything where the **environment reacts to what the model just did** and
-the model acts again. For these, subclass `EnvironmentMultiTurn` and implement the
-**episode hooks**. GRPO rolls out the whole episode, then scores the finished
+Use `EnvironmentMultiTurn` for tasks that take more than one response: a
+conversation, a tool-using agent, anything where the environment reacts to what
+the model just did and the model acts again. Subclass it and implement the
+episode hooks. GRPO rolls out the whole episode, then scores the finished
 trajectory.
 
 | Single-turn (`EnvironmentSingleTurn`) | Multi-turn (`EnvironmentMultiTurn`)                                                                                                      |
@@ -16,7 +16,7 @@ trajectory.
 
 ## The episode loop
 
-During training the trainer drives your hooks in a loop and scores the result:
+During training the trainer drives your hooks in a loop, then scores the result:
 
 ```text
 messages = env.start_episode(example, prompt_text)      # opening system/user messages
@@ -40,7 +40,7 @@ reward = env.score_episode(example, episode)
 - **`start_episode(example, prompt_text)`** returns the initial messages (e.g. a
   system prompt plus the first user message).
 - **`max_episode_turns(example)`** returns the maximum number of assistant
-  actions Flash may sample before forcing the episode terminal. The value is
+  actions Flash may sample before forcing the episode to end. The value is
   per example.
 - **`step_episode(example, messages, assistant_response)`** is the core.
   `messages` already includes the assistant action being stepped as its last
@@ -128,9 +128,8 @@ class EnvironmentEpisode:
 `EnvironmentStepResult.messages` should contain only new environment-side
 messages to append after the assistant action. Do not repeat the assistant
 message Flash just sampled. `metadata` is appended to the completed episode's
-metadata under `steps`, so it is available to `score_episode` and logs. Keep
-durable episode state in the transcript rather than in hidden mutable
-attributes.
+metadata under `steps`, available to `score_episode` and logs. Keep durable
+episode state in the transcript, not in hidden mutable attributes.
 
 ## An action protocol the model can emit as text
 
@@ -203,8 +202,8 @@ messages — a scalar becomes one assistant message, and a message list (or
 [Datasets](/guides/datasets#message-shaped-sft-targets)).
 
 Flash uses completion-only loss for SFT. It masks the token prefix rendered from
-`start_episode(...)` and trains on every token in `sft_completion(...)`. For a
-multi-turn target transcript, that means any interleaved assistant, user, and
+`start_episode(...)` and trains on every token in `sft_completion(...)`. In a
+multi-turn target transcript, any interleaved assistant, user, and
 tool/environment messages in `output` are part of the supervised completion. If
 a multi-turn environment has only scalar outputs, SFT collapses to one assistant
 turn per row and does not run `step_episode`; provide full target transcripts or
