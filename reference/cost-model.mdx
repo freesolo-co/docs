@@ -23,17 +23,17 @@ training loop, prints the quoted USD cost, and exits without submitting.
 The main levers are the ones you control in the config:
 
 - **Base model.** Smaller models are cheaper and faster for smoke tests.
-- **Algorithm.** GRPO usually costs more than SFT because it samples and scores
+- **Algorithm.** SFT usually costs less than GRPO, which samples and scores
   model completions before each update.
-- **Steps or epochs.** More GRPO `steps`, more SFT `epochs`, or a higher
+- **Steps or epochs.** More SFT `epochs`, more GRPO `steps`, or a higher
   `max_steps` cap increases cost.
 - **Sequence length.** Larger `max_length` and `max_tokens` increase work per
   example. Keep them large enough for your prompt and answer, but do not
   oversize them by default.
-- **GRPO group size.** `group_size` controls how many completions are sampled per
-  prompt. Larger groups give a stronger advantage estimate but cost more.
 - **Batch size and dataset size.** For SFT, cost scales with the number of
   examples trained over and the batch/epoch settings.
+- **GRPO group size.** `group_size` controls how many completions are sampled per
+  prompt. Larger groups give a stronger advantage estimate but cost more.
 - **Reward latency.** If your GRPO reward calls an external model or service,
   slow grading can increase wall-clock time.
 
@@ -86,12 +86,12 @@ flash undeploy <run-id>
 
 - Start with a smaller base model while validating the environment and reward.
 - Run short smoke tests before scaling steps or epochs.
+- For SFT, keep a held-out split and avoid extra epochs once held-out quality
+  stops improving.
 - For GRPO, lower `group_size` and `max_tokens` until the reward/data wiring is
   proven.
 - For thinking runs, raise `max_tokens` only enough for reasoning plus the final
   answer.
-- For SFT, keep a held-out split and avoid extra epochs once held-out quality
-  stops improving.
 - Use `flash checkpoints <run-id>` and deploy a good intermediate checkpoint
   instead of assuming the final step is always best.
 

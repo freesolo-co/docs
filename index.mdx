@@ -28,6 +28,15 @@ command that talks to the platform is authenticated with your Freesolo API key.
     ```
 
   </Accordion>
+  <Accordion title="Teach a format from examples with SFT" icon="copy">
+    Supervised fine-tuning learns from the prompt/answer pairs in your dataset.
+    Use it when you already have examples of the output you want.
+
+    ```toml
+    algorithm = "sft"
+    ```
+
+  </Accordion>
   <Accordion title="Reward the behavior you want with GRPO" icon="trophy">
     Reinforcement learning scores the model's own completions with your
     [environment's](/guides/environments) reward and updates toward higher
@@ -36,15 +45,6 @@ command that talks to the platform is authenticated with your Freesolo API key.
 
     ```toml
     algorithm = "grpo"
-    ```
-
-  </Accordion>
-  <Accordion title="Teach a format from examples with SFT" icon="copy">
-    Supervised fine-tuning learns from the prompt/answer pairs in your dataset.
-    Use it when you already have examples of the output you want.
-
-    ```toml
-    algorithm = "sft"
     ```
 
   </Accordion>

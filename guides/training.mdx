@@ -29,20 +29,20 @@ model = "Qwen/Qwen3.5-4B"
 
 <CodeGroup>
 
-```toml GRPO (RL)
-algorithm = "grpo"
-```
-
 ```toml SFT
 algorithm = "sft"
 ```
 
+```toml GRPO (RL)
+algorithm = "grpo"
+```
+
 </CodeGroup>
 
-- **`grpo`**: reinforcement learning, for when there's no fixed answer to copy.
-  Your environment's reward scores each completion.
 - **`sft`**: supervised fine-tuning, for when you already have the answers. The
   model imitates the prompt/answer pairs in your environment's dataset.
+- **`grpo`**: reinforcement learning, for when there's no fixed answer to copy.
+  Your environment's reward scores each completion.
 
 Both are driven by the same [environment](/guides/environments). See
 [how Flash works](/how-flash-works) for the difference.
@@ -51,14 +51,15 @@ Both are driven by the same [environment](/guides/environments). See
 
 ```toml
 model = "Qwen/Qwen3.5-4B"
-algorithm = "grpo"
+algorithm = "sft"
 # thinking = true        # opt into reasoning mode (thinking-capable models only)
 
 [environment]
 id = "your-org/your-env"
 
 [train]
-steps = 150                          # GRPO is step-driven; SFT is epoch-driven (set epochs = N instead)
+epochs = 3                           # SFT is epoch-driven; GRPO is step-driven (set steps = N instead)
+max_examples = 1000                  # SFT: rows to train on (set to your dataset size)
 lora_rank = 32
 lora_alpha = 64
 # learning_rate = 1e-4
