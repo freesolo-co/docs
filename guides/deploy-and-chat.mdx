@@ -76,14 +76,9 @@ many prompt tokens were served from cache in
 flash chat <run-id> -m "Summarize the plot of Hamlet in two sentences."
 ```
 
-Options:
-
-| Flag | Default | Effect |
-| --- | --- | --- |
-| `-m`, `--message` | (required) | The user message to send |
-| `--system` | - | Optional system prompt sent ahead of the user message |
-| `--max-tokens` | 512 | Maximum tokens to generate |
-| `--temperature` | 0.0 | Sampling temperature |
+`-m`/`--message` is required; `--system`, `--max-tokens` (default 512), and
+`--temperature` (default 0.0) are optional — see the
+[CLI reference](/reference/cli#serving) for the full flag list.
 
 ```bash
 flash chat <run-id> -m "Write a haiku about mountain weather" --temperature 0.8 --max-tokens 128
@@ -190,9 +185,6 @@ HuggingFace repo you own:
 flash export --adapter-id <run-id> --repository <owner>/<name>
 ```
 
-| Flag | Default | Effect |
-| --- | --- | --- |
-| `--adapter-id` | (required) | The Freesolo adapter id to export: `RUN_ID` for the final adapter, or `RUN_ID/step-N` for a saved checkpoint |
-| `--repository` | (required) | Destination HuggingFace repo `owner/name` (created if it doesn't exist) |
-| `--api-key` | `HF_TOKEN` | HuggingFace token with write access to `--repository` (read from your shell or a local `.env` / `.env.local`) |
-| `--public` | private | Create the destination repo as public |
+`--adapter-id` and `--repository` are required; `--api-key` (defaults to
+`HF_TOKEN`) and `--public` are optional. See the
+[CLI reference](/reference/cli#export) for the full flag list.

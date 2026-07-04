@@ -31,10 +31,11 @@ The same environment drives **SFT** (learn from gold answers), **GRPO** (learn
 from reward scores), **and eval**: you swap one line in the config and the
 environment stays put.
 
-For SFT, each row's `output` is the gold completion. It can be a simple scalar
-answer or a message trajectory (`{"messages": [...]}`) for multi-turn/tool-use
-imitation. Flash trains on the environment's initial episode plus that
-completion, so system prompts and tool transcripts stay part of the example.
+For SFT, each row's `output` is the gold completion Flash trains on, appended
+after the environment's initial episode so system prompts and tool transcripts
+stay part of the example. See
+[Datasets](/guides/datasets#message-shaped-sft-targets) for the `output` shapes
+(a scalar answer, or a message trajectory for multi-turn and tool-use imitation).
 
 ## The one thing you write
 
@@ -109,10 +110,9 @@ def load_environment(**kwargs) -> CustomEnv:
 See [Environments](/guides/environments) for the full SDK: prompt builders,
 loading dataset files, parameters, and secrets.
 
-With `thinking = true`, `response_text` is the answer text by default. It is also
-string-compatible and exposes `.completion`, `.thinking`, and `.raw` when a
-reward intentionally needs the separated answer, reasoning trace, or raw model
-output.
+With `thinking = true`, `response_text` is the answer text by default; it also
+exposes the separated reasoning trace and raw output when a reward needs them
+(see [Environments](/guides/environments#use-the-sdk)).
 
 ## From local file to managed run
 

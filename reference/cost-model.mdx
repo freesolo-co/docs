@@ -9,8 +9,10 @@ description: "How to preview Flash training cost, what affects it, and how charg
 flash train config.toml --cost
 ```
 
-Use it before any non-trivial run. It validates the config, estimates the
-training loop, prints the quoted USD cost, and exits without submitting.
+Use it before any non-trivial run. The estimate is catalog-deterministic and
+runs locally: it validates the config, estimates the training loop, prints the
+quoted USD cost, and exits without submitting. For an uncapped SFT run it loads
+the environment to count its training examples.
 
 <Note>
   The submit-time quote is the amount Flash checks against your prepaid org
@@ -72,9 +74,8 @@ again.
 Serving is billed per token after deployment. Prompt, completion, and cached
 prompt token rates are listed in [Supported models](/reference/models#serving-prices).
 
-Prefix caching is automatic. If a request shares a leading prompt prefix with a
-recent request, the cached prompt-token rate applies to the reused prefix.
-Completion tokens always bill at the completion-token rate.
+Prefix caching is automatic; the cached prompt-token rate applies to a reused
+prefix. See [Billing](/guides/deploy-and-chat#billing) for how it works.
 
 Tear down deployments you are done using:
 
