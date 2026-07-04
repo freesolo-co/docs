@@ -21,7 +21,6 @@ Author dataset rows with `input` and `output`:
 | --- | --- |
 | `input` | Prompt text for the model. |
 | `output` | Target answer or gold completion. For SFT this can be a scalar answer, `{ "messages": [...] }`, or a bare list of chat messages. |
-| `id` | Optional stable identifier for the row, exposed as `example.id`. |
 | `metadata` | Optional dict preserved on `example.metadata` and available to scoring. |
 
 <Note>
@@ -35,8 +34,8 @@ Author dataset rows with `input` and `output`:
 `load_task_examples(...)` accepts a local file path or an iterable of records.
 For files, use `.jsonl`, `.json`, `.csv`, `.txt`, or `.bson`. It exposes each
 record's `input` as `example.input`, `output` as `example.output`, and any
-`id`/`metadata` as `example.id`/`example.metadata`; the original row stays
-available as `example.record`.
+`metadata` as `example.metadata`; the original row stays available as
+`example.record`.
 
 ```jsonl dataset/train.jsonl
 {"input":"What is 2 + 2?","output":"4"}
@@ -47,18 +46,12 @@ Keep the public row shape to `input` plus optional `output`; alternate prompt
 or target keys are not accepted.
 
 <Warning>
-  Records are canonicalized to `input`/`output`/`id`/`metadata`. Any other
+  Records are canonicalized to `input`/`output`/`metadata`. Any other
   top-level key (say `initial_state` or `minimal_solutions`) is **dropped**
   before the record reaches a training worker — the SDK raises a `UserWarning`
   naming the record, and Flash prints a warning naming the dropped keys. Nest
   task data under `metadata` to preserve it.
 </Warning>
-
-Records without an `id` get a deterministic positional one, `example_NNNNNN`
-(`example_000000`, `example_000001`, ...), assigned by source position. Local
-loading and remote workers derive the same id for the same row, so selecting
-examples by id behaves identically in both places. The helper is exported as
-`freesolo.datasets.stable_example_id(index)`.
 
 ### Message-shaped SFT targets
 
