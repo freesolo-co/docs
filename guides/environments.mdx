@@ -3,7 +3,7 @@ title: "Environments"
 description: "Define the task your model trains on and is graded by."
 ---
 
-An **environment** is the task: the data your model sees and the reward, a
+An [**environment**](/environment-model) is the task: the data your model sees and the reward, a
 numeric score your code assigns to each model output. Flash loads environments
 through the Freesolo environment SDK.
 You author one locally, publish it to Freesolo's managed Environments Hub, and
@@ -62,7 +62,7 @@ def load_environment(dataset_path: str | None = None, **kwargs) -> StarterEnv:
 
 Replace the dataset and reward with your task:
 
-- **Dataset**: the prompts (and any gold answers) your model trains and is
+- [**Dataset**](/guides/datasets): the prompts (and any gold answers) your model trains and is
   evaluated on.
 - **Reward**: `score_response` returns a `RewardResult`. GRPO optimizes that
   score; SFT trains directly on your dataset answers instead. See [how Flash
@@ -117,7 +117,7 @@ pip = ["rapidfuzz>=3.0", "pydantic"]
 This is the supported worker dependency mechanism. A `pyproject.toml`,
 `requirements.txt`, or lockfile beside `environment.py` may be useful for local
 development, but Flash does not use those files to install packages for a
-managed training run. Put runtime packages in the training config that references
+managed training run. Put runtime packages in the [training config](/reference/configuration) that references
 the published environment.
 
 Only list packages your environment imports. Flash manages the training stack

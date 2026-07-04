@@ -46,14 +46,14 @@ inline help.
 ## Environments
 
 <ResponseField name="flash env setup">
-  Scaffold a starter project into the current directory: `environment.py`, a tiny
+  Scaffold a [starter project](/directory-structure) into the current directory: `environment.py`, a tiny
   `dataset/train.jsonl`, `configs/rl.toml` (GRPO) plus `configs/sft.toml` (SFT),
   and a `TRAINING.md` playbook for coding agents with current CLI usage, reward
   guidance, and common run mitigations. Existing files are preserved.
 </ResponseField>
 
 <ResponseField name="flash env push --name NAME [PATH]">
-  Publish a local Freesolo environment to Freesolo's managed Environments Hub
+  Publish a local Freesolo environment to Freesolo's [managed Environments Hub](/guides/environments#publish-it)
   (private) and print its id (`your-org/name`). `--name` is required and is
   normalized to a lowercase hyphen slug. You can also pass an explicit
   `namespace/name`; the namespace is validated by Freesolo and must match your
@@ -86,7 +86,7 @@ inline help.
 ## Training
 
 <ResponseField name="flash train CONFIG [flags]">
-  Submit a managed training run from a TOML config and follow its logs.
+  Submit a managed training run from a [TOML config](/reference/configuration) and follow its logs.
   Flash checks prepaid balance against the pre-flight estimate before submit, and
   successful runs are billed at the quoted Flash cost (see
   [Cost & billing](/guides/training#cost-and-billing)). The pre-flight `--cost`

@@ -44,7 +44,7 @@ You write `environment.py`; Flash owns the rest of the loop.
 | -------------------------------------------------------- | -------------------------------------------------------------------------------- |
 | The dataset, interaction, and reward in `environment.py` | The training loop: sampling prompts, generating model attempts (rollouts), applying the algorithm |
 | (nothing)                                                | Managed compute, batching, checkpointing, and auto-retry                         |
-| (nothing)                                                | A versioned Environments Hub and per-token serving                               |
+| (nothing)                                                | A versioned Environments Hub and [per-token serving](/guides/deploy-and-chat#billing)                               |
 
 The quality of the environment's dataset and reward sets the ceiling on what
 training can achieve. For the full split of responsibilities, see

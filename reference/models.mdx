@@ -3,7 +3,7 @@ title: "Supported models"
 description: "The base models Flash can fine-tune and serve, with sizes, reasoning, and token prices."
 ---
 
-Flash trains a **LoRA adapter** on top of a curated catalog of base models. You
+Flash trains a [**LoRA adapter**](/how-flash-works) on top of a curated catalog of base models. You
 set the base model with one line in your config, and list the live catalog from
 the CLI:
 
@@ -20,7 +20,7 @@ current catalog.
 
 ## Catalog
 
-Every catalog model supports **both SFT and GRPO**, and all are hybrid reasoning
+Every catalog model supports [**both SFT and GRPO**](/guides/training#choose-sft-or-grpo), and all are hybrid reasoning
 ("thinking") capable.
 
 | Model (`model =`) | Parameters | Algorithms | Reasoning |
@@ -40,7 +40,7 @@ adapter can be deployed for the selected base model.
 
 Serving is billed per token after deployment. Prompt and completion tokens have
 separate per-model rates, and cached prompt tokens use the model's cached-input
-rate. The prices below are **per 1M tokens**; your Freesolo billing dashboard
+rate. The prices below are **per 1M tokens**; your [Freesolo billing dashboard](/platform#billing)
 shows the charges you actually accrue.
 
 | Model | Prompt / 1M | Completion / 1M | Cached prompt / 1M |
