@@ -33,35 +33,8 @@ exists is left untouched.
     every run the worker imports it and calls `load_environment(**params)`. The scaffolded
     starter loads its rows from `dataset/train.jsonl`.
 
-    ```python environment.py
-    import json
-    from pathlib import Path
-
-    from freesolo.datasets import TaskExample
-    from freesolo.environments import EnvironmentSingleTurn, RewardResult
-
-    DEFAULT_DATASET_PATH = Path(__file__).parent / "dataset" / "train.jsonl"
-
-    def load_jsonl(path):
-        with Path(path).open() as f:
-            return [json.loads(line) for line in f if line.strip()]
-
-    class StarterEnv(EnvironmentSingleTurn):
-        dataset = load_jsonl(DEFAULT_DATASET_PATH)
-
-        def build_prompt_messages(self, example: TaskExample, prompt_text: str):
-            return [{"role": "user", "content": example.input}]
-
-        def score_response(self, example: TaskExample, response_text: str) -> RewardResult:
-            expected = str(example.output or "").strip()
-            return RewardResult(score=1.0 if expected and expected in response_text else 0.0, threshold=1.0)
-
-    def load_environment(dataset_path: str | None = None, **kwargs) -> StarterEnv:
-        env = StarterEnv()
-        if dataset_path:
-            env.dataset = load_jsonl(dataset_path)
-        return env
-    ```
+    See the scaffolded file in full — `StarterEnv` with `build_prompt_messages`
+    and `score_response` — in [Environments](/guides/environments#scaffold-one).
 
   </Accordion>
 
@@ -160,9 +133,9 @@ math/
   </Accordion>
 
   <Accordion title="dataset/" icon="table">
-    **What it is:** sidecar data files (`.jsonl`, `.json`, `.csv`, `.txt`,
-    `.md`, `.parquet`, `.tsv`, `.yaml`, `.yml`, and more) that your environment
-    loads. See [Datasets](/guides/datasets).
+    **What it is:** sidecar data files (`.jsonl`, `.json`, `.csv`, and more)
+    that your environment loads. See
+    [Datasets](/guides/datasets#what-gets-uploaded) for the full list.
 
     **When Flash reads it:** your environment code reads it (for example via
     `load_task_examples(...)`); `flash env push` includes the `dataset/` folder

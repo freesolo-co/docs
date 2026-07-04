@@ -207,24 +207,17 @@ def load_environment(split: str = "train", **kwargs) -> MathEnv:
     return MathEnv(split=split)
 ```
 
-The dataset file uses the user-facing `input`/`output` row shape:
-
-```jsonl dataset/train.jsonl
-{"input":"What is 2 + 2?","output":"4"}
-{"input":"What is 3 + 5?","output":"8"}
-```
-
-At runtime, read the same values from `example.record["input"]` and
-`example.record["output"]` if you need the raw row. For the common case,
-`load_task_examples(...)` exposes each record's `input` as `example.input` and
-`output` as `example.output`.
+The dataset file uses the `input`/`output` row shape ([Task
+records](/guides/datasets#task-records)). `load_task_examples(...)` exposes each
+record's `input`/`output` as `example.input`/`example.output`, with the raw row
+available as `example.record`.
 
 For SFT, the SDK builds the training conversation as the environment's
 `start_episode(example, prompt_text)` plus `sft_completion(example)`. The default
-`sft_completion` converts `example.output` into completion messages: scalar
-outputs become one assistant turn, and message-shaped outputs preserve
-multi-turn or tool-call trajectories. Override `sft_completion` only when the
-gold completion needs to be synthesized from other fields.
+`sft_completion` converts `example.output` into completion messages — see
+[Datasets](/guides/datasets#message-shaped-sft-targets) for the scalar and
+message-shaped output forms. Override `sft_completion` only when the gold
+completion needs to be synthesized from other fields.
 
 Single-turn environments usually implement `build_prompt_messages`. The SDK's
 default `start_episode` calls it and prepends the run's prompt text as a
@@ -436,11 +429,10 @@ target_messages = env.sft_completion(example)
 training_text = chat_template(prompt_messages + target_messages)
 ```
 
-The default `sft_completion(example)` reads `example.output`:
-
-- a scalar output becomes one assistant target message;
-- a bare list of chat messages, or `{"messages": [...]}`, becomes the full target
-  transcript.
+The default `sft_completion(example)` turns `example.output` into the target
+messages — a scalar becomes one assistant message, and a message list (or
+`{"messages": [...]}`) becomes the full transcript (see
+[Datasets](/guides/datasets#message-shaped-sft-targets)).
 
 Flash uses completion-only loss for SFT. It masks the token prefix rendered from
 `start_episode(...)` and trains on every token in `sft_completion(...)`. For a

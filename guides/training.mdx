@@ -108,35 +108,16 @@ flash train config.toml --set train.steps=300 --set train.lora_rank=16
 ## Cost and billing
 
 Flash checks your org's prepaid balance against the pre-flight estimate before a
-run is submitted. A successful run is billed at the quoted Flash cost for the
-planned training loop, while a run cancelled after training starts is repriced to
-the steps it reached. Setup and cold start time are shown so you understand wall
-clock, but are not billed. Once a run completes, or is cancelled after training
-starts, Flash posts the training charge to your org balance.
-Preview the estimate before you submit with `flash train --cost`:
+run is submitted, then bills a successful run at the quoted Flash cost; a run
+cancelled after training starts is repriced to the steps it reached, and setup
+time is reported but not billed. Preview the estimate before you submit:
 
 ```bash
 flash train config.toml --cost
 ```
 
-```text
-Run        : Qwen/Qwen3.5-0.8B  [GRPO, 100 steps]
-Setup      : 9.5 min (not billed)
-Per step   : 11.06 s
-Train      : 18.4 min
-Wall clock : 0.47 h
-Billable   : 0.31 h (training only)
-TOTAL      : $0.21
-```
-
-<Note>
-  The cost is catalog-deterministic and runs locally; for an uncapped SFT run
-  it loads the environment to count its training examples. Once a run starts,
-  `flash status <run-id>` includes the current or final cost record. The numbers
-  above are an example for one config.
-</Note>
-
-For more billing guidance, see [Cost and billing](/reference/cost-model).
+See [Cost and billing](/reference/cost-model) for what affects cost, how to read
+the preview output, and how cancellations are repriced.
 
 ## Monitor a run
 

@@ -53,10 +53,9 @@ shows the charges you actually accrue.
 | `Qwen/Qwen3.6-35B-A3B` | $0.180 | $1.200 | $0.0600 |
 
 The **Cached prompt** column is the rate for prompt tokens served from the
-**prefix cache**. Caching is automatic whenever a request's prompt shares a
-leading prefix with a recent one (a shared system prompt, or a multi-turn chat);
-only prompt tokens are cacheable, so completion tokens always bill at the full
-per-token rate. See [Billing](/guides/deploy-and-chat#billing).
+**prefix cache**, which is automatic. See
+[Billing](/guides/deploy-and-chat#billing) for how prefix caching works and when
+it applies.
 
 ### Notes per model
 
