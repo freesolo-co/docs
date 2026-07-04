@@ -70,13 +70,13 @@ untouched.
 
 <Accordion title="Already have a training loop?" icon="robot">
   Skip the hand-editing. Point your coding agent (Claude Code, Cursor, etc.) at
-  the [environment guide](/guides/environments) and have it find and port your
+  the [environment guide](/guides/environments/overview) and have it find and port your
   existing reward and dataset into `environment.py`. A prompt to start from:
 
 ```text
 I already have a training loop with a reward function and a dataset, and I
 want to run it on Freesolo Flash. Find my reward function and dataset in this
-project, then read https://freesolo.co/docs/guides/environments and
+project, then read https://freesolo.co/docs/guides/environments/overview and
 create an environment.py whose load_environment() returns an
 EnvironmentSingleTurn (use EnvironmentMultiTurn for multi-step tasks). Port my
 reward into score_response and wire my dataset in as the input/output records
@@ -89,8 +89,8 @@ configs/ (rl.toml for GRPO, sft.toml for SFT) with the base model and
 
 ## Step 4: Publish your environment
 
-An [environment](/guides/environments) is the task and reward your model trains
-on. [Publish](/guides/environments#publish-it) the scaffolded one to the managed
+An [environment](/guides/environments/overview) is the task and reward your model trains
+on. [Publish](/guides/environments/package#publish-it) the scaffolded one to the managed
 Environments Hub to get an id:
 
 ```bash
@@ -210,7 +210,7 @@ The commands you used above, plus the ones you'll reach for next. Run
   <Card title="Training in depth" icon="dumbbell" href="/guides/training">
     SFT vs GRPO, config options, monitoring, and cost.
   </Card>
-  <Card title="Build an environment" icon="flask" href="/guides/environments">
+  <Card title="Build an environment" icon="flask" href="/guides/environments/overview">
     Replace the starter task with your own data and reward.
   </Card>
   <Card title="Deploy & chat" icon="comments" href="/guides/deploy-and-chat">

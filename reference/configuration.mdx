@@ -32,7 +32,7 @@ lora_rank = 32
 
 | Key | Type | Default | Description |
 | --- | --- | --- | --- |
-| `id` | string | (required) | [Published Freesolo environment](/guides/environments#publish-it) id, `your-org/your-env`. |
+| `id` | string | (required) | [Published Freesolo environment](/guides/environments/package#publish-it) id, `your-org/your-env`. |
 | `params` | table | `{}` | Keyword arguments passed to the env's `load_environment(**kwargs)`. `split` is also honored by Flash for packaged env datasets — see [Datasets](/guides/datasets#load-sidecars): it selects `dataset/<split>.jsonl`, and a missing split file is an error (no silent `train.jsonl` fallback). |
 | `pip` | list[string] | `[]` | Extra third-party pip requirements the worker installs before importing your environment (an escape hatch for deps your `environment.py` imports). |
 | `secrets` | list[string] | `[]` | Environment variable names to forward to the worker as runtime secrets. Values are read from your shell, `.env`, or `.env.local` at submit time. |
