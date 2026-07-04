@@ -18,6 +18,30 @@ The submit-time quote is the amount Flash checks against your prepaid org
 balance. Successful runs are billed at the quoted Flash cost. Cancelled runs are
 repriced to the training progress they reached.
 
+## How cost is calculated
+
+`flash train --cost` reprices a run the same way the platform bills it:
+
+```text
+total = billable training hours × GPU $/hr
+```
+
+Billable training time is the training loop only — `steps × per-step time`.
+Setup (container boot, dependency install, model load, and, for GRPO,
+inference-engine warmup) is reported as wall-clock time but is **not billed**.
+Per-step time reflects the work in a step: a GRPO step samples a group of
+completions, grades them with your reward, and updates the policy, so it scales
+with how many and how long those completions are (`batch_size × group_size ×
+max_tokens`); an SFT step is one forward/backward pass, priced on the training
+tokens counted from your environment. The estimator sizes the run's memory and
+prices the cheapest GPU class that fits — it does not pin a specific card, so the
+one actually provisioned (and its live `flash gpus` rate) can differ from the
+estimate.
+
+Serving is priced separately, per token: `(prompt − cached) × input + completion
+× output + cached × cached`, at the per-model rates in
+[Supported models](/reference/models#serving-prices).
+
 ## What affects training cost
 
 You control the main levers in the config:
