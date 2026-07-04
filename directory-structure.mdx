@@ -15,8 +15,8 @@ exists is left untouched.
 ├── dataset/
 │   └── train.jsonl       # a tiny starter dataset (input/output rows)
 ├── configs/
-│   ├── rl.toml           # a GRPO (RL) training config
-│   └── sft.toml          # an SFT (supervised) training config
+│   ├── sft.toml          # an SFT (supervised) training config
+│   └── rl.toml           # a GRPO (RL) training config
 └── TRAINING.md           # a playbook for the AI agent driving your runs
 ```
 
@@ -55,40 +55,42 @@ exists is left untouched.
 
   </Accordion>
 
-  <Accordion title="configs/rl.toml" icon="gear">
-    **What it is:** a [GRPO training config](/guides/training#choose-sft-or-grpo).
-    You set `model`, the `[environment] id`, and the `[train]` knobs (steps,
-    lora_rank); the
+  <Accordion title="configs/sft.toml" icon="gear">
+    **What it is:** an [SFT training config](/guides/training#choose-sft-or-grpo)
+    for supervised fine-tuning on the `input`/`output` pairs in your environment's
+    dataset. You set `model`, the `[environment] id`, and the `[train]` knobs
+    (epochs, lora_rank); the
     training infrastructure and artifact storage are [managed for you](/reference/configuration). Copy
     it per experiment.
 
     **When Flash reads it:** every `flash train`, `--dry-run`, and `--cost` parses
     this file into the resolved job spec.
 
-    ```toml configs/rl.toml
+    ```toml configs/sft.toml
     model = "Qwen/Qwen3.5-4B"
-    algorithm = "grpo"
+    algorithm = "sft"
 
     [environment]
     id = ""   # paste the id returned by `flash env push --name my-env .`
 
     [train]
-    steps = 150
+    epochs = 3
+    max_examples = 1000
     lora_rank = 32
     ```
 
   </Accordion>
 
-  <Accordion title="configs/sft.toml" icon="copy">
-    **What it is:** the same config shape with `algorithm = "sft"`, for supervised
-    fine-tuning on the `input`/`output` pairs in your environment's dataset. Keep
-    both and pick one at train time.
+  <Accordion title="configs/rl.toml" icon="copy">
+    **What it is:** the same config shape with `algorithm = "grpo"`, for GRPO
+    (RL) training that optimizes against your environment's `score_response`
+    reward. Keep both and pick one at train time.
 
-    **When Flash reads it:** same as `rl.toml`; pass it to `flash train` to run
-    SFT instead of GRPO.
+    **When Flash reads it:** same as `sft.toml`; pass it to `flash train` to run
+    GRPO instead of SFT.
 
     ```bash
-    flash train configs/sft.toml
+    flash train configs/rl.toml
     ```
 
   </Accordion>
