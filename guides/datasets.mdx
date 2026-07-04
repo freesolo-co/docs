@@ -3,9 +3,9 @@ title: "Datasets"
 description: "Package task records and data files with Freesolo environments."
 ---
 
-Datasets live inside the environment. A Flash config points at one published
+Datasets live inside the [environment](/environment-model). A [Flash config](/reference/configuration) points at one published
 environment id, and the environment's `load_environment()` function returns the
-dataset, prompt builder, and reward logic that Flash uses for SFT, GRPO, and
+dataset, prompt builder, and reward logic that Flash uses for [SFT, GRPO](/guides/training#choose-sft-or-grpo), and
 local validation.
 
 ```toml
