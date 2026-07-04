@@ -30,7 +30,6 @@
 						"group": "Core concepts",
 						"pages": ["how-flash-works", "environment-model", "directory-structure"]
 					},
-					"guides/training",
 					{
 						"group": "Environments",
 						"pages": [
@@ -41,6 +40,7 @@
 						]
 					},
 					"guides/datasets",
+					"guides/training",
 					"guides/deploy-and-chat"
 				]
 			},
