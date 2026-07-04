@@ -32,7 +32,6 @@ from freesolo.environments import EnvironmentSingleTurn, RewardResult
 
 ROOT = Path(__file__).parent
 
-
 class MathEnv(EnvironmentSingleTurn):
     def __init__(self, *, split: str = "train") -> None:
         self.dataset = load_task_examples(ROOT / "dataset" / f"{split}.jsonl")
@@ -44,7 +43,6 @@ class MathEnv(EnvironmentSingleTurn):
         expected = str(example.output or "").strip()
         score = 1.0 if expected and expected in response_text else 0.0
         return RewardResult(score=score, threshold=1.0)
-
 
 def load_environment(split: str = "train", **kwargs) -> MathEnv:
     return MathEnv(split=split)

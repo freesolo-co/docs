@@ -61,8 +61,8 @@ environment.py            # a Freesolo environment (task + reward)
 dataset/
   train.jsonl             # a tiny starter dataset (input/output rows)
 configs/
-  rl.toml                 # a GRPO (RL) training config to start from
   sft.toml                # an SFT training config to start from
+  rl.toml                 # a GRPO (RL) training config to start from
 TRAINING.md               # agent playbook with common run issues and mitigations
 ```
 
@@ -82,7 +82,7 @@ create an environment.py whose load_environment() returns an
 EnvironmentSingleTurn (use EnvironmentMultiTurn for multi-step tasks). Port my
 reward into score_response and wire my dataset in as the input/output records
 load_environment() returns. Then fill in the matching training config in
-configs/ (rl.toml for GRPO, sft.toml for SFT) with the base model and
+configs/ (sft.toml for SFT, rl.toml for GRPO) with the base model and
 [train] settings.
 ```
 
@@ -102,18 +102,19 @@ This prints an environment id of the form `your-org/starter`.
 
 ## Step 5: Configure and validate your run
 
-Open `configs/rl.toml` and set the one thing that's yours, the environment id
+Open `configs/sft.toml` and set the one thing that's yours, the environment id
 from the previous step:
 
-```toml configs/rl.toml
+```toml configs/sft.toml
 model = "Qwen/Qwen3.5-4B"
-algorithm = "grpo"
+algorithm = "sft"
 
 [environment]
 id = "your-org/starter"
 
 [train]
-steps = 150
+epochs = 1
+max_examples = 2
 lora_rank = 32
 ```
 
@@ -121,20 +122,20 @@ lora_rank = 32
 `--dry-run` parses and checks the config locally:
 
 ```bash
-flash train configs/rl.toml --dry-run
+flash train configs/sft.toml --dry-run
 ```
 
 See what [the run will cost](/guides/training#cost-and-billing) before
 committing. `--cost` prints the pre-flight USD cost and exits without submitting:
 
 ```bash
-flash train configs/rl.toml --cost
+flash train configs/sft.toml --cost
 ```
 
 ## Step 6: Train
 
 ```bash
-flash train configs/rl.toml
+flash train configs/sft.toml
 ```
 
 <Note>
@@ -193,8 +194,8 @@ The commands you used above, plus the ones you'll reach for next. Run
 | `flash login`        | Store your Freesolo API key locally        | `flash login --api-key <key>`          |
 | `flash env setup`    | Scaffold a starter environment and configs | `flash env setup`                      |
 | `flash env push`     | Publish an environment and print its id    | `flash env push --name starter .`      |
-| `flash train`        | Submit a run and follow its logs           | `flash train configs/rl.toml`          |
-| `flash train --cost` | Preview the pre-flight cost, no submit     | `flash train configs/rl.toml --cost`   |
+| `flash train`        | Submit a run and follow its logs           | `flash train configs/sft.toml`         |
+| `flash train --cost` | Preview the pre-flight cost, no submit     | `flash train configs/sft.toml --cost`  |
 | `flash runs`         | List your runs with state, cost, and model | `flash runs`                           |
 | `flash status`       | Show run status and cost                   | `flash status <run-id>`                |
 | `flash log`          | Print or follow worker logs                | `flash log <run-id> -f`                |
