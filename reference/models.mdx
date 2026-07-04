@@ -54,19 +54,6 @@ The **Cached prompt** column is the rate for prompt tokens served from the
 automatic **prefix cache**. See [Billing](/guides/deploy-and-chat#billing) for how
 prefix caching works and when it applies.
 
-### Notes per model
-
-- **`Qwen/Qwen3.5-0.8B`**: the smallest Qwen3.5. Cheapest for smoke tests and
-  fast iteration.
-- **`openbmb/MiniCPM5-1B`**: an on-device-class small model on a standard Llama
-  architecture.
-- **`Qwen/Qwen3.5-2B`**: a small, capable step up when 0.8B underfits.
-- **`Qwen/Qwen3.5-4B`**: a balanced starting point for most tasks.
-- **`Qwen/Qwen3.5-9B`**: the largest dense catalog model, useful when quality
-  matters more than the run cost.
-- **`Qwen/Qwen3.6-35B-A3B`**: a Mixture-of-Experts checkpoint (35B total, ~3B
-  active per token) and the largest model in the catalog.
-
 ## Reasoning ("thinking") models
 
 Every catalog model is **hybrid-reasoning**: it runs with or without an explicit
