@@ -27,6 +27,15 @@ model and the task; Flash handles the training infrastructure. See
 flash train config.toml
 ```
 
+### Teach a format from examples with SFT
+
+Supervised fine-tuning learns from the prompt/answer pairs in your [dataset](/guides/datasets).
+Use it when you already have examples of the output you want.
+
+```toml
+algorithm = "sft"
+```
+
 ### Reward the behavior you want with GRPO
 
 Reinforcement learning scores the model's own completions with your
@@ -36,15 +45,6 @@ an output but can't hand-write the perfect one.
 
 ```toml
 algorithm = "grpo"
-```
-
-### Teach a format from examples with SFT
-
-Supervised fine-tuning learns from the prompt/answer pairs in your [dataset](/guides/datasets).
-Use it when you already have examples of the output you want.
-
-```toml
-algorithm = "sft"
 ```
 
 ### Serve it behind an OpenAI-compatible API

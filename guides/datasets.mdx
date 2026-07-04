@@ -30,25 +30,27 @@ model generates its own answers from the prompt and learns from your reward, so
 a reference.
 
 `load_task_examples(...)` accepts a local file path or an iterable of records.
-For files, use `.jsonl`, `.json`, `.csv`, `.txt`, or `.bson`. It exposes each
-record's `input` as `example.input`, `output` as `example.output`, and any
-`metadata` as `example.metadata`; the original row stays available as
-`example.record`.
+
+- **File formats:** `.jsonl`, `.json`, `.csv`, `.txt`, or `.bson`.
+- **Field mapping:** `input` -> `example.input`, `output` -> `example.output`, `metadata` -> `example.metadata`.
+- **Original row:** the untouched record stays available as `example.record`.
 
 ```jsonl dataset/train.jsonl
 {"input":"What is 2 + 2?","output":"4"}
 {"input":"What is 3 + 5?","output":"8"}
 ```
 
-Keep the public row shape to `input` plus optional `output`; alternate prompt
-or target keys are not accepted.
+Each row must be `input` plus an optional `output`; alternate prompt or target
+key names are not accepted. Records are canonicalized to exactly
+`input`/`output`/`metadata`.
 
 <Warning>
-  Records are canonicalized to `input`/`output`/`metadata`. Any other
-  top-level key (say `initial_state` or `minimal_solutions`) is **dropped**
-  before the record reaches a training worker — the SDK raises a `UserWarning`
-  naming the record, and Flash prints a warning naming the dropped keys. Nest
-  task data under `metadata` to preserve it.
+  When Flash builds your training records it keeps only
+  `input`/`output`/`metadata` and **silently drops** every other top-level key
+  before the row reaches a training worker. Anything your scorer needs beyond
+  the gold `output` string (a puzzle's `initial_board`, the `oracle_ids` a
+  retrieval must return, unit tests to check code against, a grading rubric) has
+  to live under `metadata`, or it is gone with no runtime warning.
 </Warning>
 
 ### Message-shaped SFT targets
