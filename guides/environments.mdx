@@ -151,14 +151,69 @@ Do not declare unused packages or secrets. If the active reward only calls the
 judge model and no longer queries the database, leave out the database client and
 its secret.
 
+## Publish it
+
+Training runs on managed infrastructure, so the environment has to be reachable by id.
+Publish your local environment folder to the managed Environments Hub:
+
+```bash
+flash env push --name math math
+```
+
+It prints the published id
+(`your-org/math`). Put that in your config's `[environment] id`.
+
+## Use an existing environment
+
+If you already have a published env id (yours or one shared with you), reference
+it directly. You can also reference a GitHub environment source with a
+`github:owner/repo@ref:path` ref or a GitHub URL.
+
+```toml
+[environment]
+id = "your-org/your-env"
+```
+
+If you want the source locally for editing or inspection, pull the whole
+environment into a directory:
+
+```bash
+flash env pull your-org/your-env
+```
+
+Pull one file by adding its path inside the environment. Use `-o` to choose the
+destination and `-f` to overwrite an existing output:
+
+```bash
+flash env pull your-org/your-env dataset/train.jsonl -o train.jsonl
+```
+
+## List what you have
+
+```bash
+flash env list
+```
+
+Shows local environment sources you can publish, such as `./environment.py` or
+folders under `environments/`.
+
+## Delete a Hub environment
+
+Delete only targets managed Hub ids of the form `namespace/name`; GitHub refs
+and local paths are not Hub records and cannot be deleted this way.
+
+```bash
+flash env delete your-org/your-env
+flash env delete your-org/your-env -y   # skip the confirmation prompt
+```
+
 ## Use the SDK
 
-Your environment code imports from the `freesolo` package. Managed training
-workers already have that SDK available when they import your published
-environment. Your local Python environment does not get it automatically from
-the `flash` CLI, so install it locally if you run or test `environment.py`
-directly, or if you use a command such as `flash train --cost` that imports the
-environment to count training rows:
+Your environment code imports from the `freesolo` package. **You don't need to
+install anything for the managed flow** — training workers already have the SDK
+when they import your published environment. Install it locally only if you plan
+to run or test `environment.py` yourself, or use a command like
+`flash train --cost` that imports the environment locally to count training rows:
 
 ```bash
 uv pip install freesolo
@@ -471,62 +526,6 @@ matters in `[train]`:
   (every turn, every tool result), so set it well above a single-turn task.
 - **`group_size`** is the number of full episodes rolled out per prompt for the
   GRPO advantage estimate.
-
-## Publish it
-
-Training runs on managed infrastructure, so the environment has to be reachable by id.
-Publish your local environment folder to the managed Environments Hub:
-
-```bash
-flash env push --name math math
-```
-
-It prints the published id
-(`your-org/math`). Put that in your config's `[environment] id`.
-
-## Use an existing environment
-
-If you already have a published env id (yours or one shared with you), reference
-it directly. You can also reference a GitHub environment source with a
-`github:owner/repo@ref:path` ref or a GitHub URL.
-
-```toml
-[environment]
-id = "your-org/your-env"
-```
-
-If you want the source locally for editing or inspection, pull the whole
-environment into a directory:
-
-```bash
-flash env pull your-org/your-env
-```
-
-Pull one file by adding its path inside the environment. Use `-o` to choose the
-destination and `-f` to overwrite an existing output:
-
-```bash
-flash env pull your-org/your-env dataset/train.jsonl -o train.jsonl
-```
-
-## List what you have
-
-```bash
-flash env list
-```
-
-Shows local environment sources you can publish, such as `./environment.py` or
-folders under `environments/`.
-
-## Delete a Hub environment
-
-Delete only targets managed Hub ids of the form `namespace/name`; GitHub refs
-and local paths are not Hub records and cannot be deleted this way.
-
-```bash
-flash env delete your-org/your-env
-flash env delete your-org/your-env -y   # skip the confirmation prompt
-```
 
 ## Pass parameters
 
