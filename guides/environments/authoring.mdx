@@ -3,8 +3,6 @@ title: "Author with the SDK"
 description: "Write the environment class - datasets, prompts, and rewards - and pass it parameters and secrets."
 ---
 
-## Use the SDK
-
 Your environment code imports from the `freesolo` package. **You don't need to
 install anything for the managed flow** — training workers already have the SDK
 when they import your published environment. Install it locally only if you plan
@@ -135,3 +133,14 @@ not stored in the TOML config, run spec, status JSON, logs, or environment
 artifact. Do not put API keys in `[environment.params]`.
 If a declared secret is missing when you submit, `flash train` fails before the
 run starts.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Multi-turn environments" icon="comments" href="/guides/environments/multi-turn">
+    Handle conversations, tools, and agents.
+  </Card>
+  <Card title="Datasets" icon="table" href="/guides/datasets">
+    Row shapes and SFT target formats.
+  </Card>
+</CardGroup>

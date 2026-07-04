@@ -23,13 +23,11 @@ Author dataset rows with `input` and `output`:
 | `output` | Target answer or gold completion. For SFT this can be a scalar answer, `{ "messages": [...] }`, or a bare list of chat messages. |
 | `metadata` | Optional dict preserved on `example.metadata` and available to scoring. |
 
-<Note>
-  Which column the model learns from depends on the algorithm. **SFT** trains
-  directly on `output`, the gold answer. **GRPO** (RL) uses only `input`: the
-  model generates its own answers from the prompt and learns from your reward,
-  so `output` is optional there and is read only if your `score_response` uses
-  it as a reference.
-</Note>
+Which column the model learns from depends on the algorithm. **SFT** trains
+directly on `output`, the gold answer. **GRPO** (RL) uses only `input`: the
+model generates its own answers from the prompt and learns from your reward, so
+`output` is optional there and is read only if your `score_response` uses it as
+a reference.
 
 `load_task_examples(...)` accepts a local file path or an iterable of records.
 
@@ -144,3 +142,14 @@ Workspace metadata, cache directories, virtualenvs, and version-control files
 are skipped. Keep the artifact small: environment uploads are capped at 64 MB
 compressed and 256 MB uncompressed. For large corpora, keep the data in an
 external store and pass the identifier or URL through `[environment.params]`.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Author with the SDK" icon="flask" href="/guides/environments/authoring">
+    Load these records inside an environment class.
+  </Card>
+  <Card title="Training" icon="dumbbell" href="/guides/training">
+    Train SFT or GRPO on your dataset.
+  </Card>
+</CardGroup>

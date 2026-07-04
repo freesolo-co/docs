@@ -14,11 +14,9 @@ runs locally: it validates the config, estimates the training loop, prints the
 quoted USD cost, and exits without submitting. For an uncapped SFT run it loads
 the environment to count its training examples.
 
-<Note>
-  The submit-time quote is the amount Flash checks against your prepaid org
-  balance. Successful runs are billed at the quoted Flash cost. Cancelled runs
-  are repriced to the training progress they actually reached.
-</Note>
+The submit-time quote is the amount Flash checks against your prepaid org
+balance. Successful runs are billed at the quoted Flash cost. Cancelled runs are
+repriced to the training progress they actually reached.
 
 ## What affects training cost
 
@@ -101,3 +99,14 @@ flash undeploy <run-id>
 The quote can change when you change the config, publish different environment
 contents, update dataset size, or submit after catalog/pricing updates. The
 authoritative number is the quote returned for the run you actually submit.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Supported models" icon="layer-group" href="/reference/models">
+    Training and serving prices per model.
+  </Card>
+  <Card title="Deploy & chat" icon="comments" href="/guides/deploy-and-chat">
+    How per-token serving is billed.
+  </Card>
+</CardGroup>
