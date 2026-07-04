@@ -1,0 +1,141 @@
+---
+title: "Package & publish"
+description: "Lay out the environment folder, declare dependencies, and publish it to the managed Hub."
+---
+
+## Structure the package
+
+A published environment is a small folder. Flash packages it, imports its
+`environment.py` entrypoint on the worker, and calls
+`load_environment(**params)`, which must return a Freesolo SDK environment. The
+folder can be named anything as long as it contains `environment.py` at its
+root.
+
+```text
+math/
+  environment.py          # defines load_environment()
+  helpers.py              # optional Python helpers
+  dataset/
+    train.jsonl           # input/output records
+    eval.jsonl
+```
+
+Publish the folder:
+
+```bash
+flash env push --name math math
+```
+
+Single `.py` upload still works for tiny smoke tests, but push real environments
+as folders. The `--name` value is normalized to a lowercase hyphen slug, and the
+published id uses your Freesolo org namespace, for example `your-org/math`.
+
+Keep all imports either from sibling files in the folder you publish, from the
+`freesolo` SDK, or from third-party packages you declare under
+`[environment].pip` (see below).
+
+### Declare third-party dependencies
+
+If your `environment.py` imports a package that isn't part of the `freesolo` SDK,
+list it under `[environment].pip` so the worker installs it before importing your
+environment:
+
+```toml
+[environment]
+id = "your-org/your-env"
+pip = ["rapidfuzz>=3.0", "pydantic"]
+```
+
+This is the supported worker dependency mechanism. A `pyproject.toml`,
+`requirements.txt`, or lockfile beside `environment.py` may be useful for local
+development, but Flash does not use those files to install packages for a
+managed training run. Put runtime packages in the [training config](/reference/configuration) that references
+the published environment.
+
+Only list packages your environment imports. Flash manages the training stack
+itself, so do not pin packages such as `torch`, `trl`, `vllm`, `peft`, or
+`bitsandbytes` here unless your environment directly imports them.
+
+For example, an environment whose reward calls a judge model should declare the
+client library and the secret it reads. Here the judge is reached through an
+OpenAI-compatible client (such as OpenRouter), but the same pattern applies to
+any provider:
+
+```toml
+[environment]
+id = "your-org/search-reward"
+pip = ["openai>=1.0.0"]
+secrets = ["JUDGE_API_KEY"]
+```
+
+If that same reward also queries a database, declare its client library and the
+exact environment variable name your code reads. Here the database is MongoDB via
+`pymongo`, but the same pattern applies to any database:
+
+```toml
+[environment]
+id = "your-org/search-reward"
+pip = ["openai>=1.0.0", "pymongo>=4.17.0"]
+secrets = ["JUDGE_API_KEY", "DATABASE_URL"]
+```
+
+Do not declare unused packages or secrets. If the active reward only calls the
+judge model and no longer queries the database, leave out the database client and
+its secret.
+
+## Publish it
+
+Training runs on managed infrastructure, so the environment has to be reachable by id.
+Publish your local environment folder to the managed Environments Hub:
+
+```bash
+flash env push --name math math
+```
+
+It prints the published id
+(`your-org/math`). Put that in your config's `[environment] id`.
+
+## Use an existing environment
+
+If you already have a published env id (yours or one shared with you), reference
+it directly. You can also reference a GitHub environment source with a
+`github:owner/repo@ref:path` ref or a GitHub URL.
+
+```toml
+[environment]
+id = "your-org/your-env"
+```
+
+If you want the source locally for editing or inspection, pull the whole
+environment into a directory:
+
+```bash
+flash env pull your-org/your-env
+```
+
+Pull one file by adding its path inside the environment. Use `-o` to choose the
+destination and `-f` to overwrite an existing output:
+
+```bash
+flash env pull your-org/your-env dataset/train.jsonl -o train.jsonl
+```
+
+## List what you have
+
+```bash
+flash env list
+```
+
+Shows local environment sources you can publish, such as `./environment.py` or
+folders under `environments/`.
+
+## Delete a Hub environment
+
+Delete only targets managed Hub ids of the form `namespace/name`; GitHub refs
+and local paths are not Hub records and cannot be deleted this way.
+
+```bash
+flash env delete your-org/your-env
+flash env delete your-org/your-env -y   # skip the confirmation prompt
+```
+

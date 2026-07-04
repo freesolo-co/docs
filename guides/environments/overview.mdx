@@ -1,0 +1,74 @@
+---
+title: "Environments"
+sidebarTitle: "Overview"
+description: "What a Freesolo environment is, and how to scaffold your first one."
+---
+
+An [**environment**](/environment-model) is the task: the data your model sees and the reward, a
+numeric score your code assigns to each model output. Flash loads environments
+through the Freesolo environment SDK.
+You author one locally, publish it to Freesolo's managed Environments Hub, and
+reference it in config by its Freesolo environment id.
+
+```toml
+[environment]
+id = "your-org/your-env"
+```
+
+## Scaffold one
+
+```bash
+flash env setup
+```
+
+This scaffolds a starter project in the current directory: `environment.py`, a
+tiny `dataset/train.jsonl`, two configs (`configs/sft.toml` for SFT and
+`configs/rl.toml` for GRPO), and a `TRAINING.md` playbook for the coding agent you
+point at the project. The starter `load_environment()` returns a Freesolo
+`EnvironmentSingleTurn` with a sample dataset and reward.
+
+```python environment.py
+import json
+from pathlib import Path
+
+from freesolo.datasets import TaskExample
+from freesolo.environments import EnvironmentSingleTurn, RewardResult
+
+DEFAULT_DATASET_PATH = Path(__file__).parent / "dataset" / "train.jsonl"
+
+
+def load_jsonl(path):
+    with Path(path).open() as f:
+        return [json.loads(line) for line in f if line.strip()]
+
+
+class StarterEnv(EnvironmentSingleTurn):
+    dataset = load_jsonl(DEFAULT_DATASET_PATH)
+
+    def build_prompt_messages(self, example: TaskExample, prompt_text: str):
+        return [{"role": "user", "content": example.input}]
+
+    def score_response(self, example: TaskExample, response_text: str) -> RewardResult:
+        expected = str(example.output or "").strip()
+        score = 1.0 if expected and expected in response_text else 0.0
+        return RewardResult(score=score, threshold=1.0)
+
+
+def load_environment(dataset_path: str | None = None, **kwargs) -> StarterEnv:
+    env = StarterEnv()
+    if dataset_path:
+        env.dataset = load_jsonl(dataset_path)
+    return env
+```
+
+Replace the dataset and reward with your task:
+
+- [**Dataset**](/guides/datasets): the prompts (and any gold answers) your model trains and is
+  evaluated on.
+- **Reward**: `score_response` returns a `RewardResult`. GRPO optimizes that
+  score; SFT trains directly on your dataset answers instead. See [how Flash
+  works](/how-flash-works).
+
+For multi-turn tasks (conversations, tool use, agents), use `EnvironmentMultiTurn`
+and implement the episode hooks — see [Multi-turn environments](/guides/environments/multi-turn) below.
+

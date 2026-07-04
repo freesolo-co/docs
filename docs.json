@@ -31,7 +31,15 @@
 						"pages": ["how-flash-works", "environment-model", "directory-structure"]
 					},
 					"guides/training",
-					"guides/environments",
+					{
+						"group": "Environments",
+						"pages": [
+							"guides/environments/overview",
+							"guides/environments/package",
+							"guides/environments/authoring",
+							"guides/environments/multi-turn"
+						]
+					},
 					"guides/datasets",
 					"guides/deploy-and-chat"
 				]
@@ -43,6 +51,10 @@
 		]
 	},
 	"redirects": [
+		{
+			"source": "/guides/environments",
+			"destination": "/guides/environments/overview"
+		},
 		{
 			"source": "/conventions",
 			"destination": "/guides/training"
