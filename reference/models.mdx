@@ -15,26 +15,24 @@ flash models
 model = "Qwen/Qwen3.5-4B"   # required — see `flash models` for the options
 ```
 
-`flash models` is the source of truth. The table below mirrors the current
-catalog.
+<Note>
+  The Qwen3.5 entries are **text-only** fine-tunes: the checkpoints are natively
+  multimodal, but Flash trains and serves the language model only.
+</Note>
 
 ## Catalog
 
 Every catalog model supports [**both SFT and GRPO**](/guides/training#choose-sft-or-grpo)
 and hybrid reasoning ("thinking").
 
-| Model (`model =`) | Parameters | Algorithms | Reasoning |
-| --- | ---: | --- | --- |
-| `Qwen/Qwen3.5-0.8B` | 0.9B | SFT, GRPO | Hybrid |
-| `openbmb/MiniCPM5-1B` | 1.2B | SFT, GRPO | Hybrid |
-| `Qwen/Qwen3.5-2B` | 2.3B | SFT, GRPO | Hybrid |
-| `Qwen/Qwen3.5-4B` | 4.7B | SFT, GRPO | Hybrid |
-| `Qwen/Qwen3.5-9B` | 9.7B | SFT, GRPO | Hybrid |
-| `Qwen/Qwen3.6-35B-A3B` | 35B total / ~3B active | SFT, GRPO | Hybrid |
-
-The default `train.lora_rank = 32` is the safest choice across the catalog. If
-you raise the rank, validate before a long run: Flash checks that the resulting
-adapter can be deployed for the selected base model.
+| Model (`model =`) | Algorithms | Reasoning |
+| --- | --- | --- |
+| `Qwen/Qwen3.5-0.8B` | SFT, GRPO | Hybrid |
+| `openbmb/MiniCPM5-1B` | SFT, GRPO | Hybrid |
+| `Qwen/Qwen3.5-2B` | SFT, GRPO | Hybrid |
+| `Qwen/Qwen3.5-4B` | SFT, GRPO | Hybrid |
+| `Qwen/Qwen3.5-9B` | SFT, GRPO | Hybrid |
+| `Qwen/Qwen3.6-35B-A3B` | SFT, GRPO | Hybrid |
 
 ## Serving prices
 
@@ -68,11 +66,6 @@ prefix caching works and when it applies.
   matters more than the run cost.
 - **`Qwen/Qwen3.6-35B-A3B`**: a Mixture-of-Experts checkpoint (35B total, ~3B
   active per token) and the largest model in the catalog.
-
-<Note>
-  The Qwen3.5 entries are **text-only** fine-tunes: the checkpoints are natively
-  multimodal, but Flash trains and serves the language model only.
-</Note>
 
 ## Reasoning ("thinking") models
 
