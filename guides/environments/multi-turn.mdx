@@ -3,8 +3,6 @@ title: "Multi-turn environments"
 description: "Conversations, tool use, and agents with EnvironmentMultiTurn."
 ---
 
-## Multi-turn environments
-
 Some tasks aren't resolved in a single response: a conversation, a tool-using
 agent, anything where the **environment reacts to what the model just did** and
 the model acts again. For these, subclass `EnvironmentMultiTurn` and implement the
@@ -16,7 +14,7 @@ trajectory.
 | `build_prompt_messages` → one prompt  | `start_episode` → opening messages                                                                                                       |
 | `score_response` → reward one reply   | `step_episode` → react to each action; `max_episode_turns` → bound the episode; `score_episode` / `score_episodes` → reward trajectories |
 
-### The episode loop
+## The episode loop
 
 During training the trainer drives your hooks in a loop and scores the result:
 
@@ -58,7 +56,7 @@ reward = env.score_episode(example, episode)
   GRPO group. You normally do not implement it; the SDK default runs your
   singular `score_episode` for each item, using `max_score_concurrency`.
 
-### Full multi-turn contract
+## Full multi-turn contract
 
 This is the worker-facing surface Flash expects:
 
@@ -134,7 +132,7 @@ metadata under `steps`, so it is available to `score_episode` and logs. Keep
 durable episode state in the transcript rather than in hidden mutable
 attributes.
 
-### An action protocol the model can emit as text
+## An action protocol the model can emit as text
 
 The trained policy is an open model, not a tool-use API, so define a plain-text
 protocol it can produce and your `step_episode` can parse — for example, a
@@ -189,7 +187,7 @@ def load_environment(split: str = "train", **kwargs) -> AgentEnv:
     return AgentEnv(split=split)
 ```
 
-### SFT targets for multi-turn
+## SFT targets for multi-turn
 
 SFT does not execute the multi-turn loop. It builds one supervised row as:
 
@@ -212,7 +210,7 @@ a multi-turn environment has only scalar outputs, SFT collapses to one assistant
 turn per row and does not run `step_episode`; provide full target transcripts or
 override `sft_completion` when you need multi-turn SFT.
 
-### Keep `step_episode` stateless
+## Keep `step_episode` stateless
 
 The SDK doesn't hand you a per-episode scratch object, and GRPO runs **many
 rollouts of the same example concurrently** — so don't stash mutable world-state
@@ -222,7 +220,7 @@ state by replaying `messages` inside `step_episode` / `score_episode`. Replay is
 reproducible as long as your service is deterministic given the same calls (seed
 any ids; avoid wall-clock-dependent logic in the reward).
 
-### Score behaviours, not a script
+## Score behaviours, not a script
 
 Open-ended tasks rarely have one correct transcript, so don't grade by imitation.
 Score the behaviours you care about — did it take the resolving action, follow
@@ -230,7 +228,7 @@ required ordering (e.g. authenticate before a privileged call), stay within
 limits — and return that blend from `score_episode`. Keeping the reward in a
 plain function (importable without the trainer) makes it unit-testable.
 
-### Configure for multi-turn
+## Configure for multi-turn
 
 For multi-turn runs, the episode budget comes from `max_episode_turns`. What
 matters in `[train]`:
@@ -242,3 +240,13 @@ matters in `[train]`:
 - **`group_size`** is the number of full episodes rolled out per prompt for the
   GRPO advantage estimate.
 
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Training" icon="dumbbell" href="/guides/training">
+    Submit a run once your environment is ready.
+  </Card>
+  <Card title="Deploy & chat" icon="comments" href="/guides/deploy-and-chat">
+    Serve the trained adapter.
+  </Card>
+</CardGroup>

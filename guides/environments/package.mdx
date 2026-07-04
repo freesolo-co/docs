@@ -3,6 +3,10 @@ title: "Package & publish"
 description: "Lay out the environment folder, declare dependencies, and publish it to the managed Hub."
 ---
 
+Turn your local files into a published environment that training runs can reach
+by id - structure the folder, declare its dependencies, and push it to the managed
+Hub.
+
 ## Structure the package
 
 A published environment is a small folder. Flash packages it, imports its
@@ -139,3 +143,13 @@ flash env delete your-org/your-env
 flash env delete your-org/your-env -y   # skip the confirmation prompt
 ```
 
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Author with the SDK" icon="flask" href="/guides/environments/authoring">
+    Fill in the environment class you just published.
+  </Card>
+  <Card title="Training" icon="dumbbell" href="/guides/training">
+    Reference the published id from a config and train.
+  </Card>
+</CardGroup>
