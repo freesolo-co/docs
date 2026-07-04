@@ -47,11 +47,12 @@ key names are not accepted. Records are canonicalized to exactly
 `input`/`output`/`metadata`.
 
 <Warning>
-  Any other top-level key (say `initial_state` or `minimal_solutions`) is
-  **dropped** before the record reaches a training worker. When that happens,
-  the SDK raises a `UserWarning` naming the record, and Flash prints a warning
-  naming the dropped keys. To preserve extra task data, nest it under
-  `metadata`.
+  When Flash builds your training records it keeps only
+  `input`/`output`/`metadata` and **silently drops** every other top-level key
+  before the row reaches a training worker. Anything your scorer needs beyond
+  the gold `output` string (a puzzle's `initial_board`, the `oracle_ids` a
+  retrieval must return, unit tests to check code against, a grading rubric) has
+  to live under `metadata`, or it is gone with no runtime warning.
 </Warning>
 
 ### Message-shaped SFT targets
