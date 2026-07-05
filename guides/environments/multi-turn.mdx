@@ -14,6 +14,11 @@ trajectory.
 | `build_prompt_messages` → one prompt  | `start_episode` → opening messages                                                                                                       |
 | `score_response` → reward one reply   | `step_episode` → react to each action; `max_episode_turns` → bound the episode; `score_episode` / `score_episodes` → reward trajectories |
 
+`flash env setup --multi-turn` scaffolds a runnable starter on this class — a
+"guess the secret number" episode with `start_episode`, `step_episode`,
+`max_episode_turns`, and `score_episode` wired end-to-end — that you edit into
+your own task.
+
 ## The episode loop
 
 During training the trainer drives your hooks in a loop, then scores the result:

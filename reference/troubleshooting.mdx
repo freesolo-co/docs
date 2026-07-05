@@ -178,6 +178,16 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
     `algorithm` must be `sft` (the default) or `grpo`. Fix the value and
     re-validate with `--dry-run`.
   </Accordion>
+
+  <Accordion title="Run rejected: training context exceeds serving context">
+    Flash rejects a run at submit when its training context is longer than the
+    base model's serving context (`max_model_len`) — a LoRA trained longer than it
+    is served wastes compute and learns positions never used at inference. SFT
+    checks `train.max_length`; GRPO checks the rollout prompt plus `max_tokens`.
+    Most models serve at 8192; `Qwen/Qwen3.6-35B-A3B` serves at 4096. Lower
+    `max_length` (and, for GRPO, `max_tokens`) to at or below the serving context
+    — see [context window](/reference/models#context-window-and-lora-rank).
+  </Accordion>
 </AccordionGroup>
 
 ## Run fit and resource use

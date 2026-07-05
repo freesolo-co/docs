@@ -97,6 +97,10 @@ again.
 Serving is billed per token after deployment. Prompt, completion, and cached
 prompt token rates are listed in [Supported models](/reference/models#serving-prices).
 
+Serving a **base model with no adapter** (a base-model id in the `model` field) is
+billed the same way, to the org whose API key made the request — not to an adapter
+owner.
+
 Prefix caching is automatic; the cached prompt-token rate applies to a reused
 prefix. See [Billing](/guides/deploy-and-chat#billing) for how it works.
 

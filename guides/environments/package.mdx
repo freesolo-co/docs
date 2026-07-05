@@ -102,8 +102,10 @@ It prints the published id
 ## Use an existing environment
 
 If you already have a published env id (yours or one shared with you), reference
-it directly. You can also reference a GitHub environment source with a
-`github:owner/repo@ref:path` ref or a GitHub URL.
+it directly. A config `[environment] id` also accepts a `github:owner/repo@ref:path` ref or a
+GitHub URL, which Flash resolves at run time. `flash env pull` (below) takes
+managed `namespace/name` slugs only — it no longer accepts `github:` refs or
+GitHub URLs.
 
 ```toml
 [environment]
