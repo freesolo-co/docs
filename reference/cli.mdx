@@ -45,11 +45,26 @@ inline help.
 
 ## Environments
 
-<ResponseField name="flash env setup">
-  Scaffold a [starter project](/directory-structure) into the current directory: `environment.py`, a tiny
-  `dataset/train.jsonl`, `configs/sft.toml` (SFT) plus `configs/rl.toml` (GRPO),
-  and a `TRAINING.md` playbook for coding agents with current CLI usage, reward
-  guidance, and common run mitigations. Existing files are preserved.
+<ResponseField name="flash env setup [flags]">
+  Scaffold a [starter project](/directory-structure) into the current directory:
+  `environment.py`, a tiny `dataset/train.jsonl`, `configs/sft.toml` (SFT) plus
+  `configs/rl.toml` (GRPO), and a `TRAINING.md` playbook for coding agents with
+  current CLI usage, reward guidance, and common run mitigations. Existing files
+  are preserved.
+
+  On an interactive terminal it first runs a short survey — the interaction shape
+  (single- vs multi-turn) and whether to train with reasoning — then scaffolds to
+  match. The flags below skip the questions; a non-interactive run (no TTY, `CI`,
+  or `-y`) takes the defaults (single-turn, no reasoning). A flag that disagrees
+  with an already-scaffolded project is ignored with a warning.
+
+  | Flag | Default | Effect |
+  | --- | --- | --- |
+  | `--single-turn` | default | Scaffold an `EnvironmentSingleTurn` env (prompt → one response) |
+  | `--multi-turn` | - | Scaffold a bounded-episode `EnvironmentMultiTurn` starter (`start_episode` / `step_episode` / `max_episode_turns` / `score_episode`) with a matching dataset |
+  | `--reasoning` | - | Scaffold configs with reasoning on (`thinking = true`, and a raised GRPO `max_tokens`) |
+  | `--no-reasoning` | default | Scaffold configs without reasoning |
+  | `-y`, `--yes` | - | Accept the defaults without prompting |
 </ResponseField>
 
 <ResponseField name="flash env push --name NAME [PATH]">

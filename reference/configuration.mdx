@@ -69,7 +69,7 @@ Reserved platform secret names such as `FREESOLO_API_KEY`, `HF_TOKEN`,
 
 | Key | Type | Default | Description |
 | --- | --- | --- | --- |
-| `lora_rank` | int | `32` | LoRA rank; higher means a larger adapter with more capacity and cost. Use the default unless you have a reason to increase it; Flash validates deployability for the selected base model. |
+| `lora_rank` | int | `32` | LoRA rank; higher means a larger adapter with more capacity and cost. Use the default unless you have a reason to increase it. Flash caps rank per base model — 128 for the 0.8B/1B/2B tiers, 64 for the 4B/9B/35B — and rejects a higher `lora_rank` at submit. See [context window and LoRA rank](/reference/models#context-window-and-lora-rank). |
 | `lora_alpha` | int | `64` | LoRA alpha. |
 | `learning_rate` | float | recipe default | Optimizer learning rate. |
 | `batch_size` | int | recipe default | Training batch size. |

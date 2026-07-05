@@ -118,6 +118,26 @@ resp = client.chat.completions.create(
 print(resp.choices[0].message.content)
 ```
 
+## Chat with a base model (no adapter)
+
+You don't need a trained adapter to serve a catalog base model. Point the same
+OpenAI-compatible client at the serving endpoint and set `model` to a base-model
+id — any id from `flash models`, e.g. `Qwen/Qwen3.5-4B` — to generate against the
+base weights with no LoRA and no `flash deploy`:
+
+```python
+resp = client.chat.completions.create(
+    model="Qwen/Qwen3.5-4B",   # a base-model id, not a run id — no deploy needed
+    messages=[{"role": "user", "content": "Hello!"}],
+)
+```
+
+Any valid Freesolo API key reaches a base model — there is no adapter to own — and
+the tokens are **billed to your own org** at that model's
+[serving prices](/reference/models#serving-prices). Unlike a deployed adapter,
+which serves the reasoning behavior it was trained with, a base model honors the
+`enable_thinking` you pass in `chat_template_kwargs`.
+
 ## Export to your own HuggingFace repo
 
 Copy a trained adapter out of Freesolo's managed storage into a HuggingFace

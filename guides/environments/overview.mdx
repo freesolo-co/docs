@@ -27,6 +27,15 @@ tiny `dataset/train.jsonl`, two configs (`configs/sft.toml` for SFT and
 point at the project. The starter `load_environment()` returns a Freesolo
 `EnvironmentSingleTurn` with a sample dataset and reward.
 
+On an interactive terminal, `flash env setup` first runs a short survey: whether
+the model handles your task in a single turn or a bounded multi-turn episode, and
+whether to train with reasoning. Answer up front with `--single-turn` /
+`--multi-turn` and `--reasoning` / `--no-reasoning`, or pass `-y` to take the
+defaults (single-turn, no reasoning); non-interactive runs (no TTY or CI) always
+take the defaults. `--multi-turn` scaffolds a runnable `EnvironmentMultiTurn`
+starter with the episode hooks wired end-to-end instead of the single-turn class,
+and `--reasoning` sets `thinking = true` in both configs.
+
 ```python environment.py
 import json
 from pathlib import Path

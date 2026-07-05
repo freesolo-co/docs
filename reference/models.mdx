@@ -34,6 +34,22 @@ and hybrid reasoning ("thinking").
 | `Qwen/Qwen3.5-9B` | SFT, GRPO | Hybrid |
 | `Qwen/Qwen3.6-35B-A3B` | SFT, GRPO | Hybrid |
 
+## Context window and LoRA rank
+
+Each base model is served at a fixed **context window** (`max_model_len`) and
+accepts LoRA adapters up to a per-model **max rank**. `flash train` enforces both
+at submit: a config whose `max_length` (or GRPO rollout length) exceeds the served
+context, or whose `lora_rank` exceeds the cap, is rejected.
+
+| Model | Context window | Max LoRA rank |
+| --- | ---: | ---: |
+| `Qwen/Qwen3.5-0.8B` | 8192 | 128 |
+| `openbmb/MiniCPM5-1B` | 8192 | 128 |
+| `Qwen/Qwen3.5-2B` | 8192 | 128 |
+| `Qwen/Qwen3.5-4B` | 8192 | 64 |
+| `Qwen/Qwen3.5-9B` | 8192 | 64 |
+| `Qwen/Qwen3.6-35B-A3B` | 4096 | 64 |
+
 ## Serving prices
 
 Serving is billed per token after deployment. Prompt and completion tokens have
