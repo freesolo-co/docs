@@ -73,7 +73,7 @@ Reserved platform secret names such as `FREESOLO_API_KEY`, `HF_TOKEN`,
 | `lora_alpha` | int | `64` | LoRA alpha. |
 | `learning_rate` | float | recipe default | Optimizer learning rate. |
 | `batch_size` | int | recipe default | Training batch size. |
-| `max_length` | int | recipe default | Max sequence length. |
+| `max_length` | int | recipe default | Max sequence length. Can't exceed the base model's served context window (`max_model_len`); a run whose training context is longer is rejected at submit — SFT checks `max_length`, GRPO checks the rollout prompt plus `max_tokens`. See [context window](/reference/models#context-window-and-lora-rank). |
 | `save_every` | int | recipe default | Checkpoint cadence (steps). Every save is uploaded: if a save fires while a previous upload is still in flight it is queued (newest wins) and uploaded next, and the final checkpoint is flushed at train end — saves are not skipped on a slow uplink. |
 | `init_from_adapter` | string | - | Warm-start from an existing adapter. Use the run id that `flash status` prints, e.g. `init_from_adapter = "<run-id>"`. To warm-start from a saved checkpoint instead of the run-level adapter, use the exact short ref listed by `flash checkpoints`: `"<run-id>/step-N"`. Longer storage refs are rejected in config; use the short refs printed by Flash. |
 
