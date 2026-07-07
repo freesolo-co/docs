@@ -33,7 +33,10 @@ Per-step time reflects the work in a step: a GRPO step samples a group of
 completions, grades them with your reward, and updates the policy, so it scales
 with how many and how long those completions are (`batch_size × group_size ×
 max_tokens`); an SFT step is one forward/backward pass, priced on the training
-tokens counted from your environment. The estimator sizes the run's memory and
+tokens counted from your environment; an OPD step samples the model's completions
+and has the managed teacher grade them before updating, priced on GPU time like
+the others — the teacher runs on Freesolo's managed key, so its tokens are not
+billed to you. The estimator sizes the run's memory and
 prices the cheapest GPU class that fits — it does not pin a specific card, so the
 one actually provisioned (and its live `flash gpus` rate) can differ from the
 estimate.
@@ -47,18 +50,18 @@ Serving is priced separately, per token: `(prompt − cached) × input + complet
 You control the main levers in the config:
 
 - **[Base model](/reference/models).** Smaller models are cheaper and faster for smoke tests.
-- **[Algorithm](/guides/training#choose-sft-or-grpo).** SFT usually costs less than GRPO, which samples and scores
-  model completions before each update.
-- **Steps or epochs.** More SFT `epochs`, more GRPO `steps`, or a higher
-  `max_steps` cap increases cost.
+- **[Algorithm](/guides/training#choose-a-training-algorithm).** SFT usually costs least. GRPO and OPD both sample and
+  score the model's own completions before each update, so they cost more per
+  step. Every algorithm is billed on GPU time; OPD's managed teacher is not
+  billed to you.
+- **Steps or epochs.** More SFT `epochs`, more GRPO/OPD `steps`, or a higher
+  SFT `max_steps` cap increases cost.
 - **Sequence length.** Larger `max_length` and `max_tokens` increase work per
   example. Keep them large enough for your prompt and answer, but do not oversize them by default.
-- **GRPO group size.** `group_size` controls how many completions are sampled per
-  prompt. Larger groups give a stronger advantage estimate but cost more.
 - **Batch size and dataset size.** For SFT, cost scales with the number of
   examples trained over and the batch/epoch settings.
-- **GRPO group size.** `group_size` controls how many completions are sampled per
-  prompt. Larger groups give a stronger advantage estimate but cost more.
+- **On-policy sample count.** For GRPO and OPD, `group_size` controls how many
+  completions are sampled per prompt. Larger groups cost more.
 - **Reward latency.** If your GRPO reward calls an external model or service,
   slow grading can increase wall-clock time.
 

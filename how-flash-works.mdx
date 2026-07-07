@@ -77,12 +77,12 @@ Freesolo id. See the [Environment model](/environment-model) for the concepts, o
 [Environments](/guides/environments/overview) and [Datasets](/guides/datasets)
 to build one.
 
-### Two ways to teach: SFT and GRPO
+### Three ways to teach: SFT, GRPO, and OPD
 
-There are two ways to turn that environment into a better model, and you choose
+There are three ways to turn that environment into a better model, and you choose
 between them with one line of config.
 
-<CardGroup cols={2}>
+<CardGroup cols={3}>
   <Card title="SFT: learn by imitation" icon="copy">
     **Supervised fine-tuning.** You show the model good answers and it learns to
     reproduce them. Best when you already have examples of the behavior you
@@ -93,12 +93,19 @@ between them with one line of config.
     them, and the model is pushed toward the higher-scoring ones. Best when good
     output is easier to *score* than to *write out* by hand.
   </Card>
+  <Card title="OPD: learn from a teacher" icon="graduation-cap">
+    **On-policy distillation.** The model generates attempts and a stronger
+    teacher grades them token by token; the model is pulled toward the teacher.
+    Best when a bigger model already does the task and you want a small one to
+    match it — no answers to write, no reward to design.
+  </Card>
 </CardGroup>
 
-If you can hand the model a stack of ideal answers, start with **SFT**. If you
-can't write the answers but you _can_ tell a good one from a bad one, that
-scoring function is exactly what **GRPO** needs. See
-[Training](/guides/training#choose-sft-or-grpo).
+Pick by what you can supply. Have a stack of ideal answers? Start with **SFT**.
+Can't write the answers but can _score_ them? That scoring function is what
+**GRPO** needs. Can't do either, but a stronger model already does the task?
+**OPD** distills that teacher into your model. See
+[Training](/guides/training#choose-a-training-algorithm).
 
 ### Rewards and rollouts (GRPO)
 
@@ -112,6 +119,16 @@ GRPO can optimize toward it; if the task is so hard that every rollout scores
 zero, there's no signal to learn from, so start with a model and task where some
 attempts succeed.
 
+### The teacher (OPD)
+
+In OPD, a **teacher** — the managed GLM 5.2 model — grades your model's own
+completions token by token, and training pulls your model toward the teacher's
+distribution. Freesolo manages the teacher and its credentials, so there's
+nothing to set up and you don't pay for teacher tokens —
+only the GPU time the run uses. Because the signal only refines tokens your model
+already produces, OPD works best when you **warm-start from an SFT adapter** that
+already gets the format right; a cold OPD run tends to underperform plain SFT.
+
 ### Serving the result
 
 Deploy the adapter to call it. `flash deploy` registers your adapter with
@@ -123,8 +140,9 @@ and serving is billed per token. See [Deploy & chat](/guides/deploy-and-chat).
 Post-training fits when the task is narrow and you can define success. Good
 signs:
 
-- You have **examples** of the behavior you want (favor SFT), or a way to
-  **score** outputs even when you can't write them (favor GRPO).
+- You have **examples** of the behavior you want (favor SFT), a way to **score**
+  outputs even when you can't write them (favor GRPO), or a **stronger model**
+  that already does the task and can grade your model's work (favor OPD).
 - You want a **small, cheap model** to reliably do one job instead of paying for
   a frontier model on every call.
 - Prompting gets you _close_ but not **consistent** enough.
@@ -139,7 +157,7 @@ your environment sets the ceiling on what training can achieve.
     Train, deploy, and chat with your first model in a few minutes.
   </Card>
   <Card title="Training in depth" icon="dumbbell" href="/guides/training">
-    SFT vs GRPO, config options, monitoring, and cost.
+    SFT, GRPO, and OPD, config options, monitoring, and cost.
   </Card>
   <Card title="Build an environment" icon="flask" href="/guides/environments/overview">
     Turn your task into a dataset and a reward.

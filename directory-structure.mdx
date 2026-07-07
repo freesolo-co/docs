@@ -15,7 +15,8 @@ you can read, diff, and version-control. Rerunning is safe: existing files stay 
 │   └── train.jsonl       # a tiny starter dataset (input/output rows)
 ├── configs/
 │   ├── sft.toml          # an SFT (supervised) training config
-│   └── rl.toml           # a GRPO (RL) training config
+│   ├── rl.toml           # a GRPO (RL) training config
+│   └── opd.toml          # an OPD (distillation) training config
 └── TRAINING.md           # a playbook for the AI agent driving your runs
 ```
 
@@ -52,7 +53,7 @@ uploads the `dataset/` folder with the environment.
 
 ### configs/sft.toml
 
-**What it is:** an [SFT training config](/guides/training#choose-sft-or-grpo)
+**What it is:** an [SFT training config](/guides/training#choose-a-training-algorithm)
 for supervised fine-tuning on the `input`/`output` pairs in your environment's
 dataset. You set `model`, the `[environment] id`, and the `[train]` knobs
 (epochs, lora_rank); the
@@ -79,13 +80,27 @@ lora_rank = 32
 
 **What it is:** the same config shape with `algorithm = "grpo"`, for GRPO
 (RL) training that optimizes against your environment's `score_response`
-reward. Keep both and pick one at train time.
+reward. Keep the configs you need and pick one at train time.
 
 **When Flash reads it:** same as `sft.toml`; pass it to `flash train` to run
 GRPO instead of SFT.
 
 ```bash
 flash train configs/rl.toml
+```
+
+### configs/opd.toml
+
+**What it is:** the same config shape with `algorithm = "opd"`, for
+[on-policy distillation](/guides/training#choose-a-training-algorithm) — a managed
+teacher model grades your model's own completions and training pulls the model
+toward it. It is step-driven; warm-start from a finished SFT run with
+`init_from_adapter` for best results.
+
+**When Flash reads it:** same as `sft.toml`; pass it to `flash train` to run OPD.
+
+```bash
+flash train configs/opd.toml
 ```
 
 ### TRAINING.md

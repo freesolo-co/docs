@@ -46,6 +46,17 @@ you can score an output but can't hand-write the perfect one.
 algorithm = "grpo"
 ```
 
+### Distill a stronger model with OPD
+
+On-policy distillation has the managed GLM 5.2 teacher grade your model's own
+completions token by token, then pulls your model toward it. Use it when a bigger
+model already does the task and you want a small one to match it — no answers to
+write and no reward to design.
+
+```toml
+algorithm = "opd"
+```
+
 ### Serve it behind an OpenAI-compatible API
 
 `flash deploy` registers the adapter with managed serving, then
@@ -70,8 +81,9 @@ flash train config.toml --cost
 
 | I want to...                                     | Start here                                                                                     |
 | ------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
-| Fine-tune from examples I already have           | [Training: SFT](/guides/training#choose-sft-or-grpo)                                           |
-| Improve outputs I can score but can't hand-write | [Training: GRPO](/guides/training#choose-sft-or-grpo) and [Environments](/guides/environments/overview) |
+| Fine-tune from examples I already have           | [Training: SFT](/guides/training#choose-a-training-algorithm)                                           |
+| Improve outputs I can score but can't hand-write | [Training: GRPO](/guides/training#choose-a-training-algorithm) and [Environments](/guides/environments/overview) |
+| Match a stronger model without answers or a reward | [Training: OPD](/guides/training#choose-a-training-algorithm)                                         |
 | Define the task and reward my model learns on    | [Environments](/guides/environments/overview)                                                           |
 | Call my model from my existing OpenAI code       | [Deploy & chat](/guides/deploy-and-chat#use-it-from-your-own-code)                             |
 | Understand how a run works              | [How Flash works](/how-flash-works)                                                            |

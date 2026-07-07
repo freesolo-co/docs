@@ -22,9 +22,9 @@ flash env setup
 ```
 
 This scaffolds a starter project in the current directory: `environment.py`, a
-tiny `dataset/train.jsonl`, two configs (`configs/sft.toml` for SFT and
-`configs/rl.toml` for GRPO), and a `TRAINING.md` playbook for the coding agent you
-point at the project. The starter `load_environment()` returns a Freesolo
+tiny `dataset/train.jsonl`, three configs (`configs/sft.toml` for SFT,
+`configs/rl.toml` for GRPO, and `configs/opd.toml` for OPD), and a `TRAINING.md`
+playbook for the coding agent you point at the project. The starter `load_environment()` returns a Freesolo
 `EnvironmentSingleTurn` with a sample dataset and reward.
 
 On an interactive terminal, `flash env setup` first runs a short survey: whether
@@ -75,7 +75,8 @@ Replace the dataset and reward with your task:
 - [**Dataset**](/guides/datasets): the prompts (and any gold answers) your model trains and is
   evaluated on.
 - **Reward**: `score_response` returns a `RewardResult`. GRPO optimizes that
-  score; SFT trains directly on your dataset answers instead. See [how Flash
+  score; SFT trains directly on your dataset answers instead; OPD distills a
+  teacher's token-level grading of the model's own completions. See [how Flash
   works](/how-flash-works).
 
 For multi-turn tasks (conversations, tool use, agents), use `EnvironmentMultiTurn`
