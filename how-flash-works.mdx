@@ -121,10 +121,10 @@ attempts succeed.
 
 ### The teacher (OPD)
 
-In OPD, a **teacher** — a much larger hosted model — grades your model's own
+In OPD, a **teacher** — the managed GLM 5.2 model — grades your model's own
 completions token by token, and training pulls your model toward the teacher's
-distribution. Freesolo manages the teacher (a Fireworks-hosted GLM model) and its
-credentials, so there's nothing to set up and you don't pay for teacher tokens —
+distribution. Freesolo manages the teacher and its credentials, so there's
+nothing to set up and you don't pay for teacher tokens —
 only the GPU time the run uses. Because the signal only refines tokens your model
 already produces, OPD works best when you **warm-start from an SFT adapter** that
 already gets the format right; a cold OPD run tends to underperform plain SFT.

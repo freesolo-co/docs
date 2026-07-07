@@ -48,7 +48,7 @@ algorithm = "opd"
 - **`grpo`**: reinforcement learning, when there's no fixed answer to copy.
   Your environment's reward scores each completion.
 - **`opd`**: on-policy distillation, when a stronger model already does the task.
-  A managed teacher (a Fireworks-hosted GLM model) grades your model's own
+  The managed GLM 5.2 teacher grades your model's own
   completions token by token, and training pulls your model toward it — no answers
   to write and no reward to design. OPD refines a format-competent model rather
   than teaching the output contract from scratch, so **warm-start from an SFT

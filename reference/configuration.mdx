@@ -26,7 +26,7 @@ lora_rank = 32
 | Key | Type | Default | Description |
 | --- | --- | --- | --- |
 | `model` | string | (required) | Base model to train a LoRA adapter on, e.g. `Qwen/Qwen3.5-4B`. See [`flash models`](/reference/models). |
-| `algorithm` | string | `sft` | `sft` (supervised): imitates example completions you provide. `grpo` (RL): learns from a reward you define. `opd` (on-policy distillation): a managed teacher model grades your model's own completions. See [Choose a training algorithm](/guides/training#choose-a-training-algorithm). |
+| `algorithm` | string | `sft` | `sft` (supervised): imitates example completions you provide. `grpo` (RL): learns from a reward you define. `opd` (on-policy distillation): the managed GLM 5.2 teacher grades your model's own completions. See [Choose a training algorithm](/guides/training#choose-a-training-algorithm). |
 | `thinking` | bool | `false` | Enable reasoning mode (thinking-capable models only). The reasoning trace shares the `max_tokens` budget with the answer, so raise `max_tokens` (and `max_length`) when you enable it. See [Troubleshooting](/reference/troubleshooting). |
 
 ## `[environment]`
@@ -100,8 +100,9 @@ Reserved platform secret names such as `FREESOLO_API_KEY`, `HF_TOKEN`,
 
 ### OPD-specific
 
-OPD reuses the GRPO sampling knobs with distillation-tuned defaults, plus a
-teacher. It is step-driven (set `steps`, not `epochs`), and warm-starting from a
+OPD reuses the GRPO sampling knobs with distillation-tuned defaults. The teacher
+is always the managed GLM 5.2 model; it is not configurable in the training
+config. OPD is step-driven (set `steps`, not `epochs`), and warm-starting from a
 finished SFT run with [`init_from_adapter`](#train) is recommended.
 
 | Key | Type | Default | Description |
@@ -111,9 +112,11 @@ finished SFT run with [`init_from_adapter`](#train) is recommended.
 | `temperature` | float | `1.0` | Sampling temperature for the model's completions. |
 | `max_tokens` | int | `512` (`1536` with `thinking`) | Max tokens per completion. |
 | `kl_penalty_coef` | float | `1.0` | Strength of the reverse-KL pull toward the teacher. Must be greater than `0`. |
-| `teacher_model` | string | `accounts/fireworks/models/glm-5p2` | The distillation teacher. Defaults to the managed GLM-5.2; an override must name a supported teacher. Credentials are platform-managed — you never set a key, and teacher tokens are not billed to you (see [Cost and billing](/reference/cost-model#what-affects-training-cost)). |
 | `stop_sequences` | list[string] | - | Stop sequences for the model's completions. |
 
+`teacher_model` is not a supported config key. Teacher credentials are
+platform-managed — you never set a key, and teacher tokens are not billed to you
+(see [Cost and billing](/reference/cost-model#what-affects-training-cost)).
 `epochs`, `max_examples`, `max_steps`, `advantage_clip`, and
 `thinking_length_penalty_coef` do not apply to OPD.
 
