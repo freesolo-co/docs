@@ -175,7 +175,7 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
   </Accordion>
 
   <Accordion title="unsupported algorithm">
-    `algorithm` must be `sft` (the default) or `grpo`. Fix the value and
+    `algorithm` must be `sft` (the default), `grpo`, or `opd`. Fix the value and
     re-validate with `--dry-run`.
   </Accordion>
 
@@ -183,7 +183,8 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
     Flash rejects a run at submit when its training context is longer than the
     base model's serving context (`max_model_len`) — a LoRA trained longer than it
     is served wastes compute and learns positions never used at inference. SFT
-    checks `train.max_length`; GRPO checks the rollout prompt plus `max_tokens`.
+    checks `train.max_length`; GRPO and OPD check the rollout prompt plus
+    `max_tokens`.
     Most models serve at 8192; `Qwen/Qwen3.6-35B-A3B` serves at 4096. Lower
     `max_length` (and, for GRPO, `max_tokens`) to at or below the serving context
     — see [context window](/reference/models#context-window-and-lora-rank).
@@ -227,8 +228,8 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
 
   <Accordion title="Run submit reports insufficient balance">
     Add funds or reduce the run estimate before submitting again. Smaller base
-    models, fewer GRPO steps, lower `group_size`, shorter `max_tokens`, and SFT
-    smoke tests are the fastest ways to lower the pre-flight estimate.
+    models, fewer GRPO/OPD steps, lower `group_size`, shorter `max_tokens`, and
+    SFT smoke tests are the fastest ways to lower the pre-flight estimate.
   </Accordion>
 
 <Accordion title="GRPO reward is stuck at 0">
@@ -287,6 +288,22 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
     pre-opened tag is treated as prompt text.
 
 </Accordion>
+
+  <Accordion title="OPD run underperforms SFT, or its rollouts never terminate">
+    On-policy distillation refines a model that already has the format right; it
+    does not teach the output contract from scratch. Starting OPD from the cold
+    base model often underperforms plain SFT and shows up as truncated rollouts
+    that never reach a stop. **Warm-start from a finished SFT run** and let OPD
+    improve on it:
+
+    ```toml
+    [train]
+    init_from_adapter = "<sft-run-id>"   # or "<sft-run-id>/step-N"
+    ```
+
+    OPD supports single- and multi-turn environments but **not tool-calling
+    environments**, and `kl_penalty_coef` must be greater than `0`.
+  </Accordion>
 
   <Accordion title="Did pressing Ctrl-C kill my run?">
     No. `Ctrl-C` during `flash train` **detaches** you; the run keeps going

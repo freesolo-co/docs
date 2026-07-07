@@ -63,6 +63,7 @@ dataset/
 configs/
   sft.toml                # an SFT training config to start from
   rl.toml                 # a GRPO (RL) training config to start from
+  opd.toml                # an OPD (distillation) training config to start from
 TRAINING.md               # agent playbook with common run issues and mitigations
 ```
 
@@ -82,8 +83,8 @@ create an environment.py whose load_environment() returns an
 EnvironmentSingleTurn (use EnvironmentMultiTurn for multi-step tasks). Port my
 reward into score_response and wire my dataset in as the input/output records
 load_environment() returns. Then fill in the matching training config in
-configs/ (sft.toml for SFT, rl.toml for GRPO) with the base model and
-[train] settings.
+configs/ (sft.toml for SFT, rl.toml for GRPO, opd.toml for OPD) with the base
+model and [train] settings.
 ```
 
 </Accordion>
@@ -210,7 +211,7 @@ The commands you used above, plus the ones you'll reach for next. Run
     The loop behind a run, and the concepts each command refers to.
   </Card>
   <Card title="Training in depth" icon="dumbbell" href="/guides/training">
-    SFT vs GRPO, config options, monitoring, and cost.
+    SFT, GRPO, and OPD, config options, monitoring, and cost.
   </Card>
   <Card title="Build an environment" icon="flask" href="/guides/environments/overview">
     Replace the starter task with your own data and reward.

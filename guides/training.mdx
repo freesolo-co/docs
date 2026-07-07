@@ -25,7 +25,7 @@ Set your choice at the top of the config:
 model = "Qwen/Qwen3.5-4B"
 ```
 
-## Choose SFT or GRPO
+## Choose a training algorithm
 
 <CodeGroup>
 
@@ -37,14 +37,28 @@ algorithm = "sft"
 algorithm = "grpo"
 ```
 
+```toml OPD (distillation)
+algorithm = "opd"
+```
+
 </CodeGroup>
 
 - **`sft`**: supervised fine-tuning, when you already have the answers. The
   model imitates the prompt/answer pairs in your environment's [dataset](/guides/datasets).
 - **`grpo`**: reinforcement learning, when there's no fixed answer to copy.
   Your environment's reward scores each completion.
+- **`opd`**: on-policy distillation, when a stronger model already does the task.
+  A managed teacher (a Fireworks-hosted GLM model) grades your model's own
+  completions token by token, and training pulls your model toward it — no answers
+  to write and no reward to design. OPD refines a format-competent model rather
+  than teaching the output contract from scratch, so **warm-start from an SFT
+  adapter** (`init_from_adapter`) for best results; a cold OPD run tends to
+  underperform SFT. It supports single- and multi-turn environments (not
+  tool-calling ones), and the teacher's credentials are platform-managed — nothing
+  to set up, and teacher tokens aren't billed to you.
 
-Both are driven by the same [environment](/guides/environments/overview). See
+All three are driven by the same [environment](/guides/environments/overview), and
+`algorithm` defaults to `sft` when omitted. See
 [how Flash works](/how-flash-works) for the difference.
 
 ## Anatomy of a config
@@ -58,13 +72,14 @@ algorithm = "sft"
 id = "your-org/your-env"
 
 [train]
-epochs = 3                           # SFT is epoch-driven; GRPO is step-driven (set steps = N instead)
+epochs = 3                           # SFT is epoch-driven; GRPO and OPD are step-driven (set steps = N instead)
 max_examples = 1000                  # SFT: rows to train on (set to your dataset size)
 lora_rank = 32
 lora_alpha = 64
 # learning_rate = 1e-4
 # batch_size = 8
 # group_size = 8                     # GRPO: completions sampled per prompt
+# init_from_adapter = "<sft-run-id>" # OPD: warm-start from a finished SFT run
 
 [wandb]
 # project = "my-project"             # optional Weights & Biases logging

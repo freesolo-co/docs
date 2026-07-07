@@ -5,7 +5,7 @@ description: "Package task records and data files with Freesolo environments."
 
 Datasets live inside the [environment](/environment-model). A [Flash config](/reference/configuration) points at one published
 environment id. The environment's `load_environment()` function returns the
-dataset, prompt builder, and reward logic that Flash uses for [SFT, GRPO](/guides/training#choose-sft-or-grpo), and
+dataset, prompt builder, and reward logic that Flash uses for [SFT, GRPO, and OPD](/guides/training#choose-a-training-algorithm), and
 local validation.
 
 ```toml
@@ -27,7 +27,8 @@ The algorithm decides which column the model learns from. **SFT** trains
 directly on `output`, the gold answer. **GRPO** (RL) uses only `input`: the
 model generates its own answers from the prompt and learns from your reward.
 `output` is optional for GRPO, read only if your `score_response` uses it as a
-reference.
+reference. **OPD** also uses only `input`: the model generates its own answers and
+learns from a teacher's token-level grading rather than `output` or your reward.
 
 `load_task_examples(...)` accepts a local file path or an iterable of records.
 
@@ -150,6 +151,6 @@ external store and pass the identifier or URL through `[environment.params]`.
     Load these records inside an environment class.
   </Card>
   <Card title="Training" icon="dumbbell" href="/guides/training">
-    Train SFT or GRPO on your dataset.
+    Train SFT, GRPO, or OPD on your dataset.
   </Card>
 </CardGroup>
