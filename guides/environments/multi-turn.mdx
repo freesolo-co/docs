@@ -7,7 +7,9 @@ Use `EnvironmentMultiTurn` for tasks that take more than one response: a
 conversation, a tool-using agent, anything where the environment reacts to what
 the model just did and the model acts again. Subclass it and implement the
 episode hooks. GRPO rolls out the whole episode, then scores the finished
-trajectory.
+trajectory. OPD can use the same plain multi-turn loop and distills the
+student's assistant turns from the managed teacher; native tool-calling
+environments remain GRPO-only.
 
 | Single-turn (`EnvironmentSingleTurn`) | Multi-turn (`EnvironmentMultiTurn`)                                                                                                      |
 | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
@@ -237,12 +239,13 @@ plain function (importable without the trainer) makes it unit-testable.
 For multi-turn runs, the episode budget comes from `max_episode_turns`. What
 matters in `[train]`:
 
-- **`max_tokens`** is _per assistant action_ (one tool call or one reply), not per
-  episode — keep it modest.
-- **`max_length`** must hold the system prompt **plus the whole running transcript**
-  (every turn, every tool result), so set it well above a single-turn task.
+- **`max_completion_tokens`** is _per assistant action_ (one tool call or one
+  reply), not per episode — keep it modest.
+- **`max_context_tokens`** must hold the system prompt **plus the whole running
+  transcript** (every turn, every tool result), so set it well above a
+  single-turn task.
 - **`group_size`** is the number of full episodes rolled out per prompt for the
-  GRPO advantage estimate.
+  GRPO advantage estimate. OPD usually uses `group_size = 1`.
 
 ## Next steps
 

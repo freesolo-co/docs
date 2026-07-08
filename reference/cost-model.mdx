@@ -26,19 +26,20 @@ repriced to the training progress they reached.
 total = billable training hours × GPU $/hr
 ```
 
-Billable training time is the training loop only — `steps × per-step time`.
-Setup (container boot, dependency install, model load, and, for GRPO,
+Billable training time is the training loop only — derived optimizer steps times
+per-step time.
+Setup (container boot, dependency install, model load, and, for GRPO/OPD,
 inference-engine warmup) is reported as wall-clock time but is **not billed**.
 Per-step time reflects the work in a step: a GRPO step samples a group of
 completions, grades them with your reward, and updates the policy, so it scales
 with how many and how long those completions are (`batch_size × group_size ×
-max_tokens`); an SFT step is one forward/backward pass, priced on the training
-tokens counted from your environment; an OPD step samples the model's completions
-and has the managed teacher grade them before updating, priced on GPU time like
-the others — the teacher runs on Freesolo's managed key, so its tokens are not
-billed to you. The estimator sizes the run's memory and
-prices the cheapest GPU class that fits — it does not pin a specific card, so the
-one actually provisioned (and its live `flash gpus` rate) can differ from the
+max_completion_tokens`); an SFT step is one forward/backward pass, priced on the
+training tokens counted from your environment; an OPD step samples the model's
+completions and has the managed teacher grade them before updating, priced on
+GPU time like the others — the teacher runs on Freesolo's managed key, so its
+tokens are not billed to you. The estimator sizes the run's memory and prices
+the cheapest GPU class that fits — it does not pin a specific card, so the one
+actually provisioned (and its live `flash gpus` rate) can differ from the
 estimate.
 
 Serving is priced separately, per token: `(prompt − cached) × input + completion
@@ -54,10 +55,12 @@ You control the main levers in the config:
   score the model's own completions before each update, so they cost more per
   step. Every algorithm is billed on GPU time; OPD's managed teacher is not
   billed to you.
-- **Steps or epochs.** More SFT `epochs`, more GRPO/OPD `steps`, or a higher
-  SFT `max_steps` cap increases cost.
-- **Sequence length.** Larger `max_length` and `max_tokens` increase work per
-  example. Keep them large enough for your prompt and answer, but do not oversize them by default.
+- **Epochs and step caps.** More `epochs` increases cost for SFT, GRPO, and OPD.
+  For GRPO/OPD, Flash derives optimizer steps from `epochs`, the retained prompt
+  count, and `batch_size`. SFT also supports a `max_steps` cap.
+- **Sequence length.** Larger `max_context_tokens` and `max_completion_tokens`
+  increase work per example. Keep them large enough for your prompt and answer,
+  but do not oversize them by default.
 - **Batch size and dataset size.** For SFT, cost scales with the number of
   examples trained over and the batch/epoch settings.
 - **On-policy sample count.** For GRPO and OPD, `group_size` controls how many
@@ -86,6 +89,9 @@ TOTAL      : $0.21
 Treat the preview as the quote for the config you submit. If you edit the
 environment, dataset, model, algorithm, or `[train]` settings, run `--cost`
 again.
+
+For GRPO and OPD, the step count shown in the preview is derived from `epochs`,
+the retained prompt count, and the resolved prompts per step.
 
 ## Charges and cancellations
 
@@ -116,13 +122,13 @@ flash undeploy <run-id>
 ## Lowering cost
 
 - Start with a smaller base model while validating the [environment](/guides/environments/overview) and reward.
-- Run short smoke tests before scaling steps or epochs.
+- Run short smoke tests before scaling `epochs` or the retained dataset size.
 - For SFT, keep a held-out split and avoid extra epochs once held-out quality
   stops improving.
-- For GRPO, lower `group_size` and `max_tokens` until the reward/data wiring is
-  proven.
-- For thinking runs, raise `max_tokens` only enough for reasoning plus the final
-  answer.
+- For GRPO and OPD, lower `group_size` and `max_completion_tokens` until the
+  reward/data or teacher-distillation wiring is proven.
+- For thinking runs, raise `max_completion_tokens` only enough for reasoning plus
+  the final answer.
 - Use `flash checkpoints <run-id>` and deploy a good intermediate checkpoint
   instead of assuming the final step is always best.
 

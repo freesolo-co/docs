@@ -72,13 +72,15 @@ algorithm = "sft"
 id = "your-org/your-env"
 
 [train]
-epochs = 3                           # SFT is epoch-driven; GRPO and OPD are step-driven (set steps = N instead)
-max_examples = 1000                  # SFT: rows to train on (set to your dataset size)
+epochs = 3                           # passes over retained rows/prompts; GRPO/OPD derive optimizer steps from this
+max_examples = 1000                  # rows/prompts to retain before training
 lora_rank = 32
 lora_alpha = 64
 # learning_rate = 1e-4
 # batch_size = 8
 # group_size = 8                     # GRPO: completions sampled per prompt
+# max_completion_tokens = 512        # GRPO/OPD: generated tokens per rollout turn
+# max_context_tokens = 4096          # total prompt + completion context cap
 # init_from_adapter = "<sft-run-id>" # OPD: warm-start from a finished SFT run
 
 [wandb]
@@ -118,7 +120,7 @@ By default `flash train` follows the logs until the run finishes. Useful flags:
 
 ```bash
 # override values at submit time
-flash train config.toml --set train.steps=300 --set train.lora_rank=16
+flash train config.toml --set train.epochs=3 --set train.lora_rank=16
 ```
 
 ## Cost and billing

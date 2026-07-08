@@ -69,6 +69,10 @@ per-token rate. When a request hits the prefix cache, the response reports how
 many prompt tokens were served from cache in
 `usage.prompt_tokens_details.cached_tokens`.
 
+Serving meters prompt, completion, and cached prompt tokens from the response and
+bills the org atomically. Sub-cent usage is carried forward, so very small
+requests are still accounted for without rounding each request up to a cent.
+
 ## Chat from the CLI
 
 ```bash
@@ -100,8 +104,9 @@ flash undeploy <run-id>  # deregister the adapter from serving
 
 ## Use it from your own code
 
-Deployments are OpenAI-compatible. Point any OpenAI SDK at the
-endpoint from `flash deployments`. The `model` is your run id:
+Deployments are OpenAI-compatible. Point any OpenAI SDK at the endpoint from
+`flash deployments`. The `model` is your run id. A valid Freesolo API key is
+required, and the key's org must own the adapter named in `model`:
 
 ```python
 from openai import OpenAI
@@ -117,6 +122,9 @@ resp = client.chat.completions.create(
 )
 print(resp.choices[0].message.content)
 ```
+
+For deployed adapters, serving preserves the run's trained thinking mode. A
+caller cannot override `enable_thinking` per request for an adapter.
 
 ## Chat with a base model (no adapter)
 
@@ -137,6 +145,14 @@ the tokens are **billed to your own org** at that model's
 [serving prices](/reference/models#serving-prices). Unlike a deployed adapter,
 which serves the reasoning behavior it was trained with, a base model honors the
 `enable_thinking` you pass in `chat_template_kwargs`.
+
+```python
+resp = client.chat.completions.create(
+    model="Qwen/Qwen3.5-4B",
+    messages=[{"role": "user", "content": "Answer directly: 17 * 19"}],
+    extra_body={"chat_template_kwargs": {"enable_thinking": False}},
+)
+```
 
 ## Export to your own HuggingFace repo
 
