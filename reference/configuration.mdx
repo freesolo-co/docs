@@ -27,7 +27,7 @@ lora_rank = 32
 | --- | --- | --- | --- |
 | `model` | string | (required) | Base model to train a LoRA adapter on, e.g. `Qwen/Qwen3.5-4B`. See [`flash models`](/reference/models). |
 | `algorithm` | string | `sft` | `sft` (supervised): imitates example completions you provide. `grpo` (RL): learns from a reward you define. `opd` (on-policy distillation): the managed GLM 5.2 teacher grades your model's own completions. See [Choose a training algorithm](/guides/training#choose-a-training-algorithm). |
-| `thinking` | bool | `false` | Enable reasoning mode (thinking-capable models only). The reasoning trace shares the `max_tokens` budget with the answer, so raise `max_tokens` (and `max_length`) when you enable it. See [Troubleshooting](/reference/troubleshooting). |
+| `thinking` | bool | `false` | Enable reasoning mode (thinking-capable models only). The reasoning trace shares the `max_completion_tokens` budget with the answer, so raise `max_completion_tokens` (and `max_context_tokens` when needed) when you enable it. See [Troubleshooting](/reference/troubleshooting). |
 
 ## `[environment]`
 
@@ -73,7 +73,7 @@ Reserved platform secret names such as `FREESOLO_API_KEY`, `HF_TOKEN`,
 | `lora_alpha` | int | `64` | LoRA alpha. |
 | `learning_rate` | float | recipe default | Optimizer learning rate. |
 | `batch_size` | int | recipe default | Training batch size. |
-| `max_length` | int | recipe default | Max sequence length. Can't exceed the base model's served context window (`max_model_len`); a run whose training context is longer is rejected at submit — SFT checks `max_length`, while GRPO and OPD check the rollout prompt plus `max_tokens`. See [context window](/reference/models#context-window-and-lora-rank). |
+| `max_context_tokens` | int | recipe default | Total training context cap. Can't exceed the base model's served context window (`max_model_len`); a run whose training context is longer is rejected at submit. SFT checks the rendered training sequence, while GRPO and OPD check the rollout prompt plus `max_completion_tokens`. See [context window](/reference/models#context-window-and-lora-rank). |
 | `save_every` | int | recipe default | Checkpoint cadence (steps). Every save is uploaded: if a save fires while a previous upload is still in flight it is queued (newest wins) and uploaded next, and the final checkpoint is flushed at train end — saves are not skipped on a slow uplink. |
 | `init_from_adapter` | string | - | Warm-start from an existing adapter. Use the run id that `flash status` prints, e.g. `init_from_adapter = "<run-id>"`. To warm-start from a saved checkpoint instead of the run-level adapter, use the exact short ref listed by `flash checkpoints`: `"<run-id>/step-N"`. Longer storage refs are rejected in config; use the short refs printed by Flash. |
 
@@ -81,7 +81,7 @@ Reserved platform secret names such as `FREESOLO_API_KEY`, `HF_TOKEN`,
 
 | Key | Type | Description |
 | --- | --- | --- |
-| `epochs` | int | Number of epochs (alternative to GRPO `steps`). |
+| `epochs` | int | Number of passes over the retained training rows. |
 | `max_steps` | int | cap on optimizer steps (`0` = no cap). |
 | `max_examples` | int | Truncate the training dataset to N examples (`0` = no cap). |
 
@@ -89,10 +89,11 @@ Reserved platform secret names such as `FREESOLO_API_KEY`, `HF_TOKEN`,
 
 | Key | Type | Description |
 | --- | --- | --- |
-| `steps` | int | Number of training steps (default 150). |
-| `group_size` | int | Completions sampled per prompt. |
+| `epochs` | int | Number of passes over the retained prompt pool. Flash derives optimizer steps from `epochs`, `max_examples`, and `batch_size`. |
+| `max_examples` | int | Truncate the prompt pool to N examples (`0` = no cap). |
+| `group_size` | int | Completions sampled per prompt. Must be at least `2`. |
 | `temperature` | float | Sampling temperature for rollouts. |
-| `max_tokens` | int | Max tokens per rollout completion. |
+| `max_completion_tokens` | int | Max generated tokens per rollout completion or assistant turn. |
 | `kl_penalty_coef` | float | Strength of the penalty that keeps the trained model from drifting too far from the base model. |
 | `advantage_clip` | float | Recorded for recipe parity but currently a no-op (TRL clips the importance ratio, not the advantage value). |
 | `thinking_length_penalty_coef` | float | Penalty on reasoning length. |
@@ -102,23 +103,26 @@ Reserved platform secret names such as `FREESOLO_API_KEY`, `HF_TOKEN`,
 
 OPD reuses the GRPO sampling knobs with distillation-tuned defaults. The teacher
 is always the managed GLM 5.2 model; it is not configurable in the training
-config. OPD is step-driven (set `steps`, not `epochs`), and warm-starting from a
-finished SFT run with [`init_from_adapter`](#train) is recommended.
+config. OPD is configured with `epochs`: Flash makes that many passes over the
+retained prompt pool and derives the optimizer-step count from `max_examples`
+and `batch_size`. Warm-starting from a finished SFT run with
+[`init_from_adapter`](#train) is recommended.
 
 | Key | Type | Default | Description |
 | --- | --- | --- | --- |
-| `steps` | int | `100` | Number of training steps. |
+| `epochs` | int | recipe default | Number of passes over the retained prompt pool. |
+| `max_examples` | int | `0` | Truncate the prompt pool to N examples (`0` = no cap). |
 | `group_size` | int | `1` | Completions the model samples per prompt; one is usually enough for distillation. |
 | `temperature` | float | `1.0` | Sampling temperature for the model's completions. |
-| `max_tokens` | int | `512` (`1536` with `thinking`) | Max tokens per completion. |
+| `max_completion_tokens` | int | `512` (`1536` with `thinking`) | Max generated tokens per completion or assistant turn. |
 | `kl_penalty_coef` | float | `1.0` | Strength of the reverse-KL pull toward the teacher. Must be greater than `0`. |
 | `stop_sequences` | list[string] | - | Stop sequences for the model's completions. |
 
 `teacher_model` is not a supported config key. Teacher credentials are
 platform-managed — you never set a key, and teacher tokens are not billed to you
 (see [Cost and billing](/reference/cost-model#what-affects-training-cost)).
-`epochs`, `max_examples`, `max_steps`, `advantage_clip`, and
-`thinking_length_penalty_coef` do not apply to OPD.
+`max_steps`, `advantage_clip`, and `thinking_length_penalty_coef` do not apply to
+OPD.
 
 ## Managed infrastructure
 
@@ -156,7 +160,7 @@ Set any value at submit time without editing the file. The override flag is
 `--set` (repeatable, dotted keys):
 
 ```bash
-flash train config.toml --set train.steps=300 --set train.lora_rank=16
+flash train config.toml --set train.epochs=3 --set train.lora_rank=16
 flash train base.toml --config overlay.toml      # deep-merge extra TOML
 ```
 

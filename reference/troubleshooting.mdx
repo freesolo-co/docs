@@ -183,10 +183,11 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
     Flash rejects a run at submit when its training context is longer than the
     base model's serving context (`max_model_len`) — a LoRA trained longer than it
     is served wastes compute and learns positions never used at inference. SFT
-    checks `train.max_length`; GRPO and OPD check the rollout prompt plus
-    `max_tokens`.
+    checks `train.max_context_tokens`; GRPO and OPD check the rollout prompt
+    plus `max_completion_tokens`.
     Most models serve at 8192; `Qwen/Qwen3.6-35B-A3B` serves at 4096. Lower
-    `max_length` (and, for GRPO, `max_tokens`) to at or below the serving context
+    `max_context_tokens` (and, for GRPO/OPD, `max_completion_tokens`) to at or
+    below the serving context
     — see [context window](/reference/models#context-window-and-lora-rank).
   </Accordion>
 </AccordionGroup>
@@ -198,14 +199,15 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
     Expected. GRPO samples multiple completions, scores them, and updates from
     that group of attempts. For the same model, it usually needs more room and
     costs more than SFT. If a GRPO run is too expensive or too large, use a
-    smaller model, reduce `group_size`, reduce `max_tokens`, reduce `max_length`,
-    or start with SFT.
+    smaller model, reduce `group_size`, reduce `max_completion_tokens`, reduce
+    `max_context_tokens`, or start with SFT.
   </Accordion>
 
   <Accordion title="Pre-flight says the run is too large">
     The usual causes are long context, long generated completions, a large GRPO
     `group_size`, or a larger base model than the task needs. Reduce
-    `max_length`, `max_tokens`, or `group_size`, or switch to a smaller model.
+    `max_context_tokens`, `max_completion_tokens`, or `group_size`, or switch to
+    a smaller model.
     If you recently enabled `thinking = true`, reasoning and the final answer
     share the same token budget.
   </Accordion>
@@ -228,8 +230,9 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
 
   <Accordion title="Run submit reports insufficient balance">
     Add funds or reduce the run estimate before submitting again. Smaller base
-    models, fewer GRPO/OPD steps, lower `group_size`, shorter `max_tokens`, and
-    SFT smoke tests are the fastest ways to lower the pre-flight estimate.
+    models, fewer GRPO/OPD epochs, lower `group_size`, shorter
+    `max_completion_tokens`, and SFT smoke tests are the fastest ways to lower
+    the pre-flight estimate.
   </Accordion>
 
 <Accordion title="GRPO reward is stuck at 0">
@@ -247,16 +250,18 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
 
 <Accordion title="Reward collapses to ~0 with `thinking = true`">
   When `thinking = true`, the model emits a reasoning trace **before** its answer,
-  and that trace counts against the **same `max_tokens` budget** as the answer. A
-  `max_tokens` tuned for a non-thinking run is usually too small once reasoning is
-  added: the reasoning eats the budget and the actual answer is truncated or never
-  emitted. If your reward parses the answer (e.g. extracts a JSON object), it then
-  sees nothing and scores ~0 across the board — even though the model is "working".
+  and that trace counts against the **same `max_completion_tokens` budget** as
+  the answer. A `max_completion_tokens` tuned for a non-thinking run is usually
+  too small once reasoning is added: the reasoning eats the budget and the actual
+  answer is truncated or never emitted. If your reward parses the answer (e.g.
+  extracts a JSON object), it then sees nothing and scores ~0 across the board —
+  even though the model is "working".
 
   Fixes:
-  - **Raise `max_tokens`** so the reasoning *and* the answer both fit (e.g. a task
-    that needs ~200 answer tokens may need `max_tokens = 2048` with thinking on),
-    and make sure `max_length` is large enough to hold the prompt plus that budget.
+  - **Raise `max_completion_tokens`** so the reasoning *and* the answer both fit
+    (e.g. a task that needs ~200 answer tokens may need
+    `max_completion_tokens = 2048` with thinking on), and make sure
+    `max_context_tokens` is large enough to hold the prompt plus that budget.
   - Optionally set `thinking_length_penalty_coef` to nudge the model toward shorter
     reasoning so the answer reliably lands inside the budget.
   - Score the answer text by default. In thinking mode `response_text` remains
@@ -330,7 +335,7 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
     ultimately succeeds, the charge remains the quoted Flash cost. Watch logs
     with `flash log <run-id> -f` or poll status with `flash status <run-id> -f`.
     If the same shape repeatedly fails before useful metrics, reduce
-    `max_length`, `max_tokens`, or `group_size`.
+    `max_context_tokens`, `max_completion_tokens`, or `group_size`.
   </Accordion>
 </AccordionGroup>
 

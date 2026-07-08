@@ -159,7 +159,7 @@ flash log <run-id> -f     # stream logs until the run finishes
 The run reaches `done` when training finishes.
 
 Start small: finish one short run end to end before you scale up. When you do,
-raise `train.steps` and change little else.
+raise `train.epochs` or `train.max_examples` and change little else.
 
 ## Step 7: Deploy
 

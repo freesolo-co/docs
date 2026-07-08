@@ -40,8 +40,9 @@ and hybrid reasoning ("thinking").
 
 Each base model is served at a fixed **context window** (`max_model_len`) and
 accepts LoRA adapters up to a per-model **max rank**. `flash train` enforces both
-at submit: a config whose `max_length` (or GRPO/OPD rollout length) exceeds the
-served context, or whose `lora_rank` exceeds the cap, is rejected.
+at submit: a config whose `max_context_tokens` exceeds the served context, whose
+GRPO/OPD prompt plus `max_completion_tokens` cannot fit, or whose `lora_rank`
+exceeds the cap, is rejected.
 
 | Model | Context window | Max LoRA rank |
 | --- | ---: | ---: |
@@ -51,6 +52,21 @@ served context, or whose `lora_rank` exceeds the cap, is rejected.
 | `Qwen/Qwen3.5-4B` | 8192 | 64 |
 | `Qwen/Qwen3.5-9B` | 8192 | 64 |
 | `Qwen/Qwen3.6-35B-A3B` | 4096 | 64 |
+
+## Serving capacity
+
+Managed serving keeps one engine per base-model tier and loads trained adapters
+as LoRA slots on that tier. The smaller catalog models serve on Modal L4
+instances; the 35B model serves on an A100-80GB tier.
+
+| Model | Serving GPU | Served context | Hot LoRA slots |
+| --- | --- | ---: | ---: |
+| `Qwen/Qwen3.5-0.8B` | L4 | 8192 | 16 |
+| `openbmb/MiniCPM5-1B` | L4 | 8192 | 16 |
+| `Qwen/Qwen3.5-2B` | L4 | 8192 | 16 |
+| `Qwen/Qwen3.5-4B` | L4 | 8192 | 16 |
+| `Qwen/Qwen3.5-9B` | L4 | 8192 | 16 |
+| `Qwen/Qwen3.6-35B-A3B` | A100-80GB | 4096 | 6 |
 
 ## Serving prices
 

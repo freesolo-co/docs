@@ -23,13 +23,14 @@ Every environment bundles three things behind one `load_environment()` entrypoin
   </Card>
   <Card title="A reward" icon="trophy">
     `score_response` looks at an answer and returns a `RewardResult` score. This
-    score is the teacher.
+    score is the GRPO signal.
   </Card>
 </CardGroup>
 
 The same environment drives **SFT** (learn from gold answers), **GRPO** (learn
-from reward scores), **and eval**. Swap one line in the config; the environment
-stays put.
+from reward scores), **OPD** (practice on the prompts while a managed teacher
+scores the model's tokens), and **eval**. Swap one line in the config; the
+environment stays put.
 
 For SFT, each row's `output` is the gold completion Flash trains on, appended
 after the environment's initial episode so system prompts and tool transcripts
@@ -65,7 +66,8 @@ The environment supplies two of the loop's steps:
   </Step>
   <Step title="Your reward scores it">
     `score_response` returns a `RewardResult`. That score is the signal the
-    algorithm learns from.
+    GRPO algorithm learns from. OPD uses the same prompt/interaction loop, but
+    its learning signal comes from the managed teacher instead of your reward.
   </Step>
 </Steps>
 

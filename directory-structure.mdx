@@ -94,7 +94,8 @@ flash train configs/rl.toml
 **What it is:** the same config shape with `algorithm = "opd"`, for
 [on-policy distillation](/guides/training#choose-a-training-algorithm) — a managed
 teacher model grades your model's own completions and training pulls the model
-toward it. It is step-driven; warm-start from a finished SFT run with
+toward it. It uses `epochs` over the retained prompt pool, and Flash derives the
+optimizer-step count internally. Warm-start from a finished SFT run with
 `init_from_adapter` for best results.
 
 **When Flash reads it:** same as `sft.toml`; pass it to `flash train` to run OPD.
