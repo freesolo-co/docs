@@ -306,6 +306,30 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
     init_from_adapter = "<sft-run-id>"   # or "<sft-run-id>/step-N"
     ```
 
+    **Check the teacher, not just the warm-start.** OPD can only pull your model
+    *toward* the managed GLM 5.2 teacher, so if the teacher isn't strong on your
+    specific task, distillation copies its mistakes and can land the student
+    *below* SFT — a falling per-token loss just means it matched a weak teacher.
+    Before you re-run, roll GLM 5.2 through your own environment on a held-out
+    split and confirm it clearly beats your model *and* solves the task the way you
+    want; if it doesn't, this is a job for GRPO or SFT, not OPD.
+
+    **Rollouts that never terminate are usually a verbose teacher.** The
+    cross-tokenizer reverse-KL is computed over shared decoded text and can't
+    supervise the zero-width stop token, so distilling toward a long-winded teacher
+    erodes termination and completions run to `max_completion_tokens`. Two
+    complementary fixes:
+
+    - Raise [`opd_eos_loss_coef`](/reference/configuration#opd-specific) (a bounded
+      terminal-EOS reinforcement) and warm-start from SFT — watch `truncated_rollouts`
+      fall in the run metrics.
+    - Shrink what has to terminate by constraining the *teacher's* reasoning at the
+      source. The teacher scores your model conditioned on your environment's system
+      prompt, so a **hard, specific** reasoning budget there ("reason in at most N
+      sentences, then act; don't reconsider") pulls the distillation target shorter.
+      A vague "be brief" can backfire on a reasoning teacher — it trims the median
+      while inflating the long tail, which is the tail that drives runaway.
+
     OPD supports single- and multi-turn environments but **not tool-calling
     environments**, and `kl_penalty_coef` must be greater than `0`.
   </Accordion>
