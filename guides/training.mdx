@@ -50,7 +50,11 @@ algorithm = "opd"
 - **`opd`**: on-policy distillation, when a stronger model already does the task.
   The managed GLM 5.2 teacher grades your model's own
   completions token by token, and training pulls your model toward it — no answers
-  to write and no reward to design. OPD refines a format-competent model rather
+  to write and no reward to design. Because training only pulls your model *toward*
+  the teacher, **the teacher is the ceiling**: pick OPD only when GLM 5.2 clearly
+  does *your* task better than your model already does, and confirm that first (see
+  the note below) — distilling from a teacher that's weak on the task copies its
+  mistakes in and can land *below* SFT. OPD refines a format-competent model rather
   than teaching the output contract from scratch, so **warm-start from an SFT
   adapter** (`init_from_adapter`) for best results; a cold OPD run tends to
   underperform SFT. It supports single- and multi-turn environments (not
@@ -60,6 +64,20 @@ algorithm = "opd"
 All three are driven by the same [environment](/guides/environments/overview), and
 `algorithm` defaults to `sft` when omitted. See
 [how Flash works](/how-flash-works) for the difference.
+
+<Note>
+  **Before an OPD run, check the teacher's quality on your task.** OPD's ceiling is
+  the teacher, so run GLM 5.2 through your own environment on a held-out split and
+  read both its score and a few of its trajectories first. If it isn't clearly
+  better than your model — or solves the task a way your environment can't reward —
+  distillation copies that in and can make your model worse; use GRPO or SFT
+  instead. If the teacher over-reasons and your rollouts run long, constrain its
+  reasoning at the source with a **hard, specific** budget in your environment's
+  system prompt (e.g. "reason in at most two or three sentences, then act; don't
+  reconsider") — a vague "be brief" tends to backfire on a reasoning model,
+  trimming the median while inflating the long tail. See
+  [Troubleshooting](/reference/troubleshooting) for the termination/runaway case.
+</Note>
 
 ## Anatomy of a config
 

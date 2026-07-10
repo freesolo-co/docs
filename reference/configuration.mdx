@@ -116,6 +116,7 @@ and `batch_size`. Warm-starting from a finished SFT run with
 | `temperature` | float | `1.0` | Sampling temperature for the model's completions. |
 | `max_completion_tokens` | int | `512` (`1536` with `thinking`) | Max generated tokens per completion or assistant turn. |
 | `kl_penalty_coef` | float | `1.0` | Strength of the reverse-KL pull toward the teacher. Must be greater than `0`. |
+| `opd_eos_loss_coef` | float | `0.5` | Terminal-EOS reinforcement. The cross-tokenizer reverse-KL can't supervise the zero-width stop token, so distilling toward a verbose teacher erodes termination; this bounded, self-limiting term reinstates the stop signal on rollouts that ended naturally. Raise it if completions run past the length cap without stopping (`truncated_rollouts` stays high); `0` disables it. |
 | `stop_sequences` | list[string] | - | Stop sequences for the model's completions. |
 
 `teacher_model` is not a supported config key. Teacher credentials are
