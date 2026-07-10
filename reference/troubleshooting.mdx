@@ -307,12 +307,14 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
     ```
 
     **Check the teacher, not just the warm-start.** OPD can only pull your model
-    *toward* the managed GLM 5.2 teacher, so if the teacher isn't strong on your
-    specific task, distillation copies its mistakes and can land the student
-    *below* SFT — a falling per-token loss just means it matched a weak teacher.
-    Before you re-run, roll GLM 5.2 through your own environment on a held-out
-    split and confirm it clearly beats your model *and* solves the task the way you
-    want; if it doesn't, this is a job for GRPO or SFT, not OPD.
+    *toward* its teacher — the managed GLM 5.2 by default, or the one you set with
+    `teacher_model` — so if that teacher isn't strong on your specific task,
+    distillation copies its mistakes and can land the student *below* SFT — a
+    falling per-token loss just means it matched a weak teacher. Before you re-run,
+    roll that teacher through your own environment on a held-out split and confirm
+    it clearly beats your model *and* solves the task the way you want; if it
+    doesn't, this is a job for GRPO or SFT, not OPD — or try a different allow-listed
+    `teacher_model`.
 
     **Rollouts that never terminate are usually a verbose teacher.** The
     cross-tokenizer reverse-KL is computed over shared decoded text and can't

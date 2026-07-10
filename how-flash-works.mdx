@@ -121,7 +121,8 @@ attempts succeed.
 
 ### The teacher (OPD)
 
-In OPD, a **teacher** — the managed GLM 5.2 model — grades your model's own
+In OPD, a **teacher** — a managed model, GLM 5.2 by default or another you pick
+with `teacher_model` — grades your model's own
 completions token by token, and training pulls your model toward the teacher's
 distribution. Freesolo manages the teacher and its credentials, so there's
 nothing to set up and you don't pay for teacher tokens —

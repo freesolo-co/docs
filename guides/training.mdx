@@ -48,18 +48,19 @@ algorithm = "opd"
 - **`grpo`**: reinforcement learning, when there's no fixed answer to copy.
   Your environment's reward scores each completion.
 - **`opd`**: on-policy distillation, when a stronger model already does the task.
-  The managed GLM 5.2 teacher grades your model's own
-  completions token by token, and training pulls your model toward it — no answers
-  to write and no reward to design. Because training only pulls your model *toward*
-  the teacher, **the teacher is the ceiling**: pick OPD only when GLM 5.2 clearly
-  does *your* task better than your model already does, and confirm that first (see
-  the note below) — distilling from a teacher that's weak on the task copies its
+  A managed teacher — **GLM 5.2 by default**, or another you pick with
+  `teacher_model` — grades your model's own completions token by token, and
+  training pulls your model toward it — no answers to write and no reward to
+  design. Because training only pulls your model *toward* the teacher, **the
+  teacher is the ceiling**: pick OPD only when your chosen teacher clearly does
+  *your* task better than your model already does, and confirm that first (see the
+  note below) — distilling from a teacher that's weak on the task copies its
   mistakes in and can land *below* SFT. OPD refines a format-competent model rather
   than teaching the output contract from scratch, so **warm-start from an SFT
   adapter** (`init_from_adapter`) for best results; a cold OPD run tends to
   underperform SFT. It supports single- and multi-turn environments (not
-  tool-calling ones), and the teacher's credentials are platform-managed — nothing
-  to set up, and teacher tokens aren't billed to you.
+  tool-calling ones), and the teacher's credentials are platform-managed for every
+  allowed teacher — nothing to set up, and teacher tokens aren't billed to you.
 
 All three are driven by the same [environment](/guides/environments/overview), and
 `algorithm` defaults to `sft` when omitted. See
@@ -67,7 +68,8 @@ All three are driven by the same [environment](/guides/environments/overview), a
 
 <Note>
   **Before an OPD run, check the teacher's quality on your task.** OPD's ceiling is
-  the teacher, so run GLM 5.2 through your own environment on a held-out split and
+  the teacher, so run your chosen teacher — GLM 5.2 by default, or the one you set
+  with `teacher_model` — through your own environment on a held-out split and
   read both its score and a few of its trajectories first. If it isn't clearly
   better than your model — or solves the task a way your environment can't reward —
   distillation copies that in and can make your model worse; use GRPO or SFT
@@ -100,10 +102,17 @@ lora_alpha = 64
 # max_completion_tokens = 512        # GRPO/OPD: generated tokens per rollout turn
 # max_context_tokens = 4096          # total prompt + completion context cap
 # init_from_adapter = "<sft-run-id>" # OPD: warm-start from a finished SFT run
+# teacher_model = "glm-5.2"          # OPD: managed teacher (glm-5.2 | deepseek-v4-pro | kimi-k2.6)
+# structured_outputs = '{"type":"object","properties":{"answer":{"type":"string"}},"required":["answer"]}'  # GRPO/OPD: guided decoding
 
 [wandb]
 # project = "my-project"             # optional Weights & Biases logging
 ```
+
+To force every GRPO or OPD rollout into valid JSON — or a regex or a fixed choice
+set — so your reward scores content instead of formatting, set
+`structured_outputs`. See the [Structured outputs](/guides/structured-outputs)
+guide.
 
 ## Infrastructure is managed
 
@@ -172,6 +181,14 @@ flash cancel <run-id>     # cancel a run
 
 When a run reaches `done`, serve it with
 [`flash deploy`](/guides/deploy-and-chat) and talk to it with `flash chat`.
+
+<Note>
+  Deploy or [export](/guides/deploy-and-chat#export-to-your-own-huggingface-repo) a
+  run you want to keep. Freesolo's managed storage garbage-collects a run's
+  checkpoints and final adapter about **7 days** after its last activity when the
+  run was never deployed — a deployed run, or one that another run warm-started
+  from, is kept. Exporting copies the adapter into a HuggingFace repo you own.
+</Note>
 
 ## Next steps
 

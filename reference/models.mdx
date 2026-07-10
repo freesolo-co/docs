@@ -57,7 +57,7 @@ exceeds the cap, is rejected.
 
 Managed serving keeps one engine per base-model tier and loads trained adapters
 as LoRA slots on that tier. The smaller catalog models serve on Modal L4
-instances; the 35B model serves on an A100-80GB tier.
+instances; the 35B model serves on an H200 tier.
 
 | Model | Serving GPU | Served context | Hot LoRA slots |
 | --- | --- | ---: | ---: |
@@ -66,7 +66,7 @@ instances; the 35B model serves on an A100-80GB tier.
 | `Qwen/Qwen3.5-2B` | L4 | 8192 | 16 |
 | `Qwen/Qwen3.5-4B` | L4 | 8192 | 16 |
 | `Qwen/Qwen3.5-9B` | L4 | 8192 | 16 |
-| `Qwen/Qwen3.6-35B-A3B` | A100-80GB | 4096 | 6 |
+| `Qwen/Qwen3.6-35B-A3B` | H200 | 4096 | 6 |
 
 ## Serving prices
 

@@ -126,6 +126,37 @@ print(resp.choices[0].message.content)
 For deployed adapters, serving preserves the run's trained thinking mode. A
 caller cannot override `enable_thinking` per request for an adapter.
 
+## Structured outputs
+
+Constrain a response to valid JSON — or a fixed set of choices, or a regex — with
+the OpenAI-standard `response_format`, so the model can't drift off format. It
+works on any deployed adapter or base model through the same OpenAI-compatible
+client:
+
+```python
+resp = client.chat.completions.create(
+    model="<run-id>",
+    messages=[{"role": "user", "content": "Give me a person as JSON."}],
+    response_format={
+        "type": "json_schema",
+        "json_schema": {
+            "schema": {
+                "type": "object",
+                "properties": {"name": {"type": "string"}, "age": {"type": "integer"}},
+                "required": ["name", "age"],
+            }
+        },
+    },
+)
+```
+
+`{"type": "json_object"}` forces any valid JSON with no fixed schema, and
+`{"type": "text"}` (the default) leaves output unconstrained. Guided decoding
+binds from the first generated token, so use it with a non-thinking deployment —
+or pass `enable_thinking: false` on a base model — when you want strictly
+formatted output. See the [Structured outputs](/guides/structured-outputs) guide
+to also constrain training rollouts.
+
 ## Chat with a base model (no adapter)
 
 You don't need a trained adapter to serve a catalog base model. Point the same

@@ -1,0 +1,146 @@
+---
+title: "Structured outputs"
+description: "Constrain training rollouts and served responses to valid JSON, a regex, or a fixed choice set with guided decoding."
+---
+
+**Guided decoding** forces the model to emit only text that matches a constraint —
+a JSON schema, a regular expression, or one of a fixed set of choices. The sampler
+literally cannot produce off-format tokens, so the output always parses.
+
+You use it in two places, with the same constraint forms in both:
+
+- **In training** — constrain every GRPO or OPD rollout so your reward measures the
+  answer's *content* instead of penalizing malformed wrappers.
+- **At serving** — guarantee a deployed model's responses are valid JSON your
+  application can parse without retries.
+
+## In training
+
+`structured_outputs` in the `[train]` table constrains every GRPO and OPD rollout.
+It applies only to the rollout algorithms — SFT never samples, so it rejects the
+key at submit. When rollouts can't drift off-format, your `score_response` parses
+the field it cares about directly and rewards the content, which makes the reward
+easier to write and the signal cleaner.
+
+### Write a constraint
+
+Set exactly **one** constraint under `[train]`. A JSON schema is the common case;
+write it as a JSON string or an inline TOML table.
+
+<CodeGroup>
+
+```toml JSON schema (string)
+[train]
+structured_outputs = '{"type": "object", "properties": {"answer": {"type": "string"}}, "required": ["answer"]}'
+```
+
+```toml JSON schema (inline table)
+[train]
+structured_outputs = { type = "object", properties = { answer = { type = "string" } }, required = ["answer"] }
+```
+
+```toml Choice
+[train]
+structured_outputs = { choice = ["yes", "no", "maybe"] }
+```
+
+```toml Regex
+[train]
+structured_outputs = { regex = "\\d{4}-\\d{2}-\\d{2}" }
+```
+
+```toml Any JSON
+[train]
+structured_outputs = { json_object = true }
+```
+
+</CodeGroup>
+
+| Constraint | Write it as | Forces the output to be |
+| --- | --- | --- |
+| JSON schema | a JSON string, or an inline table — key `json` (aliases `json_schema`, `schema`) | JSON matching your schema |
+| Choice | `{ choice = ["a", "b", ...] }` (alias `choices`), non-empty strings | exactly one of the listed strings |
+| Regex | `{ regex = "..." }` | text matching the pattern |
+| Any JSON | `{ json_object = true }`, or the string `"json_object"` | any valid JSON, with no fixed schema |
+
+A bare schema table with **no** constraint key is read as a JSON schema — its
+`type`/`properties` keys are schema vocabulary, not Flash's. Setting more than one
+constraint, or the unsupported `grammar` / `structural_tag` forms, is rejected at
+submit. To turn guided decoding off, omit the key or set `false`, `""`, or
+`"none"`.
+
+### Options
+
+These optional keys tune the constraint. Set them **alongside** a constraint (an
+option on its own is rejected):
+
+| Option | Type | Effect |
+| --- | --- | --- |
+| `disable_any_whitespace` | bool | Forbid insignificant whitespace, so JSON comes out compact (and decodes slightly faster). |
+| `disable_additional_properties` | bool | Reject object properties your schema doesn't declare, even when it omits `additionalProperties`. |
+| `whitespace_pattern` | string | Custom pattern for the whitespace the sampler may emit between JSON tokens. |
+
+```toml
+[train]
+structured_outputs = { json = { type = "object", properties = { answer = { type = "string" } }, required = ["answer"] }, disable_any_whitespace = true }
+```
+
+### Thinking mode
+
+Guided decoding binds from the **first generated token**. With `thinking = true`
+the constraint also applies to the `<think>` block — so a JSON schema would force
+the reasoning itself to be JSON, which is rarely what you want. Set
+`thinking = false` so the model reasons freely before producing the constrained
+answer. Flash warns at submit when both are set.
+
+### Score the guaranteed shape
+
+Because the wrapper is guaranteed, your reward can parse the field it grades
+instead of defending against malformed output:
+
+```python
+import json
+
+def score_response(self, example, completion: str) -> float:
+    answer = json.loads(completion)["answer"]   # always valid — the sampler was constrained
+    return 1.0 if answer.strip() == example.output.strip() else 0.0
+```
+
+## At serving
+
+A deployed adapter or a base model accepts the OpenAI-standard `response_format`,
+so a client gets guaranteed-valid output with no redeploy:
+
+```python
+resp = client.chat.completions.create(
+    model="<run-id>",
+    messages=[{"role": "user", "content": "Give me a person as JSON."}],
+    response_format={
+        "type": "json_schema",
+        "json_schema": {
+            "schema": {
+                "type": "object",
+                "properties": {"name": {"type": "string"}, "age": {"type": "integer"}},
+                "required": ["name", "age"],
+            }
+        },
+    },
+)
+```
+
+`{"type": "json_object"}` forces any valid JSON with no fixed schema, and
+`{"type": "text"}` (the default) leaves output unconstrained. The same
+first-token rule applies: use a non-thinking deployment — or pass
+`enable_thinking: false` on a base model — when you want strictly formatted
+output. See [Deploy & chat](/guides/deploy-and-chat#structured-outputs).
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Configuration reference" icon="gear" href="/reference/configuration#structured-outputs">
+    The `structured_outputs` field in the training config.
+  </Card>
+  <Card title="Deploy & chat" icon="comments" href="/guides/deploy-and-chat#structured-outputs">
+    Constrain a served model's responses per request.
+  </Card>
+</CardGroup>

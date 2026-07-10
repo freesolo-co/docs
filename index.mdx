@@ -48,8 +48,8 @@ algorithm = "grpo"
 
 ### Distill a stronger model with OPD
 
-On-policy distillation has the managed GLM 5.2 teacher grade your model's own
-completions token by token, then pulls your model toward it. Use it when a bigger
+On-policy distillation has a managed teacher (GLM 5.2 by default) grade your
+model's own completions token by token, then pulls your model toward it. Use it when a bigger
 model already does the task and you want a small one to match it — no answers to
 write and no reward to design.
 

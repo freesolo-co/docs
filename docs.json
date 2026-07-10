@@ -41,6 +41,7 @@
 					},
 					"guides/datasets",
 					"guides/training",
+					"guides/structured-outputs",
 					"guides/deploy-and-chat"
 				]
 			},

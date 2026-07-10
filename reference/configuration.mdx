@@ -26,7 +26,7 @@ lora_rank = 32
 | Key | Type | Default | Description |
 | --- | --- | --- | --- |
 | `model` | string | (required) | Base model to train a LoRA adapter on, e.g. `Qwen/Qwen3.5-4B`. See [`flash models`](/reference/models). |
-| `algorithm` | string | `sft` | `sft` (supervised): imitates example completions you provide. `grpo` (RL): learns from a reward you define. `opd` (on-policy distillation): the managed GLM 5.2 teacher grades your model's own completions. See [Choose a training algorithm](/guides/training#choose-a-training-algorithm). |
+| `algorithm` | string | `sft` | `sft` (supervised): imitates example completions you provide. `grpo` (RL): learns from a reward you define. `opd` (on-policy distillation): a managed teacher (GLM 5.2 by default, selectable with `teacher_model`) grades your model's own completions. See [Choose a training algorithm](/guides/training#choose-a-training-algorithm). |
 | `thinking` | bool | `false` | Enable reasoning mode (thinking-capable models only). The reasoning trace shares the `max_completion_tokens` budget with the answer, so raise `max_completion_tokens` (and `max_context_tokens` when needed) when you enable it. See [Troubleshooting](/reference/troubleshooting). |
 
 ## `[environment]`
@@ -75,7 +75,7 @@ Reserved platform secret names such as `FREESOLO_API_KEY`, `HF_TOKEN`,
 | `batch_size` | int | recipe default | Training batch size. |
 | `max_context_tokens` | int | recipe default | Total training context cap. Can't exceed the base model's served context window (`max_model_len`); a run whose training context is longer is rejected at submit. SFT checks the rendered training sequence, while GRPO and OPD check the rollout prompt plus `max_completion_tokens`. See [context window](/reference/models#context-window-and-lora-rank). |
 | `save_every` | int | recipe default | Checkpoint cadence (steps). Every save is uploaded: if a save fires while a previous upload is still in flight it is queued (newest wins) and uploaded next, and the final checkpoint is flushed at train end — saves are not skipped on a slow uplink. |
-| `init_from_adapter` | string | - | Warm-start from an existing adapter. Use the run id that `flash status` prints, e.g. `init_from_adapter = "<run-id>"`. To warm-start from a saved checkpoint instead of the run-level adapter, use the exact short ref listed by `flash checkpoints`: `"<run-id>/step-N"`. Longer storage refs are rejected in config; use the short refs printed by Flash. |
+| `init_from_adapter` | string | - | Warm-start from an existing adapter. Use the run id that `flash status` prints, e.g. `init_from_adapter = "<run-id>"`. To warm-start from a saved checkpoint instead of the run-level adapter, use the exact short ref listed by `flash checkpoints`: `"<run-id>/step-N"`. Longer storage refs are rejected in config; use the short refs printed by Flash. A warm-start continues that adapter in place, so set `lora_rank` equal to the source run's rank — a mismatch is rejected at submit. |
 
 ### SFT-specific
 
@@ -98,18 +98,21 @@ Reserved platform secret names such as `FREESOLO_API_KEY`, `HF_TOKEN`,
 | `advantage_clip` | float | Recorded for recipe parity but currently a no-op (TRL clips the importance ratio, not the advantage value). |
 | `thinking_length_penalty_coef` | float | Penalty on reasoning length. |
 | `stop_sequences` | list[string] | Stop sequences for generation. |
+| `structured_outputs` | string/table | Guided decoding: constrain every rollout to a JSON schema, `regex`, or `choice` set so the sampler can't emit off-format text and the reward measures content, not formatting. See [Structured outputs](/guides/structured-outputs). |
 
 ### OPD-specific
 
 OPD reuses the GRPO sampling knobs with distillation-tuned defaults. The teacher
-is always the managed GLM 5.2 model; it is not configurable in the training
-config. OPD is configured with `epochs`: Flash makes that many passes over the
+is a managed model — **GLM 5.2 by default**, or another from a fixed allow-list
+via [`teacher_model`](#opd-specific); its credentials stay platform-managed
+either way. OPD is configured with `epochs`: Flash makes that many passes over the
 retained prompt pool and derives the optimizer-step count from `max_examples`
 and `batch_size`. Warm-starting from a finished SFT run with
 [`init_from_adapter`](#train) is recommended.
 
 | Key | Type | Default | Description |
 | --- | --- | --- | --- |
+| `teacher_model` | string | `glm-5.2` | Managed teacher to distil from, one of `glm-5.2` (default), `deepseek-v4-pro`, `kimi-k2.6`. The Fireworks key stays platform-managed for every option — you never set a key and can't bring your own. An unsupported id is rejected at submit. |
 | `epochs` | int | recipe default | Number of passes over the retained prompt pool. |
 | `max_examples` | int | `0` | Truncate the prompt pool to N examples (`0` = no cap). |
 | `group_size` | int | `1` | Completions the model samples per prompt; one is usually enough for distillation. |
@@ -118,12 +121,30 @@ and `batch_size`. Warm-starting from a finished SFT run with
 | `kl_penalty_coef` | float | `1.0` | Strength of the reverse-KL pull toward the teacher. Must be greater than `0`. |
 | `opd_eos_loss_coef` | float | `0.5` | Terminal-EOS reinforcement. The cross-tokenizer reverse-KL can't supervise the zero-width stop token, so distilling toward a verbose teacher erodes termination; this bounded, self-limiting term reinstates the stop signal on rollouts that ended naturally. Raise it if completions run past the length cap without stopping (`truncated_rollouts` stays high); `0` disables it. |
 | `stop_sequences` | list[string] | - | Stop sequences for the model's completions. |
+| `structured_outputs` | string/table | - | Guided decoding for every student rollout — same forms as GRPO. See [Structured outputs](/guides/structured-outputs). |
 
-`teacher_model` is not a supported config key. Teacher credentials are
-platform-managed — you never set a key, and teacher tokens are not billed to you
-(see [Cost and billing](/reference/cost-model#what-affects-training-cost)).
+Teacher credentials are platform-managed for every allow-listed `teacher_model` —
+you never set a key, and teacher tokens are not billed to you; the `--cost`
+estimate itemizes the chosen teacher's token spend as a diagnostic, but only GPU
+time is charged (see
+[Cost and billing](/reference/cost-model#what-affects-training-cost)).
 `max_steps`, `advantage_clip`, and `thinking_length_penalty_coef` do not apply to
 OPD.
+
+### Structured outputs
+
+`structured_outputs` constrains every GRPO and OPD rollout with vLLM guided
+decoding (SFT rejects it at submit). Set exactly one constraint — a JSON schema (a
+JSON string or an inline table), `regex`, `choice`, or `json_object` — with the
+optional `disable_any_whitespace`, `disable_additional_properties`, and
+`whitespace_pattern` tuning keys. Combining constraints, or the unsupported
+`grammar` / `structural_tag`, is rejected at submit; omit the key (or set `false`
+or `"none"`) to leave rollouts unconstrained. With `thinking = true` the
+constraint binds the reasoning phase too, so set `thinking = false` for a
+freely-reasoned but strictly-formatted answer.
+
+See the [Structured outputs](/guides/structured-outputs) guide for every form,
+option, and worked examples.
 
 ## Managed infrastructure
 
