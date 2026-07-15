@@ -150,8 +150,9 @@ seeded shuffle. SFT also honors `max_context_tokens` for the rendered sequence.
 
 ## Warm-start safely
 
-`init_from_adapter` continues an existing GRPO or OPD adapter. The source
-adapter's LoRA rank and alpha are authoritative, so omit both `lora_rank` and
+`init_from_adapter` continues a source adapter in a new GRPO or OPD run. The
+source can be a finished SFT run or a saved checkpoint. Its LoRA rank and alpha
+are authoritative, so omit both `lora_rank` and
 `lora_alpha`. The server resolves them during `--dry-run` and real submit; local
 `--cost` may warn and estimate with defaults.
 

@@ -204,8 +204,8 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
   defaults and warn.
 </Accordion>
 
-  <Accordion title="The run used a different GPU than gpu.type">
-    `gpu.type` is a sizing hint, not a pin. Set `[gpu] exact_type` to an active
+  <Accordion title="The run used a different GPU than expected">
+    GPU selection is automatic unless you set `[gpu] exact_type` to an active
     validated class from `flash gpus`. Add `provider = "runpod"`, `"lambda"`, or
     `"vast"` only when the provider must also be fixed. These constraints persist
     across retries and cost estimates.

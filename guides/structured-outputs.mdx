@@ -7,12 +7,15 @@ description: "Constrain training rollouts and served responses to valid JSON, a 
 a JSON schema, a regular expression, or one of a fixed set of choices. Once the
 grammar is active, the sampler cannot produce off-format answer tokens.
 
-You use it in two places, with the same constraint forms in both:
+You use it in two places:
 
-- **In training** — constrain every GRPO or OPD rollout so your reward measures the
-  answer's _content_ instead of penalizing malformed wrappers.
-- **At serving:** constrain the final answer after any reasoning closes. Give
-  the request enough output tokens and check `finish_reason` for truncation.
+- **In training:** use a JSON schema, regex, fixed choice set, or any-JSON
+  constraint so your reward measures the answer's _content_ instead of malformed
+  wrappers.
+- **At serving:** the training constraint becomes the adapter default. The
+  OpenAI-standard per-request override supports `text`, `json_object`, and
+  `json_schema`. Give the request enough output tokens and check `finish_reason`
+  for truncation.
 
 ## In training
 

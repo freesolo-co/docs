@@ -37,9 +37,9 @@ max_completion_tokens`); an SFT step is one forward/backward pass, priced on the
 training tokens counted from your environment; an OPD step samples the model's
 completions and has the managed teacher grade them before updating. OPD is
 priced on GPU time like the others, and teacher tokens are not billed to you.
-The estimator prices the cheapest eligible GPU. `gpu.type` is not a pin. If you
-set `[gpu] provider` or `exact_type`, the estimate uses those same constraints,
-and they persist across submissions and retries.
+The estimator prices the cheapest eligible GPU automatically. If you set
+`[gpu] provider` or `exact_type`, the estimate uses those same constraints, and
+they persist across submissions and retries.
 
 Serving is priced separately, per token: `(prompt − cached) × input + completion
 × output + cached × cached`, at the per-model rates in

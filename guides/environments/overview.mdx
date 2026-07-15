@@ -87,8 +87,8 @@ and implement the episode hooks. See [Multi-turn environments](/guides/environme
 Your environment code imports from the `freesolo` package. **The managed flow
 needs no local install.** Training workers already have the SDK when they import
 your published environment. Install it locally only to run or test
-`environment.py` yourself, or to run a command like `flash train --cost`, which
-imports the environment locally to count training rows:
+`environment.py` yourself. Local `flash train --cost` uses the configured SFT
+`max_examples` and does not import the environment:
 
 ```bash
 uv pip install freesolo
@@ -97,10 +97,18 @@ uv pip install freesolo
 ## Next steps
 
 <CardGroup cols={2}>
-  <Card title="Package & publish" icon="box" href="/guides/environments/package">
+  <Card
+    title="Package & publish"
+    icon="box"
+    href="/guides/environments/package"
+  >
     Structure the folder and push it to the Hub.
   </Card>
-  <Card title="Single-turn environments" icon="flask" href="/guides/environments/single-turn">
+  <Card
+    title="Single-turn environments"
+    icon="flask"
+    href="/guides/environments/single-turn"
+  >
     Write the dataset, prompts, and reward.
   </Card>
 </CardGroup>
