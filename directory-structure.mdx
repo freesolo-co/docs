@@ -28,10 +28,10 @@ truth for what the model practices on and how it's graded. It defines
 `EnvironmentMultiTurn`) carrying a dataset and a `score_response` reward. This
 is the file you edit first.
 
-**When Flash reads it:** `flash env push` packages and uploads it;
-`flash train --cost` may import it locally to count training examples; and on
-every run the worker imports it and calls `load_environment(**params)`. The scaffolded
-starter loads its rows from `dataset/train.jsonl`.
+**When Flash reads it:** `flash env push` packages and uploads it, and every
+training worker imports it and calls `load_environment(**params)`. Local
+`flash train --cost` parses the config without executing environment code. The
+scaffolded starter loads its rows from `dataset/train.jsonl`.
 
 See the full scaffolded file — `StarterEnv` with `build_prompt_messages`
 and `score_response` — in [Environments](/guides/environments/overview#scaffold-one).
@@ -42,9 +42,10 @@ and `score_response` — in [Environments](/guides/environments/overview#scaffol
 scaffolded `environment.py` loads. Replace it with your training rows before a real run. See [Datasets](/guides/datasets).
 
 **When Flash reads it:** your `environment.py` reads it on the worker at run
-time (and locally when `flash train --cost` counts its rows; `--dry-run`
-validates only the config and does not read it); `flash env push`
-uploads the `dataset/` folder with the environment.
+time. Local `flash train --cost` parses the configured `max_examples` without
+reading the dataset. Authenticated server-side `--dry-run` runs submit-time
+preflights without a GPU worker, so it does not execute the environment;
+`flash env push` uploads the `dataset/` folder.
 
 ```jsonl dataset/train.jsonl
 {"input":"What is 2 + 2?","output":"4"}
@@ -61,7 +62,8 @@ training infrastructure and artifact storage are [managed for you](/reference/co
 it per experiment.
 
 **When Flash reads it:** every `flash train`, `--dry-run`, and `--cost` parses
-this file into the resolved job spec.
+this file. Dry-run sends the spec to the authenticated server for submit-time
+preflights; `--cost` stays local.
 
 ```toml configs/sft.toml
 model = "Qwen/Qwen3.5-4B"
@@ -156,7 +158,11 @@ in the uploaded artifact.
 ## Next steps
 
 <CardGroup cols={2}>
-  <Card title="Single-turn environments" icon="flask" href="/guides/environments/single-turn">
+  <Card
+    title="Single-turn environments"
+    icon="flask"
+    href="/guides/environments/single-turn"
+  >
     Fill in the environment class the scaffold starts you with.
   </Card>
   <Card title="Training" icon="dumbbell" href="/guides/training">

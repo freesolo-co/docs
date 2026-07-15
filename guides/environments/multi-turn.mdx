@@ -247,6 +247,15 @@ matters in `[train]`:
 - **`group_size`** is the number of full episodes rolled out per prompt for the
   GRPO advantage estimate. OPD usually uses `group_size = 1`.
 
+### Managed generation request deadlines
+
+Pure multi-turn GRPO model generations have managed request deadlines between 10
+and 60 minutes, based on context size. A timed-out assistant generation is
+aborted and retried once; timed-out output is never sent to the environment.
+
+This covers only model generation in the pure multi-turn GRPO path. It does not
+cover environment or external-service calls, OPD, or tool-loop paths.
+
 ## Next steps
 
 <CardGroup cols={2}>

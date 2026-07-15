@@ -23,7 +23,13 @@ Set your choice at the top of the config:
 
 ```toml
 model = "Qwen/Qwen3.5-4B"
+# model_revision = "main"  # optional hugging face branch, tag, or commit
+seed = 42
 ```
+
+`model_revision` pins all student-model loads to one Hugging Face revision. An
+empty or omitted value uses the model's default revision. `seed` controls the
+run's deterministic training order and defaults to `42`.
 
 ## Choose a training algorithm
 
@@ -51,83 +57,127 @@ algorithm = "opd"
   A managed teacher — **GLM 5.2 by default**, or another you pick with
   `teacher_model` — grades your model's own completions token by token, and
   training pulls your model toward it — no answers to write and no reward to
-  design. Because training only pulls your model *toward* the teacher, **the
+  design. Because training only pulls your model _toward_ the teacher, **the
   teacher is the ceiling**: pick OPD only when your chosen teacher clearly does
-  *your* task better than your model already does, and confirm that first (see the
+  _your_ task better than your model already does, and confirm that first (see the
   note below) — distilling from a teacher that's weak on the task copies its
-  mistakes in and can land *below* SFT. OPD refines a format-competent model rather
+  mistakes in and can land _below_ SFT. OPD refines a format-competent model rather
   than teaching the output contract from scratch, so **warm-start from an SFT
   adapter** (`init_from_adapter`) for best results; a cold OPD run tends to
   underperform SFT. It supports single- and multi-turn environments (not
-  tool-calling ones), and the teacher's credentials are platform-managed for every
-  allowed teacher — nothing to set up, and teacher tokens aren't billed to you.
+  tool-calling ones). Teacher access is managed for every allowed teacher, so
+  there is nothing to configure and teacher tokens are not billed to you.
 
 All three are driven by the same [environment](/guides/environments/overview), and
 `algorithm` defaults to `sft` when omitted. See
 [how Flash works](/how-flash-works) for the difference.
 
 <Note>
-  **Before an OPD run, check the teacher's quality on your task.** OPD's ceiling is
-  the teacher, so run your chosen teacher — GLM 5.2 by default, or the one you set
-  with `teacher_model` — through your own environment on a held-out split and
-  read both its score and a few of its trajectories first. If it isn't clearly
-  better than your model — or solves the task a way your environment can't reward —
-  distillation copies that in and can make your model worse; use GRPO or SFT
-  instead. If the teacher over-reasons and your rollouts run long, constrain its
-  reasoning at the source with a **hard, specific** budget in your environment's
-  system prompt (e.g. "reason in at most two or three sentences, then act; don't
-  reconsider") — a vague "be brief" tends to backfire on a reasoning model,
+  **Before an OPD run, check the teacher's quality on your task.** OPD's ceiling
+  is the teacher, so run your chosen teacher, GLM 5.2 by default or the one set
+  with `teacher_model`, through your own environment on a held-out split. Read
+  both its score and a few trajectories first. If it is not clearly better than
+  your model, or solves the task in a way your environment cannot reward,
+  distillation can make your model worse; use GRPO or SFT instead. If the
+  teacher over-reasons and your rollouts run long, constrain its reasoning at
+  the source with a **hard, specific** budget in your environment's system
+  prompt (e.g. "reason in at most two or three sentences, then act; don't
+  reconsider"). A vague "be brief" tends to backfire on a reasoning model,
   trimming the median while inflating the long tail. See
-  [Troubleshooting](/reference/troubleshooting) for the termination/runaway case.
+  [Troubleshooting](/reference/troubleshooting) for the termination/runaway
+  case.
 </Note>
 
 ## Anatomy of a config
 
 ```toml
 model = "Qwen/Qwen3.5-4B"
+# model_revision = "main"            # optional hugging face branch, tag, or commit
 algorithm = "sft"
-# thinking = true        # opt into reasoning mode (thinking-capable models only)
+seed = 42
+# thinking = true                     # opt into reasoning mode
 
 [environment]
 id = "your-org/your-env"
 
 [train]
-epochs = 3                           # passes over retained rows/prompts; GRPO/OPD derive optimizer steps from this
-max_examples = 1000                  # rows/prompts to retain before training
+epochs = 3                            # passes over retained rows or prompts
+max_examples = 1000                   # sft keeps the first n rows before seeded shuffle
+max_steps = 100                       # exact update horizon when positive
+save_at_steps = [25, 50, 100]         # mandatory saves; requires positive max_steps
 lora_rank = 32
 lora_alpha = 64
 # learning_rate = 1e-4
 # batch_size = 8
-# group_size = 8                     # GRPO: completions sampled per prompt
-# max_completion_tokens = 512        # GRPO/OPD: generated tokens per rollout turn
-# max_context_tokens = 4096          # total prompt + completion context cap
-# init_from_adapter = "<sft-run-id>" # OPD: warm-start from a finished SFT run
-# teacher_model = "glm-5.2"          # OPD: managed teacher (glm-5.2 | deepseek-v4-pro | kimi-k2.6)
-# structured_outputs = '{"type":"object","properties":{"answer":{"type":"string"}},"required":["answer"]}'  # GRPO/OPD: guided decoding
+# group_size = 8                      # grpo: completions sampled per prompt
+# max_completion_tokens = 512         # grpo/opd: generated tokens per rollout turn
+# max_context_tokens = 4096           # total context cap, including sft
+# init_from_adapter = "<sft-run-id>"  # grpo/opd: omit lora rank and alpha
+# teacher_model = "glm-5.2"           # opd: managed teacher
+# structured_outputs = '{"type":"object","properties":{"answer":{"type":"string"}},"required":["answer"]}'
 
 [wandb]
-# project = "my-project"             # optional Weights & Biases logging
+# project = "my-project"              # optional weights & biases logging
 ```
 
-To force every GRPO or OPD rollout into valid JSON — or a regex or a fixed choice
-set — so your reward scores content instead of formatting, set
+To force every GRPO or OPD rollout into valid JSON, a regex, or a fixed choice
+set, so your reward scores content instead of formatting, set
 `structured_outputs`. See the [Structured outputs](/guides/structured-outputs)
 guide.
 
+## Control the update horizon and checkpoints
+
+For SFT, GRPO, and OPD, a positive `train.max_steps` is the exact number of
+optimizer updates. If it is absent or non-positive, Flash derives the update
+count from epochs, retained examples, batch size, and the recipe.
+
+Use `train.save_at_steps` when specific checkpoint boundaries matter:
+
+```toml
+[train]
+max_steps = 100
+save_at_steps = [25, 50, 100]
+```
+
+The list must be strictly increasing and positive, requires positive
+`max_steps`, and cannot contain a step beyond it. It suppresses `save_every`,
+and every requested save is mandatory. Without `save_at_steps`, periodic
+`save_every` uploads block training while attempted but remain best-effort after
+bounded retries. Use `save_at_steps` for required durable boundaries.
+
+For SFT, `max_examples = N` retains the first N rows in file order before the
+seeded shuffle. SFT also honors `max_context_tokens` for the rendered sequence.
+
+## Warm-start safely
+
+`init_from_adapter` continues a source adapter in a new GRPO or OPD run. The
+source can be a finished SFT run or a saved checkpoint. Its LoRA rank and alpha
+are authoritative, so omit both `lora_rank` and
+`lora_alpha`. The server resolves them during `--dry-run` and real submit; local
+`--cost` may warn and estimate with defaults.
+
+If you set `model_revision`, the source and target revisions must match exactly.
+Use server-side `--dry-run` to resolve and validate the source.
+
 ## Infrastructure is managed
 
-You choose the model, algorithm, environment, and `[train]` settings. Flash
-chooses the training resources, retry path, checkpointing, and artifact storage
-for the run.
+You choose the model, algorithm, environment, and training settings. Flash
+selects suitable infrastructure by default. For controlled runs, `[gpu]` can pin
+a provider and an active validated GPU class from `flash gpus`; those constraints
+also apply to retries and cost estimates. Artifact storage remains managed.
 
 ## Validate before you submit
 
-`--dry-run` parses and validates the config locally and prints the resolved job
-spec:
+`--dry-run` is authenticated and server-side. It runs submit-time preflights,
+including warm-start resolution, creates a run with `state=dry_run`, and reports
+client/server `[train]` schema differences. It allocates no GPU and charges
+nothing:
 
 ```bash
 flash train config.toml --dry-run
 ```
+
+Use `--cost` separately for the local estimate.
 
 ## Submit the run
 
@@ -137,12 +187,12 @@ flash train config.toml
 
 By default `flash train` follows the logs until the run finishes. Useful flags:
 
-| Flag | Effect |
-| --- | --- |
-| `--background` | Submit and return immediately instead of following logs |
-| `--dry-run` | Validate locally without submitting |
-| `--cost` | Print the pre-flight USD cost and exit (no submit) |
-| `--set key=value` | Override a config value (repeatable) |
+| Flag                  | Effect                                                         |
+| --------------------- | -------------------------------------------------------------- |
+| `--background`        | Submit and return immediately instead of following logs        |
+| `--dry-run`           | Run authenticated server submit preflights; no GPU or charge   |
+| `--cost`              | Print the local pre-flight USD cost and exit (no submit)       |
+| `--set key=value`     | Override a config value (repeatable)                           |
 | `--config other.toml` | Deep-merge additional TOML for config composition (repeatable) |
 
 ```bash
@@ -183,11 +233,13 @@ When a run reaches `done`, serve it with
 [`flash deploy`](/guides/deploy-and-chat) and talk to it with `flash chat`.
 
 <Note>
-  Deploy or [export](/guides/deploy-and-chat#export-to-your-own-huggingface-repo) a
-  run you want to keep. Freesolo's managed storage garbage-collects a run's
-  checkpoints and final adapter about **7 days** after its last activity when the
-  run was never deployed — a deployed run, or one that another run warm-started
-  from, is kept. Exporting copies the adapter into a HuggingFace repo you own.
+  Deploy or
+  [export](/guides/deploy-and-chat#export-to-your-own-huggingface-repo) a run
+  you want to keep. Freesolo's managed storage garbage-collects a run's
+  checkpoints and final adapter about **7 days** after its last activity when
+  the run was never deployed. A deployed run, or one that another run
+  warm-started from, is kept. Exporting copies the adapter into a HuggingFace
+  repo you own.
 </Note>
 
 ## Next steps
@@ -196,7 +248,11 @@ When a run reaches `done`, serve it with
   <Card title="Deploy & chat" icon="comments" href="/guides/deploy-and-chat">
     Serve a finished run and talk to it.
   </Card>
-  <Card title="Configuration reference" icon="gear" href="/reference/configuration">
+  <Card
+    title="Configuration reference"
+    icon="gear"
+    href="/reference/configuration"
+  >
     Every field you can set in a training config.
   </Card>
 </CardGroup>

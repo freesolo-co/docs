@@ -8,15 +8,18 @@ inline help.
 
 ## Global flags
 
-| Flag | Effect |
-| --- | --- |
-| `-V`, `--version` | Print the Flash version and exit |
-| `--debug` | Show full tracebacks on error (otherwise errors print one clean line) |
-| `-v`, `-vv` | Increase log verbosity (`-v` info, `-vv` debug) |
+| Flag              | Effect                                                                |
+| ----------------- | --------------------------------------------------------------------- |
+| `-V`, `--version` | Print the Flash version and exit                                      |
+| `--debug`         | Show full tracebacks on error (otherwise errors print one clean line) |
+| `-v`, `-vv`       | Increase log verbosity (`-v` info, `-vv` debug)                       |
 
 ## Auth & identity
 
-<ResponseField name="flash login" type="[--api-key KEY] [--freesolo-url URL] [--api-url URL]">
+<ResponseField
+  name="flash login"
+  type="[--api-key KEY] [--freesolo-url URL] [--api-url URL]"
+>
   Log in with your Freesolo API key. Flash verifies the key against Freesolo,
   saves it locally, and prints the resolved identity on success. Defaults:
   `--api-key` from `FREESOLO_API_KEY`; `--freesolo-url` from `FREESOLO_BASE_URL`
@@ -27,20 +30,19 @@ inline help.
   Show the identity your stored key resolves to.
 </ResponseField>
 
-<ResponseField name="flash version">
-  Print the Flash version.
-</ResponseField>
+<ResponseField name="flash version">Print the Flash version.</ResponseField>
 
 ## Discovery
 
 <ResponseField name="flash models">
-  List the supported base model ids. See
-  [Supported models](/reference/models) for algorithms, reasoning, and pricing.
+  List the supported base model ids. See [Supported models](/reference/models)
+  for algorithms, reasoning, and pricing.
 </ResponseField>
 
 <ResponseField name="flash gpus">
-  List the managed GPU classes with VRAM and estimated $/hr. GPU selection is
-  automatic. You don't pick one.
+  List active validated GPU classes with VRAM, provider availability, and
+  estimated $/hr. Selection is automatic by default; `[gpu] exact_type` pins an
+  exact class.
 </ResponseField>
 
 ## Environments
@@ -52,31 +54,34 @@ inline help.
   playbook for coding agents with current CLI usage, reward guidance, and common
   run mitigations. Existing files are preserved.
 
-  On an interactive terminal it first runs a short survey — the interaction shape
-  (single- vs multi-turn) and whether to train with reasoning — then scaffolds to
-  match. The flags below skip the questions; a non-interactive run (no TTY, `CI`,
-  or `-y`) takes the defaults (single-turn, no reasoning). A flag that disagrees
-  with an already-scaffolded project is ignored with a warning.
+On an interactive terminal it first runs a short survey about the interaction
+shape (single- vs multi-turn) and whether to train with reasoning, then
+scaffolds to match. The flags below skip the questions; a non-interactive run (no TTY, `CI`,
+or `-y`) takes the defaults (single-turn, no reasoning). A flag that disagrees
+with an already-scaffolded project is ignored with a warning.
 
-  | Flag | Default | Effect |
-  | --- | --- | --- |
-  | `--single-turn` | default | Scaffold an `EnvironmentSingleTurn` env (prompt → one response) |
-  | `--multi-turn` | - | Scaffold a bounded-episode `EnvironmentMultiTurn` starter (`start_episode` / `step_episode` / `max_episode_turns` / `score_episode`) with a matching dataset |
-  | `--reasoning` | - | Scaffold configs with reasoning on (`thinking = true`, and a raised GRPO completion budget) |
-  | `--no-reasoning` | default | Scaffold configs without reasoning |
-  | `-y`, `--yes` | - | Accept the defaults without prompting |
+| Flag             | Default | Effect                                                                                                                                                       |
+| ---------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `--single-turn`  | default | Scaffold an `EnvironmentSingleTurn` env (prompt → one response)                                                                                              |
+| `--multi-turn`   | -       | Scaffold a bounded-episode `EnvironmentMultiTurn` starter (`start_episode` / `step_episode` / `max_episode_turns` / `score_episode`) with a matching dataset |
+| `--reasoning`    | -       | Scaffold configs with reasoning on (`thinking = true`, and a raised GRPO completion budget)                                                                  |
+| `--no-reasoning` | default | Scaffold configs without reasoning                                                                                                                           |
+| `-y`, `--yes`    | -       | Accept the defaults without prompting                                                                                                                        |
+
 </ResponseField>
 
 <ResponseField name="flash env push --name NAME [PATH]">
-  Publish a local Freesolo environment to Freesolo's [managed Environments Hub](/guides/environments/package#publish-it)
-  (private) and print its id (`your-org/name`). `--name` is required and is
-  normalized to a lowercase hyphen slug. You can also pass an explicit
-  `namespace/name`; Freesolo validates the namespace against your Freesolo
-  org namespace and rejects a mismatch. `PATH` defaults to the current directory. Pass `.` or any folder with `environment.py` at its root to upload helper
-  modules, `dataset/`, `README.md`, and common sibling sidecars
-  ([what gets uploaded](/guides/datasets#what-gets-uploaded) lists the
-  extensions). A single `.py` file or a folder with one top-level `.py` file also
-  works for small smoke tests.
+  Publish a local Freesolo environment to Freesolo's [managed Environments
+  Hub](/guides/environments/package#publish-it) (private) and print its id
+  (`your-org/name`). `--name` is required and is normalized to a lowercase
+  hyphen slug. You can also pass an explicit `namespace/name`; Freesolo
+  validates the namespace against your Freesolo org namespace and rejects a
+  mismatch. `PATH` defaults to the current directory. Pass `.` or any folder
+  with `environment.py` at its root to upload helper modules, `dataset/`,
+  `README.md`, and common sibling sidecars ([what gets
+  uploaded](/guides/datasets#what-gets-uploaded) lists the extensions). A single
+  `.py` file or a folder with one top-level `.py` file also works for small
+  smoke tests.
 </ResponseField>
 
 <ResponseField name="flash env pull ENV_ID [PATH] [-o OUTPUT] [-f]">
@@ -106,13 +111,14 @@ inline help.
   [Cost & billing](/guides/training#cost-and-billing)). [Cost and billing](/reference/cost-model) explains the pre-flight `--cost`
   estimate.
 
-  | Flag | Effect |
-  | --- | --- |
-  | `--dry-run` | Validate the config locally and print the resolved job spec; don't submit |
-  | `--cost` | Print the pre-flight USD cost for the config and exit (no submit) |
-  | `--background` | Submit and return immediately instead of following logs |
-  | `--set KEY=VALUE` | Override a config value (dotted key, repeatable) |
-  | `--config FILE` | Deep-merge additional TOML for config composition (repeatable) |
+| Flag              | Effect                                                                               |
+| ----------------- | ------------------------------------------------------------------------------------ |
+| `--dry-run`       | Run authenticated server submit preflights; create `state=dry_run`; no GPU or charge |
+| `--cost`          | Print the local pre-flight USD cost and exit (no submit)                             |
+| `--background`    | Submit and return immediately instead of following logs                              |
+| `--set KEY=VALUE` | Override a config value (dotted key, repeatable)                                     |
+| `--config FILE`   | Deep-merge additional TOML for config composition (repeatable)                       |
+
 </ResponseField>
 
 ## Run management
@@ -139,46 +145,45 @@ inline help.
 
 ## Serving
 
-<ResponseField name="flash deploy RUN_ID [flags]">
-  Register a trained adapter with the managed serving service.
+<ResponseField name="flash deploy RUN_ID[/step-N] [--dry-run]">
+  Deploy a final adapter or checkpoint. Every real deploy resolves an immutable
+  revision, runs a mandatory bounded smoke, and activates the stable run-id alias
+  only after verification. `--dry-run` previews without creating a deployment.
   Serving is [billed per token](/guides/deploy-and-chat#billing).
 
-  | Flag | Default | Effect |
-  | --- | --- | --- |
-  | `--dry-run` | - | Preview the deploy without creating it |
-  | `--no-verify` | - | Skip the server-side post-deploy smoke check. Registration alone does not guarantee the adapter serves, so use this only when you'll verify separately. |
+If no final adapter exists, use the `RUN_ID/step-N` selector listed by
+`flash checkpoints RUN_ID`.
 
-  If the run has no final adapter (for example it was cancelled or preempted
-  before finalizing) but saved per-step checkpoints, a run-level deploy fails
-  with a clear error listing the available steps and the exact
-  `flash deploy RUN_ID/step-N` command to use instead.
 </ResponseField>
 
 <ResponseField name="flash checkpoints RUN_ID">
-  List a run's per-step checkpoints available to deploy, including
-  intermediate checkpoints from a live or stopped RL run. Serve one with
-  `flash deploy RUN_ID/step-N`. When output is not a styled terminal, each
-  line is single-space separated (`step N RUN_ID/step-N`), so it splits
+  List a run's saved SFT, GRPO, or OPD checkpoints available to deploy. Serve
+  one with `flash deploy RUN_ID/step-N`. When output is not a styled terminal,
+  each line is single-space separated (`step N RUN_ID/step-N`), so it splits
   cleanly in scripts (`awk`, `grep "step N"`).
 </ResponseField>
 
-<ResponseField name="flash chat RUN_ID -m MESSAGE [flags]">
-  Send a message to a deployed adapter and stream the reply as it is generated.
+<ResponseField name="flash chat TARGET -m MESSAGE [flags]">
+  Send a message to a deployment. `TARGET` is the stable `RUN_ID` alias or a full
+  immutable revision. `RUN_ID/step-N` is not a chat target.
 
-  | Flag | Default | Effect |
-  | --- | --- | --- |
-  | `-m`, `--message` | (required) | The user message |
-  | `--system` | - | Optional system prompt sent ahead of the user message (transient — used for this request only). Useful for training-prompt parity in evals |
-  | `--max-tokens` | `512` | Max tokens to generate |
-  | `--temperature` | `0.0` | Sampling temperature |
+| Flag              | Default    | Effect                                                                                                                |
+| ----------------- | ---------- | --------------------------------------------------------------------------------------------------------------------- |
+| `-m`, `--message` | (required) | The user message                                                                                                      |
+| `--system`        | -          | Optional system prompt sent ahead of the user message. It is transient and useful for training-prompt parity in evals |
+| `--max-tokens`    | `512`      | Max tokens to generate                                                                                                |
+| `--temperature`   | `0.0`      | Sampling temperature                                                                                                  |
+
 </ResponseField>
 
-<ResponseField name="flash deployments">
-  List active serving deployments and endpoints.
+<ResponseField name="flash deployments [--json]">
+  List each active run alias and its currently active verified revision. Human
+  output shows run id, step, revision, state, verification time, OpenAI model,
+  and detail. `--json` includes complete records and `openai_base_url`.
 </ResponseField>
 
 <ResponseField name="flash undeploy RUN_ID">
-  Deregister a run's adapter from serving so it no longer accepts requests.
+  Disable the stable alias and all immutable revisions for the run.
 </ResponseField>
 
 ## Export
@@ -188,10 +193,11 @@ inline help.
   exist). `--adapter-id` is either `RUN_ID` for the final adapter or
   `RUN_ID/step-N` for a saved checkpoint. `--repository` is required.
 
-  | Flag | Default | Effect |
-  | --- | --- | --- |
-  | `--api-key` | `HF_TOKEN` | HuggingFace token with write access to `--repository` (read from your shell or a local `.env` / `.env.local`) |
-  | `--public` | private | Create the destination repo as public |
+| Flag        | Default    | Effect                                                                                                        |
+| ----------- | ---------- | ------------------------------------------------------------------------------------------------------------- |
+| `--api-key` | `HF_TOKEN` | HuggingFace token with write access to `--repository` (read from your shell or a local `.env` / `.env.local`) |
+| `--public`  | private    | Create the destination repo as public                                                                         |
+
 </ResponseField>
 
 ## Next steps
@@ -200,7 +206,11 @@ inline help.
   <Card title="Quickstart" icon="rocket" href="/quickstart">
     The commands in a full end-to-end run.
   </Card>
-  <Card title="Troubleshooting" icon="life-ring" href="/reference/troubleshooting">
+  <Card
+    title="Troubleshooting"
+    icon="life-ring"
+    href="/reference/troubleshooting"
+  >
     Fix common CLI and auth errors.
   </Card>
 </CardGroup>

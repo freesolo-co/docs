@@ -4,15 +4,18 @@ description: "Constrain training rollouts and served responses to valid JSON, a 
 ---
 
 **Guided decoding** forces the model to emit only text that matches a constraint —
-a JSON schema, a regular expression, or one of a fixed set of choices. The sampler
-literally cannot produce off-format tokens, so the output always parses.
+a JSON schema, a regular expression, or one of a fixed set of choices. Once the
+grammar is active, the sampler cannot produce off-format answer tokens.
 
-You use it in two places, with the same constraint forms in both:
+You use it in two places:
 
-- **In training** — constrain every GRPO or OPD rollout so your reward measures the
-  answer's *content* instead of penalizing malformed wrappers.
-- **At serving** — guarantee a deployed model's responses are valid JSON your
-  application can parse without retries.
+- **In training:** use a JSON schema, regex, fixed choice set, or any-JSON
+  constraint so your reward measures the answer's _content_ instead of malformed
+  wrappers.
+- **At serving:** the training constraint becomes the adapter default. The
+  OpenAI-standard per-request override supports `text`, `json_object`, and
+  `json_schema`. Give the request enough output tokens and check `finish_reason`
+  for truncation.
 
 ## In training
 
@@ -56,12 +59,12 @@ structured_outputs = { json_object = true }
 
 </CodeGroup>
 
-| Constraint | Write it as | Forces the output to be |
-| --- | --- | --- |
-| JSON schema | a JSON string, or an inline table — key `json` (aliases `json_schema`, `schema`) | JSON matching your schema |
-| Choice | `{ choice = ["a", "b", ...] }` (alias `choices`), non-empty strings | exactly one of the listed strings |
-| Regex | `{ regex = "..." }` | text matching the pattern |
-| Any JSON | `{ json_object = true }`, or the string `"json_object"` | any valid JSON, with no fixed schema |
+| Constraint  | Write it as                                                                 | Forces the output to be              |
+| ----------- | --------------------------------------------------------------------------- | ------------------------------------ |
+| JSON schema | a JSON string or inline table; key `json` (aliases `json_schema`, `schema`) | JSON matching your schema            |
+| Choice      | `{ choice = ["a", "b", ...] }` (alias `choices`), non-empty strings         | exactly one of the listed strings    |
+| Regex       | `{ regex = "..." }`                                                         | text matching the pattern            |
+| Any JSON    | `{ json_object = true }`, or the string `"json_object"`                     | any valid JSON, with no fixed schema |
 
 A bare schema table with **no** constraint key is read as a JSON schema — its
 `type`/`properties` keys are schema vocabulary, not Flash's. Setting more than one
@@ -74,11 +77,11 @@ submit. To turn guided decoding off, omit the key or set `false`, `""`, or
 These optional keys tune the constraint. Set them **alongside** a constraint (an
 option on its own is rejected):
 
-| Option | Type | Effect |
-| --- | --- | --- |
-| `disable_any_whitespace` | bool | Forbid insignificant whitespace, so JSON comes out compact (and decodes slightly faster). |
-| `disable_additional_properties` | bool | Reject object properties your schema doesn't declare, even when it omits `additionalProperties`. |
-| `whitespace_pattern` | string | Custom pattern for the whitespace the sampler may emit between JSON tokens. |
+| Option                          | Type   | Effect                                                                                           |
+| ------------------------------- | ------ | ------------------------------------------------------------------------------------------------ |
+| `disable_any_whitespace`        | bool   | Forbid insignificant whitespace, so JSON comes out compact (and decodes slightly faster).        |
+| `disable_additional_properties` | bool   | Reject object properties your schema doesn't declare, even when it omits `additionalProperties`. |
+| `whitespace_pattern`            | string | Custom pattern for the whitespace the sampler may emit between JSON tokens.                      |
 
 ```toml
 [train]
@@ -87,29 +90,41 @@ structured_outputs = { json = { type = "object", properties = { answer = { type 
 
 ### Thinking mode
 
-Guided decoding binds from the **first generated token**. With `thinking = true`
-the constraint also applies to the `<think>` block — so a JSON schema would force
-the reasoning itself to be JSON, which is rarely what you want. Set
-`thinking = false` so the model reasons freely before producing the constrained
-answer. Flash warns at submit when both are set.
+Structured outputs work with `thinking = true`. For a single-turn rollout and
+the first assistant turn of a multi-turn rollout, reasoning remains free-form and
+the grammar begins after the model closes `</think>`. The final answer must
+satisfy the configured constraint.
 
-### Score the guaranteed shape
+A later multi-turn prompt may already contain an earlier `</think>` boundary, so
+its grammar can apply from the first new token. Test later-turn behavior when a
+multi-turn environment combines thinking and structured outputs.
 
-Because the wrapper is guaranteed, your reward can parse the field it grades
-instead of defending against malformed output:
+Keep the reasoning and final answer within `max_completion_tokens`. An unclosed
+or truncated thinking block never reaches the constrained answer and is invalid.
+
+### Score a completed constrained answer
+
+For a non-truncated rollout that reaches the constrained final answer, the
+wrapper is guaranteed. Still return zero if reasoning or generation ends before
+that answer is complete:
 
 ```python
 import json
 
 def score_response(self, example, completion: str) -> float:
-    answer = json.loads(completion)["answer"]   # always valid — the sampler was constrained
+    try:
+        answer = json.loads(completion)["answer"]
+    except (json.JSONDecodeError, KeyError, TypeError):
+        return 0.0
     return 1.0 if answer.strip() == example.output.strip() else 0.0
 ```
 
 ## At serving
 
-A deployed adapter or a base model accepts the OpenAI-standard `response_format`,
-so a client gets guaranteed-valid output with no redeploy:
+A deployed adapter or a base model accepts the OpenAI-standard `response_format`.
+A training `structured_outputs` constraint becomes the deployed adapter's
+default. A request-level `response_format` overrides that default without a
+redeploy:
 
 ```python
 resp = client.chat.completions.create(
@@ -129,18 +144,30 @@ resp = client.chat.completions.create(
 ```
 
 `{"type": "json_object"}` forces any valid JSON with no fixed schema, and
-`{"type": "text"}` (the default) leaves output unconstrained. The same
-first-token rule applies: use a non-thinking deployment — or pass
-`enable_thinking: false` on a base model — when you want strictly formatted
-output. See [Deploy & chat](/guides/deploy-and-chat#structured-outputs).
+`{"type": "text"}` leaves output unconstrained. With thinking enabled, reasoning
+remains free-form and the requested grammar begins after `</think>`. Give each
+request enough output tokens and check `finish_reason` before parsing the answer.
+
+Every real adapter deployment runs a bounded smoke when a default constraint is
+present. Deployment fails before alias activation if output is invalid or leaves
+thinking unclosed or truncated. See
+[Deploy & chat](/guides/deploy-and-chat#structured-outputs).
 
 ## Next steps
 
 <CardGroup cols={2}>
-  <Card title="Configuration reference" icon="gear" href="/reference/configuration#structured-outputs">
+  <Card
+    title="Configuration reference"
+    icon="gear"
+    href="/reference/configuration#structured-outputs"
+  >
     The `structured_outputs` field in the training config.
   </Card>
-  <Card title="Deploy & chat" icon="comments" href="/guides/deploy-and-chat#structured-outputs">
+  <Card
+    title="Deploy & chat"
+    icon="comments"
+    href="/guides/deploy-and-chat#structured-outputs"
+  >
     Constrain a served model's responses per request.
   </Card>
 </CardGroup>
