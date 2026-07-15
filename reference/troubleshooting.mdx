@@ -364,14 +364,14 @@ Fixes:
 </Accordion>
 
   <Accordion title="A capacity or resource-fit issue interrupted training">
-    Flash uses bounded retries. SFT, GRPO, and OPD resume from the latest complete
-    full-state checkpoint at a clean optimizer-step boundary when one is
-    available. OPD may start a replacement fresh only when no earlier attempt
-    reached its first optimizer update.
+    Flash uses bounded retries. SFT, GRPO, and OPD resume only from a validated
+    full-state checkpoint at a clean optimizer-step boundary.
 
-    If an earlier OPD attempt may have updated but its checkpoint is missing,
-    incomplete, unreadable, incompatible, or ambiguous, replacement fails closed
-    instead of restarting from fresh state.
+    OPD may start a replacement fresh only when Flash can prove that no earlier
+    attempt may have mutated optimizer state. If checkpoint or mutation evidence
+    is missing, incomplete, unreadable, incompatible, or ambiguous, replacement
+    fails closed instead of searching for an older checkpoint or restarting from
+    fresh state.
 
     Watch logs with `flash log <run-id> -f` or poll status with
     `flash status <run-id> -f`. If the same shape repeatedly fails before useful

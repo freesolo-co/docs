@@ -147,10 +147,10 @@ caller cannot override `enable_thinking` per request for an adapter.
 
 ## Structured outputs
 
-Constrain a response to valid JSON, a fixed choice, or a regex with the
-OpenAI-standard `response_format`. A training `structured_outputs` constraint
-becomes the deployed adapter's default, and request-level `response_format`
-overrides it. This works on adapters and base models:
+Constrain a response to valid JSON with the OpenAI-standard `response_format`.
+A training `structured_outputs` constraint becomes the deployed adapter's
+default. A request-level `response_format` can override it with `text`,
+`json_object`, or `json_schema`. This works on adapters and base models:
 
 ```python
 resp = client.chat.completions.create(
@@ -220,7 +220,11 @@ flash export --adapter-id <run-id> --repository <owner>/<name>
 ## Next steps
 
 <CardGroup cols={2}>
-  <Card title="Serving prices" icon="dollar-sign" href="/reference/models#serving-prices">
+  <Card
+    title="Serving prices"
+    icon="dollar-sign"
+    href="/reference/models#serving-prices"
+  >
     Per-token rates for every model.
   </Card>
   <Card title="CLI reference" icon="terminal" href="/reference/cli">

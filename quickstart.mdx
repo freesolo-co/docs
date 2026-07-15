@@ -119,9 +119,9 @@ max_examples = 2
 lora_rank = 32
 ```
 
-Run an authenticated server-side validation first. `--dry-run` runs the same
-submit-time preflights as a real submission, creates a run with `state=dry_run`,
-reports client/server `[train]` schema mismatches, and allocates no GPU or charge:
+Run an authenticated server-side validation first. `--dry-run` runs server-side
+submit-time preflights, creates a run with `state=dry_run`, reports client/server
+`[train]` schema mismatches, allocates no GPU, and incurs no charge:
 
 ```bash
 flash train configs/sft.toml --dry-run
@@ -195,20 +195,20 @@ The commands you used above, plus the ones you'll reach for next. Run
 `flash <command> --help` for the full set of flags, or see the
 [CLI reference](/reference/cli).
 
-| Command              | What it does                               | Example                                |
-| -------------------- | ------------------------------------------ | -------------------------------------- |
-| `flash login`        | Store your Freesolo API key locally        | `flash login --api-key <key>`          |
-| `flash env setup`    | Scaffold a starter environment and configs | `flash env setup`                      |
-| `flash env push`     | Publish an environment and print its id    | `flash env push --name starter .`      |
-| `flash train`        | Submit a run and follow its logs           | `flash train configs/sft.toml`         |
-| `flash train --dry-run` | Run server preflights, no GPU or charge | `flash train configs/sft.toml --dry-run` |
-| `flash train --cost` | Preview the local pre-flight cost, no submit | `flash train configs/sft.toml --cost` |
-| `flash runs`         | List your runs with state, cost, and model | `flash runs`                           |
-| `flash status`       | Show run status and cost                   | `flash status <run-id>`                |
-| `flash log`          | Print or follow worker logs                | `flash log <run-id> -f`                |
-| `flash deploy`       | Serve a trained adapter                    | `flash deploy <run-id>`                |
-| `flash chat`         | Send a message to a deployment             | `flash chat <run-id> -m "hi"`          |
-| `flash undeploy`     | Tear a deployment down                     | `flash undeploy <run-id>`              |
+| Command                 | What it does                                 | Example                                  |
+| ----------------------- | -------------------------------------------- | ---------------------------------------- |
+| `flash login`           | Store your Freesolo API key locally          | `flash login --api-key <key>`            |
+| `flash env setup`       | Scaffold a starter environment and configs   | `flash env setup`                        |
+| `flash env push`        | Publish an environment and print its id      | `flash env push --name starter .`        |
+| `flash train`           | Submit a run and follow its logs             | `flash train configs/sft.toml`           |
+| `flash train --dry-run` | Run server preflights, no GPU or charge      | `flash train configs/sft.toml --dry-run` |
+| `flash train --cost`    | Preview the local pre-flight cost, no submit | `flash train configs/sft.toml --cost`    |
+| `flash runs`            | List your runs with state, cost, and model   | `flash runs`                             |
+| `flash status`          | Show run status and cost                     | `flash status <run-id>`                  |
+| `flash log`             | Print or follow worker logs                  | `flash log <run-id> -f`                  |
+| `flash deploy`          | Serve a trained adapter                      | `flash deploy <run-id>`                  |
+| `flash chat`            | Send a message to a deployment               | `flash chat <run-id> -m "hi"`            |
+| `flash undeploy`        | Tear a deployment down                       | `flash undeploy <run-id>`                |
 
 ## Next steps
 
@@ -219,7 +219,11 @@ The commands you used above, plus the ones you'll reach for next. Run
   <Card title="Training in depth" icon="dumbbell" href="/guides/training">
     SFT, GRPO, and OPD, config options, monitoring, and cost.
   </Card>
-  <Card title="Build an environment" icon="flask" href="/guides/environments/overview">
+  <Card
+    title="Build an environment"
+    icon="flask"
+    href="/guides/environments/overview"
+  >
     Replace the starter task with your own data and reward.
   </Card>
   <Card title="Deploy & chat" icon="comments" href="/guides/deploy-and-chat">
