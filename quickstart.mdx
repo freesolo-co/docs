@@ -11,8 +11,8 @@ with it from the CLI.
 
 - **Python 3.11 or 3.12**, with `uv`, `pipx`, or `pip` to install the CLI.
 - **A Freesolo API key**, created in your dashboard at
-  [freesolo.co](https://freesolo.co). Every `flash` command authenticates with
-  it.
+  [freesolo.co](https://freesolo.co). Commands that contact Freesolo, including
+  server-side `--dry-run`, authenticate with it. Local `--cost` does not submit.
 
 ## Step 1: Install the CLI
 
@@ -119,15 +119,17 @@ max_examples = 2
 lora_rank = 32
 ```
 
-[Validate it locally](/guides/training#validate-before-you-submit) first.
-`--dry-run` parses and checks the config locally:
+Run an authenticated server-side validation first. `--dry-run` runs the same
+submit-time preflights as a real submission, creates a run with `state=dry_run`,
+reports client/server `[train]` schema mismatches, and allocates no GPU or charge:
 
 ```bash
 flash train configs/sft.toml --dry-run
 ```
 
 See what [the run will cost](/guides/training#cost-and-billing) before
-committing. `--cost` prints the pre-flight USD cost and exits without submitting:
+committing. `--cost` remains local: it prints the pre-flight USD cost and exits
+without submitting:
 
 ```bash
 flash train configs/sft.toml --cost
@@ -171,6 +173,9 @@ Serve the trained adapter on Freesolo's
 flash deploy <run-id>
 ```
 
+Every real deploy resolves an immutable adapter revision and runs a bounded
+serving smoke before the stable run-id alias is activated.
+
 ## Step 8: Chat
 
 ```bash
@@ -196,7 +201,8 @@ The commands you used above, plus the ones you'll reach for next. Run
 | `flash env setup`    | Scaffold a starter environment and configs | `flash env setup`                      |
 | `flash env push`     | Publish an environment and print its id    | `flash env push --name starter .`      |
 | `flash train`        | Submit a run and follow its logs           | `flash train configs/sft.toml`         |
-| `flash train --cost` | Preview the pre-flight cost, no submit     | `flash train configs/sft.toml --cost`  |
+| `flash train --dry-run` | Run server preflights, no GPU or charge | `flash train configs/sft.toml --dry-run` |
+| `flash train --cost` | Preview the local pre-flight cost, no submit | `flash train configs/sft.toml --cost` |
 | `flash runs`         | List your runs with state, cost, and model | `flash runs`                           |
 | `flash status`       | Show run status and cost                   | `flash status <run-id>`                |
 | `flash log`          | Print or follow worker logs                | `flash log <run-id> -f`                |

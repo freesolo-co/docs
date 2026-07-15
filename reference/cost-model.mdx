@@ -11,8 +11,8 @@ flash train config.toml --cost
 
 Use it before any non-trivial run. The estimate is catalog-deterministic and
 runs locally: it validates the config, estimates the training loop, prints the
-quoted USD cost, and exits without submitting. For an uncapped SFT run it loads
-the environment to count its training examples.
+quoted USD cost, and exits without submitting. SFT configs require positive
+`max_examples`; use the full row count for an uncapped run.
 
 The submit-time quote is the amount Flash checks against your prepaid org
 balance. Successful runs are billed at the quoted Flash cost. Cancelled runs are
@@ -35,12 +35,11 @@ completions, grades them with your reward, and updates the policy, so it scales
 with how many and how long those completions are (`batch_size × group_size ×
 max_completion_tokens`); an SFT step is one forward/backward pass, priced on the
 training tokens counted from your environment; an OPD step samples the model's
-completions and has the managed teacher grade them before updating, priced on
-GPU time like the others — the teacher runs on Freesolo's managed key, so its
-tokens are not billed to you. The estimator sizes the run's memory and prices
-the cheapest GPU class that fits — it does not pin a specific card, so the one
-actually provisioned (and its live `flash gpus` rate) can differ from the
-estimate.
+completions and has the managed teacher grade them before updating. OPD is
+priced on GPU time like the others, and teacher tokens are not billed to you.
+The estimator prices the cheapest eligible GPU. `gpu.type` is not a pin. If you
+set `[gpu] provider` or `exact_type`, the estimate uses those same constraints,
+and they persist across submissions and retries.
 
 Serving is priced separately, per token: `(prompt − cached) × input + completion
 × output + cached × cached`, at the per-model rates in
@@ -55,9 +54,11 @@ You control the main levers in the config:
   score the model's own completions before each update, so they cost more per
   step. Every algorithm is billed on GPU time; OPD's managed teacher is not
   billed to you.
-- **Epochs and step caps.** More `epochs` increases cost for SFT, GRPO, and OPD.
-  For GRPO/OPD, Flash derives optimizer steps from `epochs`, the retained prompt
-  count, and `batch_size`. SFT also supports a `max_steps` cap.
+- **Epochs and exact step horizons.** More `epochs` increases cost when Flash
+  derives the update count. For SFT, GRPO, and OPD, positive `max_steps` sets the
+  exact optimizer-update horizon.
+- **Required saves.** `save_at_steps` adds the synchronous upload work for each
+  required deployable adapter and full resume checkpoint to the estimate.
 - **Sequence length.** Larger `max_context_tokens` and `max_completion_tokens`
   increase work per example. Keep them large enough for your prompt and answer,
   but do not oversize them by default.
@@ -90,8 +91,9 @@ Treat the preview as the quote for the config you submit. If you edit the
 environment, dataset, model, algorithm, or `[train]` settings, run `--cost`
 again.
 
-For GRPO and OPD, the step count shown in the preview is derived from `epochs`,
-the retained prompt count, and the resolved prompts per step.
+When `max_steps` is positive, the preview uses it as the exact update count for
+SFT, GRPO, or OPD. Otherwise the count is derived from epochs, retained examples,
+batch size, and the recipe.
 
 ## Charges and cancellations
 
@@ -122,7 +124,7 @@ flash undeploy <run-id>
 ## Lowering cost
 
 - Start with a smaller base model while validating the [environment](/guides/environments/overview) and reward.
-- Run short smoke tests before scaling `epochs` or the retained dataset size.
+- Run short smoke tests before scaling `epochs`, positive `max_steps`, or the retained dataset size.
 - For SFT, keep a held-out split and avoid extra epochs once held-out quality
   stops improving.
 - For GRPO and OPD, lower `group_size` and `max_completion_tokens` until the

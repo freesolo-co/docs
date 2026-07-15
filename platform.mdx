@@ -9,8 +9,9 @@ dashboard at [freesolo.co/platform](https://freesolo.co/platform).
 
 ## API keys
 
-Every `flash` command authenticates with a Freesolo API key. Create and revoke
-keys in **API Keys**. Keys are org-wide; any org member can manage them. A
+Commands that contact Freesolo authenticate with a Freesolo API key. Create and
+revoke keys in **API Keys**. The local `flash train --cost` preview does not
+submit a request. Keys are org-wide; any org member can manage them. A
 new key is shown once. Use it with `flash login --api-key <key>` or the
 `FREESOLO_API_KEY` environment variable. See
 [Quickstart](/quickstart#step-2-log-in).
@@ -42,9 +43,13 @@ environment source.
 
 ## Models
 
-**Models** lists the org's deployed LoRA adapters from [managed serving](/guides/deploy-and-chat). It shows
-the adapter id, [base model](/reference/models), serving URL, latest reward when the adapter came from
-a Flash run, per-token billing, and serving status. Rows that still have a
+**Models** lists the org's deployed LoRA adapters from
+[managed serving](/guides/deploy-and-chat). Each deployed run appears as one
+stable run-alias row, not separate rows for immutable revisions. It shows the
+adapter id, [base model](/reference/models), serving URL, latest reward when the
+adapter came from a Flash run, per-token billing, and serving status. The alias
+routes only to a revision that passed deployment verification, while older
+immutable revisions can remain directly callable. Rows that still have a
 matching Flash run link back to the run detail page.
 
 Model access is org-scoped: the serving endpoint authorizes external chat

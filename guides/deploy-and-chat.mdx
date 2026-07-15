@@ -21,12 +21,10 @@ Preview what a deploy would do without creating it:
 flash deploy <run-id> --dry-run
 ```
 
-Skip the server-side post-deploy smoke check. Registration alone does not
-guarantee the adapter serves, so use this only when you'll verify separately:
-
-```bash
-flash deploy <run-id> --no-verify
-```
+Every real deploy resolves the adapter to an immutable Hugging Face commit,
+runs a bounded serving smoke against that revision, and only then atomically
+activates the stable run-id alias. Verification is mandatory; a failed smoke
+leaves the existing alias unchanged.
 
 ## Deploy a specific checkpoint
 
@@ -54,6 +52,16 @@ metadata to the run without altering its training state.
   to deploy one of them instead.
 </Note>
 
+## Stable aliases and immutable revisions
+
+Final adapters use `RUN_ID@final.<40-char-sha>` and saved checkpoints use
+`RUN_ID@step-N.<40-char-sha>`. The stable run-id alias moves only after the new
+revision passes its bounded smoke. Older revisions can remain directly callable.
+
+`RUN_ID/step-N` is a deploy and export selector, not a chat model name. After
+deploying that checkpoint, use the run alias or the full immutable revision from
+`flash deployments`.
+
 ## Billing
 
 Serving is **billed per token**. Prompt and completion tokens have per-model
@@ -79,8 +87,11 @@ requests are still accounted for without rounding each request up to a cent.
 flash chat <run-id> -m "Summarize the plot of Hamlet in two sentences."
 ```
 
+`flash chat` accepts the stable run alias or a full immutable revision.
+`RUN_ID/step-N` is not accepted because it is a deploy/export selector.
+
 `-m`/`--message` is required; `--system`, `--max-tokens` (default 512), and
-`--temperature` (default 0.0) are optional — see the
+`--temperature` (default 0.0) are optional. See the
 [CLI reference](/reference/cli#serving) for the full flag list.
 
 ```bash
@@ -98,22 +109,30 @@ flash chat <run-id> -m "What is 6*7?" --system "Answer with just the number."
 ## Manage deployments
 
 ```bash
-flash deployments        # list active deployments and endpoints
-flash undeploy <run-id>  # deregister the adapter from serving
+flash deployments         # human-readable deployment status
+flash deployments --json  # complete machine-readable records
+flash undeploy <run-id>   # disable the alias and immutable revisions
 ```
+
+Human output shows run id, step, revision, state, verification time, OpenAI
+model, and detail. JSON output includes `openai_base_url` for clients.
+
+`flash undeploy <run-id>` disables the stable alias and all of the run's
+immutable revisions.
 
 ## Use it from your own code
 
-Deployments are OpenAI-compatible. Point any OpenAI SDK at the endpoint from
-`flash deployments`. The `model` is your run id. A valid Freesolo API key is
-required, and the key's org must own the adapter named in `model`:
+Deployments are OpenAI-compatible. Use `flash deployments --json` and pass its
+`openai_base_url` as the SDK base URL. Set `model` to the stable run alias or a
+full immutable revision. A valid Freesolo API key is required, and the key's org
+must own the adapter named in `model`:
 
 ```python
 from openai import OpenAI
 
 client = OpenAI(
-    base_url="https://<your-endpoint>/v1",   # from `flash deployments`
-    api_key="<your-freesolo-api-key>",       # your Freesolo API key (the same one `flash login` uses); the endpoint checks that your org owns the adapter
+    base_url="https://<your-endpoint>/v1",   # use openai_base_url from deployments json
+    api_key="<your-freesolo-api-key>",       # use the same freesolo key as flash login
 )
 
 resp = client.chat.completions.create(
@@ -128,10 +147,10 @@ caller cannot override `enable_thinking` per request for an adapter.
 
 ## Structured outputs
 
-Constrain a response to valid JSON — or a fixed set of choices, or a regex — with
-the OpenAI-standard `response_format`, so the model can't drift off format. It
-works on any deployed adapter or base model through the same OpenAI-compatible
-client:
+Constrain a response to valid JSON, a fixed choice, or a regex with the
+OpenAI-standard `response_format`. A training `structured_outputs` constraint
+becomes the deployed adapter's default, and request-level `response_format`
+overrides it. This works on adapters and base models:
 
 ```python
 resp = client.chat.completions.create(
@@ -151,11 +170,11 @@ resp = client.chat.completions.create(
 ```
 
 `{"type": "json_object"}` forces any valid JSON with no fixed schema, and
-`{"type": "text"}` (the default) leaves output unconstrained. Guided decoding
-binds from the first generated token, so use it with a non-thinking deployment —
-or pass `enable_thinking: false` on a base model — when you want strictly
-formatted output. See the [Structured outputs](/guides/structured-outputs) guide
-to also constrain training rollouts.
+`{"type": "text"}` leaves output unconstrained. With thinking enabled, reasoning
+is free-form and the grammar begins after `</think>`. Real deployments fail
+before alias activation if structured output is invalid, unclosed, or truncated.
+See the [Structured outputs](/guides/structured-outputs) guide to also constrain
+training rollouts.
 
 ## Chat with a base model (no adapter)
 

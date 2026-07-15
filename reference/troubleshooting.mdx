@@ -35,8 +35,8 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
 
 <AccordionGroup>
   <Accordion title="flash login fails or commands report 401 / invalid key">
-    Every command authenticates with a **Freesolo API key**, verified against
-    Freesolo at login.
+    Commands that contact Freesolo authenticate with a **Freesolo API key**,
+    verified at login. Local `flash train --cost` does not submit.
 
     - Create a key in your dashboard at [freesolo.co](https://freesolo.co).
     - Log in once: `flash login --api-key <your-key>` (or set `FREESOLO_API_KEY`
@@ -70,11 +70,10 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
 
   <Accordion title="ModuleNotFoundError: No module named 'freesolo' (local authoring)">
     Managed training workers have the Freesolo SDK when they import a published
-    environment. Your local Python environment does not get that SDK automatically from the `flash`
-    CLI. Install it locally to run or test `environment.py` directly, or to run
-    a command such as `flash train --cost` that **loads** the environment to
-    count examples. `--dry-run` validates the config only and does not import
-    the environment:
+    environment. Your local Python environment does not get that SDK automatically
+    from the `flash` CLI. Install it locally to run or test `environment.py`
+    directly. Local `flash train --cost` parses the config without importing the
+    environment, and authenticated server-side `--dry-run` starts no GPU worker:
 
     ```bash
     uv pip install freesolo
@@ -86,8 +85,9 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
   </Accordion>
 
   <Accordion title="Worker import fails with ModuleNotFoundError">
-    `flash train --dry-run` validates the config, but it does not prove every
-    remote environment dependency is installed. If `flash log <run-id>` shows
+    `flash train --dry-run` runs server-side submit preflights, but it does not
+    execute the GPU worker or prove every environment dependency is installed.
+    If `flash log <run-id>` shows
     your `environment.py` failed while importing a task library, add that
     package to `[environment].pip`, publish the environment, and submit again:
 
@@ -100,15 +100,16 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
     Only list packages your environment imports. Flash does not install worker
     dependencies from a `pyproject.toml`, `requirements.txt`, or lockfile bundled
     with the environment; keep managed-run dependencies in `[environment].pip`.
+
   </Accordion>
 
-  <Accordion title="[environment].pip breaks training startup">
-    `[environment].pip` is for task dependencies imported by your environment.
-    Do not pin Flash's managed training stack there, such as `torch`, `trl`,
-    `vllm`, `peft`, or `bitsandbytes`, unless your environment
-    directly imports that package. Extra pins can conflict with the worker's
-    tested training recipe. Remove the pin and resubmit.
-  </Accordion>
+<Accordion title="[environment].pip breaks training startup">
+  `[environment].pip` is for task dependencies imported by your environment. Do
+  not pin Flash's managed training stack there, such as `torch`, `trl`, `vllm`,
+  `peft`, or `bitsandbytes`, unless your environment directly imports that
+  package. Extra pins can conflict with the worker's tested training recipe.
+  Remove the pin and resubmit.
+</Accordion>
 
   <Accordion title="flash env pull says the archive is too large">
     Pull the specific file you need instead of the whole environment:
@@ -121,6 +122,7 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
     Keep published environments focused on source, small sidecars, and datasets
     needed by the run. Do not publish virtualenvs, local caches, model weights,
     or generated artifacts.
+
   </Accordion>
 
   <Accordion title="I republished an environment and want to verify the data">
@@ -132,13 +134,14 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
 
     For clean A/B experiments, publish changed datasets under a fresh env name
     so old runs, new runs, and local files are easy to tell apart.
+
   </Accordion>
 
-  <Accordion title="Environment won't import / name collision">
-    If your environment module shares a name with an installed Python package, it
-    can shadow or be shadowed by that package. Keep helper module names distinct
-    from installed packages.
-  </Accordion>
+<Accordion title="Environment won't import / name collision">
+  If your environment module shares a name with an installed Python package, it
+  can shadow or be shadowed by that package. Keep helper module names distinct
+  from installed packages.
+</Accordion>
 
   <Accordion title="What id do I reference in my config?">
     The `[environment] id` must be a published Freesolo environment id, produced
@@ -166,29 +169,46 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
   <Accordion title="Unknown config key or section rejected">
     Flash rejects unknown config sections and `[train]` keys **at parse time**.
     Check the key against the
-    [configuration reference](/reference/configuration) and validate locally:
+    [configuration reference](/reference/configuration) and run authenticated
+    server-side validation:
 
     ```bash
     flash train config.toml --dry-run
     ```
 
+    Dry-run also reports client/server `[train]` schema differences.
+
   </Accordion>
 
-  <Accordion title="unsupported algorithm">
-    `algorithm` must be `sft` (the default), `grpo`, or `opd`. Fix the value and
-    re-validate with `--dry-run`.
-  </Accordion>
+<Accordion title="unsupported algorithm">
+  `algorithm` must be `sft` (the default), `grpo`, or `opd`. Fix the value and
+  re-validate with `--dry-run`.
+</Accordion>
 
-  <Accordion title="Run rejected: training context exceeds serving context">
-    Flash rejects a run at submit when its training context is longer than the
-    base model's serving context (`max_model_len`) — a LoRA trained longer than it
-    is served wastes compute and learns positions never used at inference. SFT
-    checks `train.max_context_tokens`; GRPO and OPD check the rollout prompt
-    plus `max_completion_tokens`.
-    Most models serve at 8192; `Qwen/Qwen3.6-35B-A3B` serves at 4096. Lower
-    `max_context_tokens` (and, for GRPO/OPD, `max_completion_tokens`) to at or
-    below the serving context
-    — see [context window](/reference/models#context-window-and-lora-rank).
+<Accordion title="Run rejected: training context exceeds serving context">
+  Flash rejects a run at submit when its training context is longer than the
+  base model's serving context (`max_model_len`). A LoRA trained longer than it
+  is served wastes compute and learns positions never used at inference. SFT
+  checks `train.max_context_tokens`; GRPO and OPD check the rollout prompt plus
+  `max_completion_tokens`. Most models serve at 8192; `Qwen/Qwen3.6-35B-A3B`
+  serves at 4096. Lower `max_context_tokens` and, for GRPO/OPD,
+  `max_completion_tokens` to at or below the serving context. See [context
+  window](/reference/models#context-window-and-lora-rank).
+</Accordion>
+
+<Accordion title="Warm-start rank, alpha, or revision mismatch">
+  The source LoRA rank and alpha are authoritative. Remove both
+  `train.lora_rank` and `train.lora_alpha` when using `init_from_adapter`. A
+  pinned `model_revision` must match the source exactly. Use server-side
+  `--dry-run` to resolve and validate the source; local `--cost` may use
+  defaults and warn.
+</Accordion>
+
+  <Accordion title="The run used a different GPU than gpu.type">
+    `gpu.type` is a sizing hint, not a pin. Set `[gpu] exact_type` to an active
+    validated class from `flash gpus`. Add `provider = "runpod"`, `"lambda"`, or
+    `"vast"` only when the provider must also be fixed. These constraints persist
+    across retries and cost estimates.
   </Accordion>
 </AccordionGroup>
 
@@ -228,24 +248,25 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
 
   </Accordion>
 
-  <Accordion title="Run submit reports insufficient balance">
-    Add funds or reduce the run estimate before submitting again. Smaller base
-    models, fewer GRPO/OPD epochs, lower `group_size`, shorter
-    `max_completion_tokens`, and SFT smoke tests are the fastest ways to lower
-    the pre-flight estimate.
-  </Accordion>
+<Accordion title="Run submit reports insufficient balance">
+  Add funds or reduce the run estimate before submitting again. Smaller base
+  models, fewer GRPO/OPD epochs, lower `group_size`, shorter
+  `max_completion_tokens`, and SFT smoke tests are the fastest ways to lower the
+  pre-flight estimate.
+</Accordion>
 
 <Accordion title="GRPO reward is stuck at 0">
   The task is too hard for the model at its current ability: if no rollout ever
   scores, there's nothing for GRPO to reinforce. Try a stronger or larger base
-  model, make the task easier to start, or double-check that your reward
-  returns a positive reward for good answers.
+  model, make the task easier to start, or double-check that your reward returns
+  a positive reward for good answers.
 </Accordion>
 
 <Accordion title="Reward is stuck at 1 (or never moves)">
   Usually the reward is not discriminative: it scores almost everything the
   same. Make the reward function separate better answers from worse ones so GRPO
-  has a spread of scores to learn from. See [Environments](/guides/environments/overview).
+  has a spread of scores to learn from. See
+  [Environments](/guides/environments/overview).
 </Accordion>
 
 <Accordion title="Reward collapses to ~0 with `thinking = true`">
@@ -257,21 +278,23 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
   extracts a JSON object), it then sees nothing and scores ~0 across the board —
   even though the model is "working".
 
-  Fixes:
-  - **Raise `max_completion_tokens`** so the reasoning *and* the answer both fit
-    (e.g. a task that needs ~200 answer tokens may need
-    `max_completion_tokens = 2048` with thinking on), and make sure
-    `max_context_tokens` is large enough to hold the prompt plus that budget.
-  - Optionally set `thinking_length_penalty_coef` to nudge the model toward shorter
-    reasoning so the answer reliably lands inside the budget.
-  - Score the answer text by default. In thinking mode `response_text` remains
-    string-compatible answer text and also exposes `response_text.completion`,
-    `response_text.thinking`, and `response_text.raw` for rewards that intentionally
-    inspect reasoning.
+Fixes:
 
-  The same trap applies to any **reasoning model you call as an LLM judge** from a
-  reward: give the judge call enough `max_tokens` or it returns empty content and
-  the judge silently scores 0.
+- **Raise `max_completion_tokens`** so the reasoning _and_ the answer both fit
+  (e.g. a task that needs ~200 answer tokens may need
+  `max_completion_tokens = 2048` with thinking on), and make sure
+  `max_context_tokens` is large enough to hold the prompt plus that budget.
+- Optionally set `thinking_length_penalty_coef` to nudge the model toward shorter
+  reasoning so the answer reliably lands inside the budget.
+- Score the answer text by default. In thinking mode `response_text` remains
+  string-compatible answer text and also exposes `response_text.completion`,
+  `response_text.thinking`, and `response_text.raw` for rewards that intentionally
+  inspect reasoning.
+
+The same trap applies to any **reasoning model you call as an LLM judge** from a
+reward: give the judge call enough `max_tokens` or it returns empty content and
+the judge silently scores 0.
+
 </Accordion>
 
 <Accordion title="Qwen3.5 thinking multi-turn SFT learns doubled thinking tags">
@@ -283,57 +306,42 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
   The symptom is doubled, missing, or misplaced thinking tags, or an adapter that
   behaves differently in training-style evals than it does when served.
 
-  Fixes:
-  - For message-shaped multi-turn SFT targets, keep intermediate assistant turns
-    as the actual code, tool, or action text only.
-  - Put `<think>...</think>` plus the final answer only in the final assistant
-    target.
-  - Do not add a second opener for the template's pre-opened `<think>\n`. Flash's
-    completion-only SFT masking uses the longest shared token prefix, so that
-    pre-opened tag is treated as prompt text.
+Fixes:
+
+- For message-shaped multi-turn SFT targets, keep intermediate assistant turns
+  as the actual code, tool, or action text only.
+- Put `<think>...</think>` plus the final answer only in the final assistant
+  target.
+- Do not add a second opener for the template's pre-opened `<think>\n`. Flash's
+  completion-only SFT masking uses the longest shared token prefix, so that
+  pre-opened tag is treated as prompt text.
 
 </Accordion>
 
   <Accordion title="OPD run underperforms SFT, or its rollouts never terminate">
-    On-policy distillation refines a model that already has the format right; it
-    does not teach the output contract from scratch. Starting OPD from the cold
-    base model often underperforms plain SFT and shows up as truncated rollouts
-    that never reach a stop. **Warm-start from a finished SFT run** and let OPD
-    improve on it:
+    OPD refines a model that already has the output format. Warm-start from a
+    finished SFT run, and omit `lora_rank` and `lora_alpha` because the source
+    values are authoritative:
 
     ```toml
     [train]
-    init_from_adapter = "<sft-run-id>"   # or "<sft-run-id>/step-N"
+    init_from_adapter = "<sft-run-id>"
     ```
 
-    **Check the teacher, not just the warm-start.** OPD can only pull your model
-    *toward* its teacher — the managed GLM 5.2 by default, or the one you set with
-    `teacher_model` — so if that teacher isn't strong on your specific task,
-    distillation copies its mistakes and can land the student *below* SFT — a
-    falling per-token loss just means it matched a weak teacher. Before you re-run,
-    roll that teacher through your own environment on a held-out split and confirm
-    it clearly beats your model *and* solves the task the way you want; if it
-    doesn't, this is a job for GRPO or SFT, not OPD — or try a different allow-listed
-    `teacher_model`.
+    You can also use `"<sft-run-id>/step-N"` for a saved checkpoint. Verify that
+    the selected teacher clearly beats the student on held-out task examples.
 
-    **Rollouts that never terminate are usually a verbose teacher.** The
-    cross-tokenizer reverse-KL is computed over shared decoded text and can't
-    supervise the zero-width stop token, so distilling toward a long-winded teacher
-    erodes termination and completions run to `max_completion_tokens`. Two
-    complementary fixes:
+    There is no auxiliary EOS loss. For rollouts that reach
+    `max_completion_tokens` without stopping:
 
-    - Raise [`opd_eos_loss_coef`](/reference/configuration#opd-specific) (a bounded
-      terminal-EOS reinforcement) and warm-start from SFT — watch `truncated_rollouts`
-      fall in the run metrics.
-    - Shrink what has to terminate by constraining the *teacher's* reasoning at the
-      source. The teacher scores your model conditioned on your environment's system
-      prompt, so a **hard, specific** reasoning budget there ("reason in at most N
-      sentences, then act; don't reconsider") pulls the distillation target shorter.
-      A vague "be brief" can backfire on a reasoning teacher — it trims the median
-      while inflating the long tail, which is the tail that drives runaway.
+    - Start from an SFT adapter with the desired stopping behavior.
+    - Give the teacher a hard answer or reasoning budget in the system prompt.
+    - Add `stop_sequences` when the task has reliable textual terminators.
+    - Track `truncated_rollouts` to diagnose termination.
 
-    OPD supports single- and multi-turn environments but **not tool-calling
-    environments**, and `kl_penalty_coef` must be greater than `0`.
+    OPD supports single- and multi-turn environments but not tool-calling ones,
+    and `kl_penalty_coef` must be greater than `0`.
+
   </Accordion>
 
   <Accordion title="Did pressing Ctrl-C kill my run?">
@@ -349,19 +357,26 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
 
   </Accordion>
 
-  <Accordion title="flash cancel takes a long time to return">
-    Expected. Cancellation waits for the managed worker to stop and clean up
-    before confirming, which can take several minutes. The CLI waits this
-    teardown out; the run is marked `cancelled` when it completes.
-  </Accordion>
+<Accordion title="flash cancel takes a long time to return">
+  Expected. Cancellation waits for the managed worker to stop and clean up
+  before confirming, which can take several minutes. The CLI waits this teardown
+  out; the run is marked `cancelled` when it completes.
+</Accordion>
 
   <Accordion title="A capacity or resource-fit issue interrupted training">
-    Runs are supervised by Flash: a stall watchdog plus bounded auto-retry that
-    **resumes from the last streamed checkpoint** when possible. If the run
-    ultimately succeeds, the charge remains the quoted Flash cost. Watch logs
-    with `flash log <run-id> -f` or poll status with `flash status <run-id> -f`.
-    If the same shape repeatedly fails before useful metrics, reduce
-    `max_context_tokens`, `max_completion_tokens`, or `group_size`.
+    Flash uses bounded retries. SFT, GRPO, and OPD resume from the latest complete
+    full-state checkpoint at a clean optimizer-step boundary when one is
+    available. OPD may start a replacement fresh only when no earlier attempt
+    reached its first optimizer update.
+
+    If an earlier OPD attempt may have updated but its checkpoint is missing,
+    incomplete, unreadable, incompatible, or ambiguous, replacement fails closed
+    instead of restarting from fresh state.
+
+    Watch logs with `flash log <run-id> -f` or poll status with
+    `flash status <run-id> -f`. If the same shape repeatedly fails before useful
+    metrics, reduce `max_context_tokens`, `max_completion_tokens`, or `group_size`.
+
   </Accordion>
 </AccordionGroup>
 
@@ -381,25 +396,30 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
 
   </Accordion>
 
-  <Accordion title="Deploy or the first request is slow">
-    Deploy registers and warms the adapter on Freesolo's managed serving
-    service. Large models can take a few minutes before the endpoint is ready.
-    See [Deploy & chat](/guides/deploy-and-chat).
-  </Accordion>
+<Accordion title="Deploy or the first request is slow">
+  Every real deploy resolves an immutable revision and runs a bounded smoke
+  before activating the stable alias. Large models can take a few minutes to
+  warm and verify. A failed smoke leaves the alias unchanged. See [Deploy &
+  chat](/guides/deploy-and-chat).
+</Accordion>
 
   <Accordion title="How is serving billed?">
     Serving is **billed per token** for requests. Prompt, completion, and cached
     prompt token rates are listed in [Supported models](/reference/models#serving-prices).
-    `flash undeploy <run-id>` deregisters the adapter.
+    `flash undeploy <run-id>` disables the alias and immutable revisions.
   </Accordion>
 
   <Accordion title="Calling the endpoint from my own code is rejected">
-    Deployments are OpenAI-compatible. Use the endpoint from `flash deployments`
-    as the `base_url` and the `<run-id>` as the `model`. The OpenAI SDK requires
-    an `api_key`, and so does the serving endpoint — pass your Freesolo API key
-    (the same key `flash login` uses). Serving authorizes every request against the
-    org that owns the adapter, so a placeholder key is rejected (401/403). See
-    [Use it from your own code](/guides/deploy-and-chat#use-it-from-your-own-code).
+    Use `openai_base_url` from `flash deployments --json`, set `model` to the run
+    alias or a full immutable revision, and pass your Freesolo API key.
+
+    - `401`: missing or invalid key.
+    - `402`: insufficient org balance.
+    - `403`: the key's org does not own the adapter.
+    - `503`: backend temporarily unavailable; retry with backoff.
+
+    See [Use it from your own code](/guides/deploy-and-chat#use-it-from-your-own-code).
+
   </Accordion>
 </AccordionGroup>
 
@@ -415,7 +435,11 @@ and the failing command.
   <Card title="CLI reference" icon="terminal" href="/reference/cli">
     Flags and commands for every step.
   </Card>
-  <Card title="Configuration reference" icon="gear" href="/reference/configuration">
+  <Card
+    title="Configuration reference"
+    icon="gear"
+    href="/reference/configuration"
+  >
     Valid config keys and sections.
   </Card>
 </CardGroup>

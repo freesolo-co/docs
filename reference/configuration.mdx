@@ -3,14 +3,18 @@ title: "Configuration reference"
 description: "Every field in a Flash training config (TOML)."
 ---
 
-Describe a run in a TOML config, then pass it to `flash train`. Only
-`model` and `environment.id` are required. `algorithm` defaults to `sft`;
-everything else has a default. Validate a config locally with
-`flash train config.toml --dry-run`.
+Describe a run in a TOML config, then pass it to `flash train`. Every run
+requires `model` and `environment.id`; SFT also requires a positive
+`train.max_examples`. `algorithm` defaults to `sft`. Run authenticated
+submit-time preflights with
+`flash train config.toml --dry-run`; it creates `state=dry_run`, allocates no GPU,
+and charges nothing.
 
 ```toml
 model = "Qwen/Qwen3.5-4B"
+# model_revision = "main"
 algorithm = "sft"
+seed = 42
 
 [environment]
 id = "your-org/your-env"
@@ -23,20 +27,22 @@ lora_rank = 32
 
 ## Top level
 
-| Key | Type | Default | Description |
-| --- | --- | --- | --- |
-| `model` | string | (required) | Base model to train a LoRA adapter on, e.g. `Qwen/Qwen3.5-4B`. See [`flash models`](/reference/models). |
-| `algorithm` | string | `sft` | `sft` (supervised): imitates example completions you provide. `grpo` (RL): learns from a reward you define. `opd` (on-policy distillation): a managed teacher (GLM 5.2 by default, selectable with `teacher_model`) grades your model's own completions. See [Choose a training algorithm](/guides/training#choose-a-training-algorithm). |
-| `thinking` | bool | `false` | Enable reasoning mode (thinking-capable models only). The reasoning trace shares the `max_completion_tokens` budget with the answer, so raise `max_completion_tokens` (and `max_context_tokens` when needed) when you enable it. See [Troubleshooting](/reference/troubleshooting). |
+| Key              | Type   | Default    | Description                                                                                                          |
+| ---------------- | ------ | ---------- | -------------------------------------------------------------------------------------------------------------------- |
+| `model`          | string | (required) | Base model to train a LoRA adapter on, e.g. `Qwen/Qwen3.5-4B`. See [`flash models`](/reference/models).              |
+| `model_revision` | string | `""`       | Optional Hugging Face branch, tag, or commit. Empty uses the default revision; a value pins all student-model loads. |
+| `algorithm`      | string | `sft`      | `sft` imitates completions, `grpo` learns from your reward, and `opd` distils from a managed teacher.                |
+| `seed`           | int    | `42`       | Deterministic run seed for training order and sampling. Must be between `0` and `9223372036854775807`.               |
+| `thinking`       | bool   | `false`    | Enable reasoning mode on a thinking-capable model. Reasoning and the answer share `max_completion_tokens`.           |
 
 ## `[environment]`
 
-| Key | Type | Default | Description |
-| --- | --- | --- | --- |
-| `id` | string | (required) | [Published Freesolo environment](/guides/environments/package#publish-it) id, `your-org/your-env`. |
-| `params` | table | `{}` | Keyword arguments passed to the env's `load_environment(**kwargs)`. Flash also honors `split` for packaged env datasets. See [Datasets](/guides/datasets#load-sidecars): it selects `dataset/<split>.jsonl`, and a missing split file is an error (no silent `train.jsonl` fallback). |
-| `pip` | list[string] | `[]` | Extra third-party pip requirements the worker installs before importing your environment (an escape hatch for deps your `environment.py` imports). |
-| `secrets` | list[string] | `[]` | Environment variable names to forward to the worker as runtime secrets. Values are read from your shell, `.env`, or `.env.local` at submit time. |
+| Key       | Type         | Default    | Description                                                                                                                                                                                                                                                                           |
+| --------- | ------------ | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`      | string       | (required) | [Published Freesolo environment](/guides/environments/package#publish-it) id, `your-org/your-env`.                                                                                                                                                                                    |
+| `params`  | table        | `{}`       | Keyword arguments passed to the env's `load_environment(**kwargs)`. Flash also honors `split` for packaged env datasets. See [Datasets](/guides/datasets#load-sidecars): it selects `dataset/<split>.jsonl`, and a missing split file is an error (no silent `train.jsonl` fallback). |
+| `pip`     | list[string] | `[]`       | Extra third-party pip requirements the worker installs before importing your environment (an escape hatch for deps your `environment.py` imports).                                                                                                                                    |
+| `secrets` | list[string] | `[]`       | Environment variable names to forward to the worker as runtime secrets. Values are read from your shell, `.env`, or `.env.local` at submit time.                                                                                                                                      |
 
 ```toml
 [environment]
@@ -67,98 +73,96 @@ Reserved platform secret names such as `FREESOLO_API_KEY`, `HF_TOKEN`,
 
 ## `[train]`
 
-| Key | Type | Default | Description |
-| --- | --- | --- | --- |
-| `lora_rank` | int | `32` | LoRA rank; higher means a larger adapter with more capacity and cost. Use the default unless you have a reason to increase it. Flash caps rank per base model — 128 for the 0.8B/1B/2B tiers, 64 for the 4B/9B/35B — and rejects a higher `lora_rank` at submit. See [context window and LoRA rank](/reference/models#context-window-and-lora-rank). |
-| `lora_alpha` | int | `64` | LoRA alpha. |
-| `learning_rate` | float | recipe default | Optimizer learning rate. |
-| `batch_size` | int | recipe default | Training batch size. |
-| `max_context_tokens` | int | recipe default | Total training context cap. Can't exceed the base model's served context window (`max_model_len`); a run whose training context is longer is rejected at submit. SFT checks the rendered training sequence, while GRPO and OPD check the rollout prompt plus `max_completion_tokens`. See [context window](/reference/models#context-window-and-lora-rank). |
-| `save_every` | int | recipe default | Checkpoint cadence (steps). Every save is uploaded: if a save fires while a previous upload is still in flight it is queued (newest wins) and uploaded next, and the final checkpoint is flushed at train end — saves are not skipped on a slow uplink. |
-| `init_from_adapter` | string | - | Warm-start from an existing adapter. Use the run id that `flash status` prints, e.g. `init_from_adapter = "<run-id>"`. To warm-start from a saved checkpoint instead of the run-level adapter, use the exact short ref listed by `flash checkpoints`: `"<run-id>/step-N"`. Longer storage refs are rejected in config; use the short refs printed by Flash. A warm-start continues that adapter in place, so set `lora_rank` equal to the source run's rank — a mismatch is rejected at submit. |
+| Key                  | Type      | Default        | Description                                                                                                                                                                                                                                                           |
+| -------------------- | --------- | -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `lora_rank`          | int       | `32`           | LoRA rank; higher means a larger adapter with more capacity and cost. Flash enforces the base model serving cap. Omit with `init_from_adapter`; the source rank is authoritative. See [context window and LoRA rank](/reference/models#context-window-and-lora-rank). |
+| `lora_alpha`         | int       | `64`           | LoRA alpha. Omit with `init_from_adapter`; the source alpha is authoritative.                                                                                                                                                                                         |
+| `learning_rate`      | float     | recipe default | Optimizer learning rate.                                                                                                                                                                                                                                              |
+| `batch_size`         | int       | recipe default | Training batch size.                                                                                                                                                                                                                                                  |
+| `max_context_tokens` | int       | recipe default | Total training context cap. SFT applies it to the rendered sequence; GRPO and OPD apply it to prompt plus completion. It cannot exceed the base model serving context. See [context window](/reference/models#context-window-and-lora-rank).                          |
+| `max_steps`          | int       | derived        | A positive value is the exact update horizon for SFT, GRPO, and OPD. Absent or non-positive uses the derived count.                                                                                                                                                   |
+| `save_at_steps`      | list[int] | `[]`           | Strictly increasing positive required saves. Requires positive `max_steps`, cannot exceed it, and suppresses `save_every`. Each step must durably publish the deployable adapter and full resume checkpoint.                                                          |
+| `save_every`         | int       | recipe default | Periodic cadence when `save_at_steps` is empty. Upload attempts are synchronous but remain best-effort after bounded retries.                                                                                                                                         |
+| `init_from_adapter`  | string    | -              | Continue a GRPO or OPD adapter from `RUN_ID` or the exact `RUN_ID/step-N` shown by `flash checkpoints`. Longer storage refs are rejected. Omit rank and alpha. If set, `model_revision` must match the source exactly.                                                |
+
+Server-side `--dry-run` resolves warm-start rank and alpha. Local `--cost` may
+warn and estimate with defaults.
 
 ### SFT-specific
 
-| Key | Type | Description |
-| --- | --- | --- |
-| `epochs` | int | Number of passes over the retained training rows. |
-| `max_steps` | int | cap on optimizer steps (`0` = no cap). |
-| `max_examples` | int | Truncate the training dataset to N examples (`0` = no cap). |
+| Key            | Type | Description                                                                                                                            |
+| -------------- | ---- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `epochs`       | int  | Passes over retained rows when `max_steps` is not positive.                                                                            |
+| `max_examples` | int  | Required positive row count. Retains the first N rows in file order before seeded shuffle; use the full row count for an uncapped run. |
 
 ### GRPO-specific
 
-| Key | Type | Description |
-| --- | --- | --- |
-| `epochs` | int | Number of passes over the retained prompt pool. Flash derives optimizer steps from `epochs`, `max_examples`, and `batch_size`. |
-| `max_examples` | int | Truncate the prompt pool to N examples (`0` = no cap). |
-| `group_size` | int | Completions sampled per prompt. Must be at least `2`. |
-| `temperature` | float | Sampling temperature for rollouts. |
-| `max_completion_tokens` | int | Max generated tokens per rollout completion or assistant turn. |
-| `kl_penalty_coef` | float | Strength of the penalty that keeps the trained model from drifting too far from the base model. |
-| `advantage_clip` | float | Recorded for recipe parity but currently a no-op (TRL clips the importance ratio, not the advantage value). |
-| `thinking_length_penalty_coef` | float | Penalty on reasoning length. |
-| `stop_sequences` | list[string] | Stop sequences for generation. |
-| `structured_outputs` | string/table | Guided decoding: constrain every rollout to a JSON schema, `regex`, or `choice` set so the sampler can't emit off-format text and the reward measures content, not formatting. See [Structured outputs](/guides/structured-outputs). |
+| Key                            | Type         | Description                                                                                                                    |
+| ------------------------------ | ------------ | ------------------------------------------------------------------------------------------------------------------------------ |
+| `epochs`                       | int          | Passes over the retained prompt pool when `max_steps` is not positive.                                                         |
+| `max_examples`                 | int          | Truncate the prompt pool to N examples (`0` = no cap).                                                                         |
+| `group_size`                   | int          | Completions sampled per prompt. Must be at least `2`.                                                                          |
+| `temperature`                  | float        | Sampling temperature for rollouts.                                                                                             |
+| `max_completion_tokens`        | int          | Maximum generated tokens per completion or assistant turn.                                                                     |
+| `kl_penalty_coef`              | float        | Strength of the penalty that limits drift from the base model.                                                                 |
+| `advantage_clip`               | float        | Recorded for recipe parity but currently a no-op; the runtime clips the importance ratio instead.                              |
+| `thinking_length_penalty_coef` | float        | Penalty on reasoning length.                                                                                                   |
+| `stop_sequences`               | list[string] | Stop sequences for generation.                                                                                                 |
+| `structured_outputs`           | string/table | Constrain each rollout to a JSON schema, regex, choice set, or any JSON. See [Structured outputs](/guides/structured-outputs). |
 
 ### OPD-specific
 
-OPD reuses the GRPO sampling knobs with distillation-tuned defaults. The teacher
-is a managed model — **GLM 5.2 by default**, or another from a fixed allow-list
-via [`teacher_model`](#opd-specific); its credentials stay platform-managed
-either way. OPD is configured with `epochs`: Flash makes that many passes over the
-retained prompt pool and derives the optimizer-step count from `max_examples`
-and `batch_size`. Warm-starting from a finished SFT run with
-[`init_from_adapter`](#train) is recommended.
+OPD derives updates from epochs, retained prompts, and batch size unless positive
+`max_steps` sets an exact horizon. An SFT warm-start is recommended.
 
-| Key | Type | Default | Description |
-| --- | --- | --- | --- |
-| `teacher_model` | string | `glm-5.2` | Managed teacher to distil from, one of `glm-5.2` (default), `deepseek-v4-pro`, `kimi-k2.6`. The Fireworks key stays platform-managed for every option — you never set a key and can't bring your own. An unsupported id is rejected at submit. |
-| `epochs` | int | recipe default | Number of passes over the retained prompt pool. |
-| `max_examples` | int | `0` | Truncate the prompt pool to N examples (`0` = no cap). |
-| `group_size` | int | `1` | Completions the model samples per prompt; one is usually enough for distillation. |
-| `temperature` | float | `1.0` | Sampling temperature for the model's completions. |
-| `max_completion_tokens` | int | `512` (`1536` with `thinking`) | Max generated tokens per completion or assistant turn. |
-| `kl_penalty_coef` | float | `1.0` | Strength of the reverse-KL pull toward the teacher. Must be greater than `0`. |
-| `opd_eos_loss_coef` | float | `0.5` | Terminal-EOS reinforcement. The cross-tokenizer reverse-KL can't supervise the zero-width stop token, so distilling toward a verbose teacher erodes termination; this bounded, self-limiting term reinstates the stop signal on rollouts that ended naturally. Raise it if completions run past the length cap without stopping (`truncated_rollouts` stays high); `0` disables it. |
-| `stop_sequences` | list[string] | - | Stop sequences for the model's completions. |
-| `structured_outputs` | string/table | - | Guided decoding for every student rollout — same forms as GRPO. See [Structured outputs](/guides/structured-outputs). |
+| Key                     | Type         | Default                        | Description                                                                                                                        |
+| ----------------------- | ------------ | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `teacher_model`         | string       | `glm-5.2`                      | Managed teacher: `glm-5.2`, `deepseek-v4-pro`, or `kimi-k2.6`. Unsupported ids are rejected. Teacher tokens are not billed to you. |
+| `epochs`                | int          | recipe default                 | Passes over retained prompts when `max_steps` is not positive.                                                                     |
+| `max_examples`          | int          | `0`                            | Truncate the prompt pool to N examples (`0` = no cap).                                                                             |
+| `group_size`            | int          | `1`                            | Completions sampled per prompt.                                                                                                    |
+| `temperature`           | float        | `1.0`                          | Student sampling temperature.                                                                                                      |
+| `max_completion_tokens` | int          | `512` (`1536` with `thinking`) | Maximum generated tokens per completion or assistant turn.                                                                         |
+| `kl_penalty_coef`       | float        | `1.0`                          | Reverse-KL strength. Must be greater than `0`.                                                                                     |
+| `stop_sequences`        | list[string] | -                              | Stop sequences for student completions.                                                                                            |
+| `structured_outputs`    | string/table | -                              | Guided decoding for each student rollout.                                                                                          |
 
-Teacher credentials are platform-managed for every allow-listed `teacher_model` —
-you never set a key, and teacher tokens are not billed to you; the `--cost`
-estimate itemizes the chosen teacher's token spend as a diagnostic, but only GPU
-time is charged (see
-[Cost and billing](/reference/cost-model#what-affects-training-cost)).
-`max_steps`, `advantage_clip`, and `thinking_length_penalty_coef` do not apply to
-OPD.
+There is no auxiliary EOS loss. For termination problems, use an SFT warm-start,
+verify teacher quality, set a hard prompt budget, add suitable `stop_sequences`,
+and inspect `truncated_rollouts`.
+
+The local `--cost` estimate may itemize teacher usage for diagnosis, but only GPU
+time is charged. `advantage_clip` and `thinking_length_penalty_coef` do not apply
+to OPD.
 
 ### Structured outputs
 
-`structured_outputs` constrains every GRPO and OPD rollout with vLLM guided
-decoding (SFT rejects it at submit). Set exactly one constraint — a JSON schema (a
-JSON string or an inline table), `regex`, `choice`, or `json_object` — with the
-optional `disable_any_whitespace`, `disable_additional_properties`, and
-`whitespace_pattern` tuning keys. Combining constraints, or the unsupported
-`grammar` / `structural_tag`, is rejected at submit; omit the key (or set `false`
-or `"none"`) to leave rollouts unconstrained. With `thinking = true` the
-constraint binds the reasoning phase too, so set `thinking = false` for a
-freely-reasoned but strictly-formatted answer.
+`structured_outputs` constrains GRPO and OPD rollouts; SFT rejects it. Set
+exactly one JSON schema, `regex`, `choice`, or `json_object` constraint. Optional
+whitespace controls are documented in the guide. Combining constraints or using
+unsupported grammar forms is rejected. With `thinking = true`, reasoning remains
+free-form and the grammar begins after `</think>`. See
+[Structured outputs](/guides/structured-outputs).
 
-See the [Structured outputs](/guides/structured-outputs) guide for every form,
-option, and worked examples.
+## `[gpu]`
 
-## Managed infrastructure
+| Key                | Type   | Default | Description                                                                                                                      |
+| ------------------ | ------ | ------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `provider`         | string | `""`    | Omit or leave empty for automatic selection; `runpod`, `lambda`, or `vast` pins the provider.                                    |
+| `exact_type`       | string | `""`    | Pin an active validated GPU exactly as shown by `flash gpus`. Preflight rejects unavailable, unsupported, or undersized choices. |
+| `max_retries`      | int    | `5`     | Nonnegative retry count. `0` means exactly one provider submission.                                                              |
+| `max_wall_seconds` | int    | `86400` | Maximum run wall time in seconds; minimum `60`.                                                                                  |
 
-Flash chooses the training resources, retry path, wall-clock limits,
-checkpointing, and run artifact storage. Those platform-managed fields may
-appear in resolved specs and run status for observability, but they are not
-config knobs.
+Provider and exact-GPU constraints persist across retries and cost estimates.
+`gpu.type` does not pin hardware; use `exact_type` when identity matters.
 
 ## `[worker_env]` (advanced)
 
 `[worker_env]` passes non-secret string values into the worker environment and is
 serialized into the run spec and artifacts. Use it only for harmless labels or
 feature flags. Secret-looking keys and values are rejected; runtime secrets
-belong in `[environment].secrets`.
+belong in `[environment].secrets`. `SEED`, `RUN_ID`, `HF_REPO`, and `FLASH_ARM`
+are control-plane-owned and cannot be overridden here.
 
 ```toml
 [worker_env]
@@ -171,10 +175,10 @@ Optional [Weights & Biases](https://wandb.ai) logging labels. These values are
 non-secret; set `WANDB_API_KEY` in your local environment when submitting a run
 to enable logging to your own W&B account.
 
-| Key | Type | Description |
-| --- | --- | --- |
-| `project` | string | W&B project name. |
-| `run_name` | string | W&B run name. |
+| Key        | Type   | Description       |
+| ---------- | ------ | ----------------- |
+| `project`  | string | W&B project name. |
+| `run_name` | string | W&B run name.     |
 
 ## Overrides & composition
 
@@ -192,7 +196,11 @@ flash train base.toml --config overlay.toml      # deep-merge extra TOML
   <Card title="Training" icon="dumbbell" href="/guides/training">
     See these fields in the run lifecycle.
   </Card>
-  <Card title="Troubleshooting" icon="life-ring" href="/reference/troubleshooting">
+  <Card
+    title="Troubleshooting"
+    icon="life-ring"
+    href="/reference/troubleshooting"
+  >
     Fix common config and run errors.
   </Card>
 </CardGroup>
