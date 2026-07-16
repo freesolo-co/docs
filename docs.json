@@ -17,6 +17,9 @@
 	"fonts": {
 		"family": "Figtree"
 	},
+	"appearance": {
+		"strict": true
+	},
 	"navigation": {
 		"groups": [
 			{
@@ -70,6 +73,12 @@
 		}
 	],
 	"navbar": {
+		"links": [
+			{
+				"type": "discord",
+				"href": "https://discord.gg/dAhfQs3T72"
+			}
+		],
 		"primary": {
 			"type": "button",
 			"label": "Create API Key",
