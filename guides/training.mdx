@@ -54,39 +54,60 @@ algorithm = "opd"
 - **`grpo`**: reinforcement learning, when there's no fixed answer to copy.
   Your environment's reward scores each completion.
 - **`opd`**: on-policy distillation, when a stronger model already does the task.
-  A managed teacher — **GLM 5.2 by default**, or another you pick with
-  `teacher_model` — grades your model's own completions token by token, and
-  training pulls your model toward it — no answers to write and no reward to
-  design. Because training only pulls your model _toward_ the teacher, **the
-  teacher is the ceiling**: pick OPD only when your chosen teacher clearly does
-  _your_ task better than your model already does, and confirm that first (see the
-  note below) — distilling from a teacher that's weak on the task copies its
-  mistakes in and can land _below_ SFT. OPD refines a format-competent model rather
-  than teaching the output contract from scratch, so **warm-start from an SFT
-  adapter** (`init_from_adapter`) for best results; a cold OPD run tends to
-  underperform SFT. It supports single- and multi-turn environments (not
-  tool-calling ones). Teacher access is managed for every allowed teacher, so
-  there is nothing to configure and teacher tokens are not billed to you.
+  A managed teacher, **GLM 5.2 by default** or another selected with
+  `teacher_model`, grades your model's own completions token by token. Training
+  pulls your model toward that teacher without using answers or a reward as the
+  training signal.
+  **Warm-start from an SFT adapter** (`init_from_adapter`) for best results; a cold
+  OPD run tends to underperform SFT. OPD supports single- and multi-turn
+  environments, but not tool-calling ones. Teacher access is managed and teacher
+  tokens are not billed to you.
 
 All three are driven by the same [environment](/guides/environments/overview), and
 `algorithm` defaults to `sft` when omitted. See
 [how Flash works](/how-flash-works) for the difference.
 
-<Note>
-  **Before an OPD run, check the teacher's quality on your task.** OPD's ceiling
-  is the teacher, so run your chosen teacher, GLM 5.2 by default or the one set
-  with `teacher_model`, through your own environment on a held-out split. Read
-  both its score and a few trajectories first. If it is not clearly better than
-  your model, or solves the task in a way your environment cannot reward,
-  distillation can make your model worse; use GRPO or SFT instead. If the
-  teacher over-reasons and your rollouts run long, constrain its reasoning at
-  the source with a **hard, specific** budget in your environment's system
-  prompt (e.g. "reason in at most two or three sentences, then act; don't
-  reconsider"). A vague "be brief" tends to backfire on a reasoning model,
-  trimming the median while inflating the long tail. See
-  [Troubleshooting](/reference/troubleshooting) for the termination/runaway
-  case.
-</Note>
+## Check the teacher before OPD
+
+OPD pulls your model toward the teacher, so the teacher's competence on your task
+roughly sets the ceiling. Treat a teacher evaluation as a precondition for the
+run. Flash does not automate this comparison. Use your evaluation harness, or have
+the coding agent follow the scaffolded
+[`TRAINING.md`](/directory-structure#trainingmd), to call the teacher on held-out
+prompts and score its transcripts with the same scorer you use for your model.
+
+1. Keep a held-out split outside training, then run both the selected teacher and
+   your current model on it.
+2. Compare their scores, then read several trajectories from both. A score alone
+   can hide a teacher that reaches the right answer for the wrong reason.
+3. Confirm that the teacher clearly wins and that your environment rewards the
+   behavior you want to transfer.
+
+| What you find | Next step |
+| --- | --- |
+| The teacher clearly outperforms your model, and the scores match what you see | Use OPD |
+| The teacher is no better than your model | Use GRPO or train on curated answers with SFT |
+| The teacher looks better, but the environment does not reward the improvement | Fix the environment, then repeat the held-out evaluation |
+
+The environment score does not drive OPD's token-level updates. It tells you
+whether the behavior you care about improved, so a broken evaluation leaves you
+unable to judge the run.
+
+### Bound reasoning before long rollouts
+
+If the teacher over-reasons in the held-out evaluation or OPD rollouts hit the
+length limit, put a hard, specific budget in the environment's system prompt:
+
+```text
+Reason in at most two or three sentences, then act.
+Once you have started, do not reconsider.
+```
+
+Avoid a vague instruction such as "be brief." It can shorten the typical response
+while making the longest responses even longer. Re-run the held-out evaluation
+after changing the prompt. See [Troubleshooting](/reference/troubleshooting) if
+rollouts still fail to terminate.
+
 
 ## Anatomy of a config
 
