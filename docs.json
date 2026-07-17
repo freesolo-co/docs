@@ -75,7 +75,7 @@
 	"navbar": {
 		"links": [
 			{
-				"type": "discord",
+				"icon": "discord",
 				"href": "https://discord.gg/dAhfQs3T72"
 			}
 		],
