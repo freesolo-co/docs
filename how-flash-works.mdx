@@ -151,6 +151,16 @@ signs:
 If you don't yet have data or a way to grade answers, start there: the quality of
 your environment sets the ceiling on what training can achieve.
 
+## Examples
+
+See the [flash-example repository](https://github.com/freesolo-co/flash-example)
+for eight small, self-contained end-to-end examples. They distill Kimi K2.6, or
+GLM-5.2 where Kimi K2.6 was low-yield, into 2B-9B models that match or near-match
+GPT-5.5 on each task's held-out set at a fraction of the parameter footprint.
+Together they show the full Flash workflow across pure SFT, single-stage OPD,
+SFT-to-GRPO warm starts, and SFT-to-OPD warm starts; each shipped recipe is
+documented in its example README and the repository's `RESULTS.md`.
+
 ## Next
 
 <CardGroup cols={2}>
