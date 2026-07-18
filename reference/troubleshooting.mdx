@@ -190,7 +190,7 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
   base model's serving context (`max_model_len`). A LoRA trained longer than it
   is served wastes compute and learns positions never used at inference. SFT
   checks `train.max_context_tokens`; GRPO and OPD check the rollout prompt plus
-  `max_completion_tokens`. Most models serve at 8192; `Qwen/Qwen3.6-35B-A3B`
+  `max_completion_tokens`. Most models serve at 32768; `Qwen/Qwen3.6-35B-A3B`
   serves at 4096. Lower `max_context_tokens` and, for GRPO/OPD,
   `max_completion_tokens` to at or below the serving context. See [context
   window](/reference/models#context-window-and-lora-rank).

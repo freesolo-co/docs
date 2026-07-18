@@ -39,26 +39,26 @@ exceeds the cap, is rejected.
 
 | Model | Context window | Max LoRA rank |
 | --- | ---: | ---: |
-| `Qwen/Qwen3.5-0.8B` | 8192 | 128 |
-| `openbmb/MiniCPM5-1B` | 8192 | 128 |
-| `Qwen/Qwen3.5-2B` | 8192 | 128 |
-| `Qwen/Qwen3.5-4B` | 8192 | 64 |
-| `Qwen/Qwen3.5-9B` | 8192 | 64 |
+| `Qwen/Qwen3.5-0.8B` | 32768 | 128 |
+| `openbmb/MiniCPM5-1B` | 32768 | 128 |
+| `Qwen/Qwen3.5-2B` | 32768 | 128 |
+| `Qwen/Qwen3.5-4B` | 32768 | 64 |
+| `Qwen/Qwen3.5-9B` | 32768 | 64 |
 | `Qwen/Qwen3.6-35B-A3B` | 4096 | 64 |
 
 ## Serving capacity
 
 Managed serving keeps one engine per base-model tier and loads trained adapters
-as LoRA slots on that tier. The smaller catalog models serve on Modal L4
-instances; the 35B model serves on an H200 tier.
+as LoRA slots on that tier. The smaller catalog models and the 4B serve on Modal
+L4 instances; the 9B serves on an H100 tier and the 35B on an H200 tier.
 
 | Model | Serving GPU | Served context | Hot LoRA slots |
 | --- | --- | ---: | ---: |
-| `Qwen/Qwen3.5-0.8B` | L4 | 8192 | 16 |
-| `openbmb/MiniCPM5-1B` | L4 | 8192 | 16 |
-| `Qwen/Qwen3.5-2B` | L4 | 8192 | 16 |
-| `Qwen/Qwen3.5-4B` | L4 | 8192 | 16 |
-| `Qwen/Qwen3.5-9B` | L4 | 8192 | 16 |
+| `Qwen/Qwen3.5-0.8B` | L4 | 32768 | 16 |
+| `openbmb/MiniCPM5-1B` | L4 | 32768 | 16 |
+| `Qwen/Qwen3.5-2B` | L4 | 32768 | 16 |
+| `Qwen/Qwen3.5-4B` | L4 | 32768 | 16 |
+| `Qwen/Qwen3.5-9B` | H100 | 32768 | 16 |
 | `Qwen/Qwen3.6-35B-A3B` | H200 | 4096 | 6 |
 
 ## Serving prices
