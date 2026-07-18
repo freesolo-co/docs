@@ -1,0 +1,22 @@
+---
+title: "Examples"
+description: "Eight end-to-end Flash distillation examples across SFT, GRPO, and OPD."
+---
+
+The [flash-example repository](https://github.com/freesolo-co/flash-example)
+contains eight small, self-contained end-to-end examples that show the full
+Flash workflow. They distill Kimi K2.6, or GLM-5.2 where Kimi K2.6 was
+low-yield, into 2B-9B models that match or near-match GPT-5.5 on each task's
+held-out set at a fraction of the parameter footprint. The shipped recipes span
+pure SFT, single-stage OPD, SFT-to-GRPO warm starts, and SFT-to-OPD warm starts,
+with exact configs and results in each example README and the repository's
+`RESULTS.md`.
+
+<Card
+  title="Explore the flash-example repository"
+  icon="github"
+  href="https://github.com/freesolo-co/flash-example"
+>
+  Browse the environments, training configs, held-out evaluations, and final
+  results.
+</Card>

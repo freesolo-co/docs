@@ -33,6 +33,7 @@
 						"group": "Core concepts",
 						"pages": ["how-flash-works", "environment-model", "directory-structure"]
 					},
+					"examples",
 					{
 						"group": "Environments",
 						"pages": [
