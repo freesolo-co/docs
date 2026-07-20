@@ -27,6 +27,7 @@ and hybrid reasoning ("thinking").
 | `Qwen/Qwen3.5-2B` | SFT, GRPO, OPD | Hybrid |
 | `Qwen/Qwen3.5-4B` | SFT, GRPO, OPD | Hybrid |
 | `Qwen/Qwen3.5-9B` | SFT, GRPO, OPD | Hybrid |
+| `Qwen/Qwen3.6-27B` | SFT, GRPO, OPD | Hybrid |
 | `Qwen/Qwen3.6-35B-A3B` | SFT, GRPO, OPD | Hybrid |
 
 ## Context window and LoRA rank
@@ -44,13 +45,14 @@ exceeds the cap, is rejected.
 | `Qwen/Qwen3.5-2B` | 32768 | 128 |
 | `Qwen/Qwen3.5-4B` | 32768 | 64 |
 | `Qwen/Qwen3.5-9B` | 32768 | 64 |
+| `Qwen/Qwen3.6-27B` | 32768 | 64 |
 | `Qwen/Qwen3.6-35B-A3B` | 4096 | 64 |
 
 ## Serving capacity
 
 Managed serving keeps one engine per base-model tier and loads trained adapters
 as LoRA slots on that tier. The smaller catalog models and the 4B serve on Modal
-L4 instances; the 9B serves on an H100 tier and the 35B on an H200 tier.
+L4 instances; the 9B and 27B serve on an H100 tier and the 35B on an H200 tier.
 
 | Model | Serving GPU | Served context | Hot LoRA slots |
 | --- | --- | ---: | ---: |
@@ -59,6 +61,7 @@ L4 instances; the 9B serves on an H100 tier and the 35B on an H200 tier.
 | `Qwen/Qwen3.5-2B` | L4 | 32768 | 16 |
 | `Qwen/Qwen3.5-4B` | L4 | 32768 | 16 |
 | `Qwen/Qwen3.5-9B` | H100 | 32768 | 16 |
+| `Qwen/Qwen3.6-27B` | H100 | 32768 | 16 |
 | `Qwen/Qwen3.6-35B-A3B` | H200 | 4096 | 6 |
 
 ## Serving prices
@@ -74,8 +77,9 @@ shows the charges you accrue.
 | `openbmb/MiniCPM5-1B` | $0.012 | $0.060 | $0.0024 |
 | `Qwen/Qwen3.5-2B` | $0.024 | $0.120 | $0.0048 |
 | `Qwen/Qwen3.5-4B` | $0.036 | $0.180 | $0.0072 |
-| `Qwen/Qwen3.5-9B` | $0.120 | $0.180 | $0.0240 |
-| `Qwen/Qwen3.6-35B-A3B` | $0.180 | $1.200 | $0.0600 |
+| `Qwen/Qwen3.5-9B` | $0.137 | $0.228 | $0.0276 |
+| `Qwen/Qwen3.6-27B` | $0.510 | $3.666 | $0.1680 |
+| `Qwen/Qwen3.6-35B-A3B` | $0.238 | $1.518 | $0.0792 |
 
 The **Cached prompt** column is the rate for prompt tokens served from the
 automatic **prefix cache**. See [Billing](/guides/deploy-and-chat#billing) for how
