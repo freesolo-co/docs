@@ -17,6 +17,11 @@
 	"fonts": {
 		"family": "Figtree"
 	},
+	"integrations": {
+		"ga4": {
+			"measurementId": "G-KLS92VK8RW"
+		}
+	},
 	"appearance": {
 		"strict": true
 	},
