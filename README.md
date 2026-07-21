@@ -8,7 +8,7 @@ This repo IS the Mintlify deployment source (the site builds from the repo root)
 The pages were moved here from the `freesolo-co/freesolo` monorepo (`docs/`) so the
 Mintlify project deploys the right content.
 
-- **Live site:** https://freesolo.mintlify.app
+- **Live site:** https://docs.freesolo.co
 - **Mintlify project id:** `6a361f42ca07eb683ee6b96d`
 - **Config:** [`docs.json`](docs.json) (navigation, theme, name)
 
