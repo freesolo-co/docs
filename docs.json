@@ -45,12 +45,12 @@
 							"guides/environments/overview",
 							"guides/environments/package",
 							"guides/environments/single-turn",
-							"guides/environments/multi-turn"
+							"guides/environments/multi-turn",
+							"guides/structured-outputs"
 						]
 					},
 					"guides/datasets",
 					"guides/training",
-					"guides/structured-outputs",
 					"guides/deploy-and-chat"
 				]
 			},
