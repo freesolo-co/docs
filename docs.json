@@ -1,135 +1,145 @@
 {
-	"$schema": "https://mintlify.com/docs.json",
-	"theme": "mint",
-	"name": "Freesolo Docs",
-	"description": "Train, deploy, and chat with custom LoRA models on managed infrastructure.",
-	"favicon": "/favicon.svg",
-	"colors": {
-		"primary": "#5f72ff",
-		"light": "#8b98ff",
-		"dark": "#1b1b4b"
-	},
-	"logo": {
-		"light": "/logo/freesolo-wordmark-light.svg",
-		"dark": "/logo/freesolo-wordmark-dark.svg",
-		"href": "https://freesolo.co"
-	},
-	"fonts": {
-		"family": "Figtree"
-	},
-	"integrations": {
-		"ga4": {
-			"measurementId": "G-KLS92VK8RW"
-		}
-	},
-	"appearance": {
-		"strict": true
-	},
-	"navigation": {
-		"groups": [
-			{
-				"group": "Get started",
-				"pages": ["index", "quickstart", "platform"]
-			},
-			{
-				"group": "Flash",
-				"pages": [
-					{
-						"group": "Core concepts",
-						"pages": ["how-flash-works", "environment-model", "directory-structure"]
-					},
-					"examples",
-					{
-						"group": "Environments",
-						"pages": [
-							"guides/environments/overview",
-							"guides/environments/package",
-							"guides/environments/single-turn",
-							"guides/environments/multi-turn"
-						]
-					},
-					"guides/datasets",
-					"guides/training",
-					"guides/structured-outputs",
-					"guides/deploy-and-chat"
-				]
-			},
-			{
-				"group": "Reference",
-				"pages": ["reference/models", "reference/cli", "reference/configuration", "reference/cost-model", "reference/troubleshooting"]
-			}
-		]
-	},
-	"redirects": [
-		{
-			"source": "/guides/environments",
-			"destination": "/guides/environments/overview"
-		},
-		{
-			"source": "/guides/environments/authoring",
-			"destination": "/guides/environments/single-turn"
-		},
-		{
-			"source": "/conventions",
-			"destination": "/guides/training"
-		},
-		{
-			"source": "/guides/conventions",
-			"destination": "/guides/training"
-		}
-	],
-	"navbar": {
-		"links": [
-			{
-				"label": "",
-				"icon": "discord",
-				"href": "https://discord.gg/dAhfQs3T72"
-			}
-		],
-		"primary": {
-			"type": "button",
-			"label": "Create API Key",
-			"href": "https://freesolo.co/platform"
-		}
-	},
-	"footer": {
-		"socials": {
-			"linkedin": "https://www.linkedin.com/company/freesolo-co",
-			"github": "https://github.com/freesolo-co",
-			"x": "https://twitter.com/freesolo",
-			"discord": "https://discord.gg/dAhfQs3T72"
-		},
-		"links": [
-			{
-				"header": "Company",
-				"items": [
-					{
-						"label": "Careers",
-						"href": "https://freesolo.co/contact"
-					},
-					{
-						"label": "Privacy Policy",
-						"href": "https://freesolo.co/privacy"
-					},
-					{
-						"label": "Terms",
-						"href": "https://freesolo.co/terms"
-					}
-				]
-			},
-			{
-				"header": "Contact",
-				"items": [
-					{
-						"label": "Sales",
-						"href": "https://freesolo.co/contact"
-					},
-					{
-						"label": "Support",
-						"href": "https://freesolo.co/contact"
-					}
-				]
-			}
-		]
-	}
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "Freesolo Docs",
+  "description": "Train, deploy, and chat with custom LoRA models on managed infrastructure.",
+  "favicon": "/favicon.svg",
+  "colors": {
+    "primary": "#5f72ff",
+    "light": "#8b98ff",
+    "dark": "#1b1b4b"
+  },
+  "logo": {
+    "light": "/logo/freesolo-wordmark-light.svg",
+    "dark": "/logo/freesolo-wordmark-dark.svg",
+    "href": "https://freesolo.co"
+  },
+  "fonts": {
+    "family": "Figtree"
+  },
+  "integrations": {
+    "ga4": {
+      "measurementId": "G-KLS92VK8RW"
+    }
+  },
+  "appearance": {
+    "strict": true
+  },
+  "navigation": {
+    "groups": [
+      {
+        "group": "Get started",
+        "pages": ["index", "quickstart", "platform"]
+      },
+      {
+        "group": "Flash",
+        "pages": [
+          {
+            "group": "Core concepts",
+            "pages": [
+              "how-flash-works",
+              "environment-model",
+              "directory-structure"
+            ]
+          },
+          "examples",
+          {
+            "group": "Environments",
+            "pages": [
+              "guides/environments/overview",
+              "guides/environments/package",
+              "guides/environments/single-turn",
+              "guides/environments/multi-turn",
+              "guides/structured-outputs"
+            ]
+          },
+          "guides/datasets",
+          "guides/training",
+          "guides/deploy-and-chat"
+        ]
+      },
+      {
+        "group": "Reference",
+        "pages": [
+          "reference/models",
+          "reference/cli",
+          "reference/configuration",
+          "reference/cost-model",
+          "reference/troubleshooting"
+        ]
+      }
+    ]
+  },
+  "redirects": [
+    {
+      "source": "/guides/environments",
+      "destination": "/guides/environments/overview"
+    },
+    {
+      "source": "/guides/environments/authoring",
+      "destination": "/guides/environments/single-turn"
+    },
+    {
+      "source": "/conventions",
+      "destination": "/guides/training"
+    },
+    {
+      "source": "/guides/conventions",
+      "destination": "/guides/training"
+    }
+  ],
+  "navbar": {
+    "links": [
+      {
+        "label": "",
+        "icon": "discord",
+        "href": "https://discord.gg/dAhfQs3T72"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Create API Key",
+      "href": "https://freesolo.co/platform"
+    }
+  },
+  "footer": {
+    "socials": {
+      "linkedin": "https://www.linkedin.com/company/freesolo-co",
+      "github": "https://github.com/freesolo-co",
+      "x": "https://twitter.com/freesolo",
+      "discord": "https://discord.gg/dAhfQs3T72"
+    },
+    "links": [
+      {
+        "header": "Company",
+        "items": [
+          {
+            "label": "Careers",
+            "href": "https://freesolo.co/contact"
+          },
+          {
+            "label": "Privacy Policy",
+            "href": "https://freesolo.co/privacy"
+          },
+          {
+            "label": "Terms",
+            "href": "https://freesolo.co/terms"
+          }
+        ]
+      },
+      {
+        "header": "Contact",
+        "items": [
+          {
+            "label": "Sales",
+            "href": "https://freesolo.co/contact"
+          },
+          {
+            "label": "Support",
+            "href": "https://freesolo.co/contact"
+          }
+        ]
+      }
+    ]
+  }
 }
