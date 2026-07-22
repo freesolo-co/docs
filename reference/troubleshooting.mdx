@@ -187,12 +187,13 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
 
 <Accordion title="Run rejected: training context exceeds serving context">
   Flash rejects a run at submit when its training context is longer than the
-  base model's serving context (`max_model_len`). A LoRA trained longer than it
-  is served wastes compute and learns positions never used at inference. SFT
-  checks `train.max_context_tokens`; GRPO and OPD check the rollout prompt plus
-  `max_completion_tokens`. Most models serve at 32768; `Qwen/Qwen3.6-35B-A3B`
-  serves at 4096. Lower `max_context_tokens` and, for GRPO/OPD,
-  `max_completion_tokens` to at or below the serving context. See [context
+  base model's **training context cap**. A LoRA trained longer than that cap
+  wastes compute and learns positions the recipe never validates. SFT checks
+  `train.max_context_tokens`; GRPO and OPD check the rollout prompt plus
+  `max_completion_tokens`. Most models allow up to 32768 tokens of training
+  context; `Qwen/Qwen3.6-35B-A3B` is capped at 4096 for training (it is still
+  _served_ at 32768). Lower `max_context_tokens` and, for GRPO/OPD,
+  `max_completion_tokens` to at or below the cap. See [context
   window](/reference/models#context-window-and-lora-rank).
 </Accordion>
 
@@ -247,6 +248,17 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
     ```
 
   </Accordion>
+
+<Accordion title="My run is warming up for many minutes">
+  Expected for GRPO and OPD. Before the first billed step the worker boots the
+  container, installs dependencies, loads the model, and initializes vLLM and the
+  training kernels. `flash log <run-id> -f` prints a `warming up (stage=...)`
+  line during this phase; it can take several minutes, occasionally 15-20 for a
+  large model, and **setup time is not billed**. Do not cancel: the run has not
+  stalled. Once training starts, `-f` streams a per-step heartbeat (reward,
+  `grad_norm`, `kl`, `entropy`, completion length, and more), so a quiet stretch
+  is throttled logging, not a dead run.
+</Accordion>
 
 <Accordion title="Run submit reports insufficient balance">
   Add funds or reduce the run estimate before submitting again. Smaller base

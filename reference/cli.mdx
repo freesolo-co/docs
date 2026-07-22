@@ -70,6 +70,21 @@ with an already-scaffolded project is ignored with a warning.
 
 </ResponseField>
 
+<ResponseField name="flash env test [PATH]">
+  Validate a local environment offline before publishing. Loads the same
+  entrypoint `flash env push` would package (`PATH` defaults to `.`) and drives
+  its first few dataset episodes with no GPU and no model: it checks that
+  prompts, SFT completions, and any multi-turn replies are well-formed chat
+  messages and that the reward is finite, printing a short prompt/response
+  preview per episode. It replays the dataset's gold `sft_completion` as the
+  policy answer when one is present, otherwise a canned response. Prints
+  `overall: PASS` and exits `0` when every driven episode passes the contract
+  checks, or `overall: FAIL` and exits `1` on a load error, an empty dataset,
+  malformed messages, a hook exception, or a non-finite reward. PASS means the
+  environment contract is valid, not that the reward is high; a low replayed
+  reward is a warning, not a failure.
+</ResponseField>
+
 <ResponseField name="flash env push --name NAME [PATH]">
   Publish a local Freesolo environment to Freesolo's [managed Environments
   Hub](/guides/environments/package#publish-it) (private) and print its id
@@ -80,8 +95,11 @@ with an already-scaffolded project is ignored with a warning.
   with `environment.py` at its root to upload helper modules, `dataset/`,
   `README.md`, and common sibling sidecars ([what gets
   uploaded](/guides/datasets#what-gets-uploaded) lists the extensions). A single
-  `.py` file or a folder with one top-level `.py` file also works for small
-  smoke tests.
+  `.py` file, or a folder with one top-level `.py` file, also works for small
+  smoke tests; single-file mode packages only that entrypoint, a sibling
+  `README.md`/`TRAINING.md`, and any `dataset/` tree. Secrets (`.env` files,
+  `*.key`, `*.pem`, `credentials*`, SSH keys) and virtualenvs are never
+  uploaded.
 </ResponseField>
 
 <ResponseField name="flash env pull ENV_ID [PATH] [-o OUTPUT] [-f]">
@@ -164,8 +182,10 @@ If no final adapter exists, use the `RUN_ID/step-N` selector listed by
 </ResponseField>
 
 <ResponseField name="flash chat TARGET -m MESSAGE [flags]">
-  Send a message to a deployment. `TARGET` is the stable `RUN_ID` alias or a full
-  immutable revision. `RUN_ID/step-N` is not a chat target.
+  Send a message to a deployment. `TARGET` is the stable `RUN_ID` alias, a full
+  immutable revision, or `RUN_ID/step-N` for a checkpoint you have already
+  deployed, resolving to that checkpoint's verified revision, so run
+  `flash deploy RUN_ID/step-N` first.
 
 | Flag              | Default    | Effect                                                                                                                |
 | ----------------- | ---------- | --------------------------------------------------------------------------------------------------------------------- |
