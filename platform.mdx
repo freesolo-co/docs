@@ -22,7 +22,11 @@ new key is shown once. Use it with `flash login --api-key <key>` or the
 [`flash train`](/guides/training). Filter by status; columns cover state,
 model, environment, and cost. Open a run for the same detail exposed by
 `flash status`: the run spec, checkpoints, artifact/deployment metadata, error
-state, and current or final cost record.
+state, and current or final cost record. For GRPO and OPD runs, the run page
+also shows a **sampled completions** panel: per training step it surfaces
+example prompts and the completions the model generated, each tagged with its
+GRPO reward or OPD distillation loss, so you can watch what the model produces
+as it trains.
 
 ## Checkpoints
 

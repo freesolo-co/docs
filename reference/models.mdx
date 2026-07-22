@@ -23,25 +23,31 @@ and hybrid reasoning ("thinking").
 | Model (`model =`) | Algorithms | Reasoning |
 | --- | --- | --- |
 | `Qwen/Qwen3.5-0.8B` | SFT, GRPO, OPD | Hybrid |
-| `openbmb/MiniCPM5-1B` | SFT, GRPO, OPD | Hybrid |
 | `Qwen/Qwen3.5-2B` | SFT, GRPO, OPD | Hybrid |
 | `Qwen/Qwen3.5-4B` | SFT, GRPO, OPD | Hybrid |
 | `Qwen/Qwen3.5-9B` | SFT, GRPO, OPD | Hybrid |
 | `Qwen/Qwen3.6-27B` | SFT, GRPO, OPD | Hybrid |
 | `Qwen/Qwen3.6-35B-A3B` | SFT, GRPO, OPD | Hybrid |
 
+<Note>
+  Every catalog model accepts **image inputs** when served and supports **image
+  training**. See [Image inputs](/guides/datasets#image-inputs) for the dataset
+  formats and limits.
+</Note>
+
 ## Context window and LoRA rank
 
-Each base model is served at a fixed **context window** (`max_model_len`) and
-accepts LoRA adapters up to a per-model **max rank**. `flash train` enforces both
-at submit: a config whose `max_context_tokens` exceeds the served context, whose
-GRPO/OPD prompt plus `max_completion_tokens` cannot fit, or whose `lora_rank`
-exceeds the cap, is rejected.
+`flash train` enforces a per-model **training context cap** and **max LoRA rank**
+at submit: a config whose `max_context_tokens` exceeds the cap, whose GRPO/OPD
+prompt plus `max_completion_tokens` cannot fit, or whose `lora_rank` exceeds the
+max rank, is rejected. Every model is _served_ at a 32768-token context (see
+[Serving capacity](#serving-capacity)); the training cap equals that for every
+model except `Qwen/Qwen3.6-35B-A3B`, which trains at up to 4096 tokens but is
+served at 32768.
 
-| Model | Context window | Max LoRA rank |
+| Model | Training context | Max LoRA rank |
 | --- | ---: | ---: |
 | `Qwen/Qwen3.5-0.8B` | 32768 | 128 |
-| `openbmb/MiniCPM5-1B` | 32768 | 128 |
 | `Qwen/Qwen3.5-2B` | 32768 | 128 |
 | `Qwen/Qwen3.5-4B` | 32768 | 64 |
 | `Qwen/Qwen3.5-9B` | 32768 | 64 |
@@ -51,18 +57,18 @@ exceeds the cap, is rejected.
 ## Serving capacity
 
 Managed serving keeps one engine per base-model tier and loads trained adapters
-as LoRA slots on that tier. The smaller catalog models and the 4B serve on Modal
-L4 instances; the 9B and 27B serve on an H100 tier and the 35B on an H200 tier.
+as LoRA slots on that tier. The smaller catalog models and the 4B serve on L4
+instances, the 9B on an L40S tier, the 27B on an H100 tier, and the 35B on an
+H200 tier. Every model is served at a 32768-token context.
 
 | Model | Serving GPU | Served context | Hot LoRA slots |
 | --- | --- | ---: | ---: |
 | `Qwen/Qwen3.5-0.8B` | L4 | 32768 | 16 |
-| `openbmb/MiniCPM5-1B` | L4 | 32768 | 16 |
 | `Qwen/Qwen3.5-2B` | L4 | 32768 | 16 |
 | `Qwen/Qwen3.5-4B` | L4 | 32768 | 16 |
-| `Qwen/Qwen3.5-9B` | H100 | 32768 | 16 |
+| `Qwen/Qwen3.5-9B` | L40S | 32768 | 16 |
 | `Qwen/Qwen3.6-27B` | H100 | 32768 | 16 |
-| `Qwen/Qwen3.6-35B-A3B` | H200 | 4096 | 6 |
+| `Qwen/Qwen3.6-35B-A3B` | H200 | 32768 | 6 |
 
 ## Serving prices
 
@@ -74,7 +80,6 @@ shows the charges you accrue.
 | Model | Prompt / 1M | Completion / 1M | Cached prompt / 1M |
 | --- | ---: | ---: | ---: |
 | `Qwen/Qwen3.5-0.8B` | $0.012 | $0.060 | $0.0024 |
-| `openbmb/MiniCPM5-1B` | $0.012 | $0.060 | $0.0024 |
 | `Qwen/Qwen3.5-2B` | $0.024 | $0.120 | $0.0048 |
 | `Qwen/Qwen3.5-4B` | $0.036 | $0.180 | $0.0072 |
 | `Qwen/Qwen3.5-9B` | $0.137 | $0.228 | $0.0276 |

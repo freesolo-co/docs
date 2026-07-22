@@ -58,9 +58,11 @@ Final adapters use `RUN_ID@final.<40-char-sha>` and saved checkpoints use
 `RUN_ID@step-N.<40-char-sha>`. The stable run-id alias moves only after the new
 revision passes its bounded smoke. Older revisions can remain directly callable.
 
-`RUN_ID/step-N` is a deploy and export selector, not a chat model name. After
-deploying that checkpoint, use the run alias or the full immutable revision from
-`flash deployments`.
+`RUN_ID/step-N` is a deploy and export selector. Once you have deployed that
+checkpoint, `flash chat RUN_ID/step-N` works from the CLI too, resolving to
+that checkpoint's verified revision. From an OpenAI client, set `model` to the
+run alias or the full immutable revision from `flash deployments`; the
+`RUN_ID/step-N` shorthand is a Flash-CLI selector, not an OpenAI model name.
 
 ## Billing
 
@@ -87,8 +89,10 @@ requests are still accounted for without rounding each request up to a cent.
 flash chat <run-id> -m "Summarize the plot of Hamlet in two sentences."
 ```
 
-`flash chat` accepts the stable run alias or a full immutable revision.
-`RUN_ID/step-N` is not accepted because it is a deploy/export selector.
+`flash chat` accepts the stable run alias, a full immutable revision, or
+`RUN_ID/step-N` for a checkpoint you have already deployed. A `RUN_ID/step-N`
+target resolves to that checkpoint's verified revision, so deploy it first with
+`flash deploy RUN_ID/step-N`.
 
 `-m`/`--message` is required; `--system`, `--max-tokens` (default 512), and
 `--temperature` (default 0.0) are optional. See the
@@ -131,7 +135,7 @@ must own the adapter named in `model`:
 from openai import OpenAI
 
 client = OpenAI(
-    base_url="https://<your-endpoint>/v1",   # use openai_base_url from deployments json
+    base_url="https://serve.freesolo.co/v1",  # openai_base_url from flash deployments --json
     api_key="<your-freesolo-api-key>",       # use the same freesolo key as flash login
 )
 
@@ -144,6 +148,30 @@ print(resp.choices[0].message.content)
 
 For deployed adapters, serving preserves the run's trained thinking mode. A
 caller cannot override `enable_thinking` per request for an adapter.
+
+## Send images
+
+Every catalog model accepts **image inputs**, so a served adapter or base model
+can take multimodal prompts over the same OpenAI-compatible API. Pass images as
+OpenAI `image_url` content parts (a public URL or a `data:` URI) alongside the
+text. A single request accepts up to four images:
+
+```python
+resp = client.chat.completions.create(
+    model="<run-id>",
+    messages=[
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "What is in this image?"},
+                {"type": "image_url", "image_url": {"url": "https://example.com/photo.jpg"}},
+            ],
+        }
+    ],
+)
+```
+
+To train on image data, see [Image inputs](/guides/datasets#image-inputs).
 
 ## Structured outputs
 

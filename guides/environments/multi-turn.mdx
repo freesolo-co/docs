@@ -234,6 +234,33 @@ required ordering (e.g. authenticate before a privileged call), stay within
 limits — and return that blend from `score_episode`. Keeping the reward in a
 plain function (importable without the trainer) makes it unit-testable.
 
+## Per-turn credit (GRPO)
+
+By default, multi-turn GRPO assigns **one reward to the whole episode**
+(`credit_assignment = "per_episode"`): every assistant turn shares the
+trajectory's group-relative advantage. For a pure multi-turn task where each turn
+is independently gradable, set `credit_assignment = "per_turn"` in `[train]` to
+give **each assistant turn its own group-relative advantage** instead.
+
+Supply the per-turn signal from `score_episode` by returning a `RewardResult`
+whose `metadata` carries a `per_turn_rewards` list, one finite value per
+assistant turn, in order:
+
+```python
+def score_episode(self, example, episode) -> RewardResult:
+    per_turn = [self.grade_turn(m) for m in episode.messages if m["role"] == "assistant"]
+    return RewardResult(
+        score=sum(per_turn) / len(per_turn),
+        metadata={"per_turn_rewards": per_turn},
+    )
+```
+
+The list length must equal the number of assistant turns and every entry must be
+finite. If it is missing, malformed, or the wrong length, Flash logs a warning
+and falls back to episode-level credit for that rollout. `per_turn` credit is
+rejected for native tool-calling multi-turn environments, and a single-turn run
+is identical either way.
+
 ## Configure for multi-turn
 
 For multi-turn runs, the episode budget comes from `max_episode_turns`. What
