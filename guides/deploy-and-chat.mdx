@@ -153,10 +153,16 @@ caller cannot override `enable_thinking` per request for an adapter.
 
 Every catalog model accepts **image inputs**, so a served adapter or base model
 can take multimodal prompts over the same OpenAI-compatible API. Pass images as
-OpenAI `image_url` content parts (a public URL or a `data:` URI) alongside the
-text. A single request accepts up to four images:
+OpenAI `image_url` content parts. Serving accepts base64 `data:` URIs only;
+remote (`http(s)`) and `file:` URLs are rejected. A single request accepts up to
+four images:
 
 ```python
+import base64
+
+with open("photo.jpg", "rb") as f:
+    data_uri = "data:image/jpeg;base64," + base64.b64encode(f.read()).decode()
+
 resp = client.chat.completions.create(
     model="<run-id>",
     messages=[
@@ -164,7 +170,7 @@ resp = client.chat.completions.create(
             "role": "user",
             "content": [
                 {"type": "text", "text": "What is in this image?"},
-                {"type": "image_url", "image_url": {"url": "https://example.com/photo.jpg"}},
+                {"type": "image_url", "image_url": {"url": data_uri}},
             ],
         }
     ],

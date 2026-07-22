@@ -51,7 +51,9 @@ key names are not accepted. Records are canonicalized to exactly
   before the row reaches a training worker. Anything your scorer needs beyond
   the gold `output` string (a puzzle's `initial_board`, the `oracle_ids` a
   retrieval must return, unit tests to check code against, a grading rubric) has
-  to live under `metadata`, or it is gone with no runtime warning.
+  to live under `metadata`, or it is gone with no runtime warning. The one
+  exception is the top-level `image`/`images` fields, which the multimodal
+  loader reads from the original row (see [Image inputs](#image-inputs)).
 </Warning>
 
 ### Message-shaped SFT targets
@@ -95,18 +97,20 @@ in the gold completion: an image inside an SFT `output` message is rejected.
 Build a multimodal prompt the OpenAI way: a user message whose `content` is a
 list of parts, mixing text with one or more image parts. Flash accepts `image`,
 `image_url`, and `input_image` parts, and each image source can be a `data:`
-URI, raw bytes, a PIL image, an `http(s)` URL, or a path relative to the packaged
-`dataset/` directory:
+URI, raw bytes, a PIL image, an `http(s)` URL, or a package-root-relative path
+under `dataset/` (e.g. `dataset/photo.jpg`):
 
 ```python environment.py
 import base64
 from pathlib import Path
 
+from freesolo.environments import EnvironmentSingleTurn
+
 ROOT = Path(__file__).parent
 
 
 class VisionEnv(EnvironmentSingleTurn):
-    def build_prompt_messages(self, example):
+    def build_prompt_messages(self, example, prompt_text):
         raw = (ROOT / "dataset" / example.metadata["image"]).read_bytes()
         uri = "data:image/jpeg;base64," + base64.b64encode(raw).decode()
         return [
@@ -120,11 +124,15 @@ class VisionEnv(EnvironmentSingleTurn):
         ]
 ```
 
-A task record can also carry a top-level `image` (single) or `images` (a list),
-which Flash attaches to the prompt for you. Either way, one example may hold up
-to **8 images**. Remote `http(s)` URLs are **disabled by default**; set
+A task record can also carry a top-level `image` (single) or `images` (a list).
+These are the one exception to the field whitelist above: the multimodal loader
+reads them from the original row (`example.record`) and appends them to the
+first user message, so they survive even though they are not part of the
+canonical `input`/`output`/`metadata` mapping. Either way, one example may hold
+up to **8 images**. Remote `http(s)` URLs are **disabled by default**; set
 `FLASH_MULTIMODAL_ALLOW_REMOTE_IMAGES=1` in the worker to allow them, and a
-relative path must stay inside `dataset/`.
+relative path is resolved from the package root and must stay inside `dataset/`
+(e.g. `dataset/photo.jpg`).
 
 Algorithm notes: **SFT** trains on image prompts with a text completion; **OPD**
 with images is single-turn only and requires `teacher_model = "kimi-k2.6"`;

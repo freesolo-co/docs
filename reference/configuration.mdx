@@ -109,7 +109,7 @@ warn and estimate with defaults.
 | `thinking_length_penalty_coef` | float        | Penalty on reasoning length.                                                                                                   |
 | `stop_sequences`               | list[string] | Stop sequences for generation.                                                                                                 |
 | `structured_outputs`           | string/table | Constrain each rollout to a JSON schema, regex, choice set, or any JSON. See [Structured outputs](/guides/structured-outputs). |
-| `credit_assignment`            | string       | `per_episode` (default) scores one reward for the whole rollout; `per_turn` gives each assistant turn its own group-relative advantage in pure multi-turn GRPO. Tool-calling multi-turn environments require `per_episode`, and single-turn runs are equivalent either way. See [per-turn credit](/guides/environments/multi-turn#per-turn-credit). |
+| `credit_assignment`            | string       | `per_episode` (default) scores one reward for the whole rollout; `per_turn` gives each assistant turn its own group-relative advantage in pure multi-turn GRPO. Tool-calling multi-turn environments require `per_episode`, and single-turn runs are equivalent either way. See [per-turn credit](/guides/environments/multi-turn#per-turn-credit-grpo). |
 
 ### OPD-specific
 
