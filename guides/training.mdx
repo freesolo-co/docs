@@ -127,13 +127,12 @@ max_examples = 1000                   # sft keeps the first n rows before seeded
 max_steps = 100                       # exact update horizon when positive
 save_at_steps = [25, 50, 100]         # mandatory saves; requires positive max_steps
 lora_rank = 32
-lora_alpha = 64
 # learning_rate = 1e-4
 # batch_size = 8
 # group_size = 8                      # grpo: completions sampled per prompt
 # max_completion_tokens = 512         # grpo/opd: generated tokens per rollout turn
 # max_context_tokens = 4096           # total context cap, including sft
-# init_from_adapter = "<sft-run-id>"  # grpo/opd: omit lora rank and alpha
+# init_from_adapter = "<sft-run-id>"  # grpo/opd: omit lora_rank (rank/alpha inherited)
 # teacher_model = "glm-5.2"           # opd: managed teacher
 # structured_outputs = '{"type":"object","properties":{"answer":{"type":"string"}},"required":["answer"]}'
 
@@ -173,9 +172,10 @@ seeded shuffle. SFT also honors `max_context_tokens` for the rendered sequence.
 
 `init_from_adapter` continues a source adapter in a new GRPO or OPD run. The
 source can be a finished SFT run or a saved checkpoint. Its LoRA rank and alpha
-are authoritative, so omit both `lora_rank` and
-`lora_alpha`. The server resolves them during `--dry-run` and real submit; local
-`--cost` may warn and estimate with defaults.
+are authoritative, so omit `lora_rank`. `lora_alpha` is managed (always
+`2 * lora_rank`) and is never a config key. The server resolves the source rank
+during `--dry-run` and real submit; local `--cost` may warn and estimate with
+defaults.
 
 If you set `model_revision`, the source and target revisions must match exactly.
 Use server-side `--dry-run` to resolve and validate the source.

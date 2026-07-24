@@ -198,15 +198,16 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
 </Accordion>
 
 <Accordion title="Warm-start rank, alpha, or revision mismatch">
-  The source LoRA rank and alpha are authoritative. Remove both
-  `train.lora_rank` and `train.lora_alpha` when using `init_from_adapter`. A
+  The source LoRA rank and alpha are authoritative, so omit
+  `train.lora_rank` when using `init_from_adapter`. `train.lora_alpha` is
+  managed (always `2 * lora_rank`) and is never a config key. A
   pinned `model_revision` must match the source exactly. Use server-side
   `--dry-run` to resolve and validate the source; local `--cost` may use
   defaults and warn.
 </Accordion>
 
   <Accordion title="The run used a different GPU than expected">
-    GPU selection is automatic unless you set `[gpu] exact_type` to an active
+    GPU selection is automatic unless you set `[gpu] type` to an active
     validated class from `flash gpus`. Add `provider = "runpod"`, `"lambda"`, or
     `"vast"` only when the provider must also be fixed. These constraints persist
     across retries and cost estimates.
@@ -332,8 +333,8 @@ Fixes:
 
   <Accordion title="OPD run underperforms SFT, or its rollouts never terminate">
     OPD refines a model that already has the output format. Warm-start from a
-    finished SFT run, and omit `lora_rank` and `lora_alpha` because the source
-    values are authoritative:
+    finished SFT run, and omit `lora_rank` because the source rank is
+    authoritative (`lora_alpha` is managed, always `2 * lora_rank`):
 
     ```toml
     [train]

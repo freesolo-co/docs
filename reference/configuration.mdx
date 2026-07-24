@@ -75,8 +75,7 @@ Reserved platform secret names such as `FREESOLO_API_KEY`, `HF_TOKEN`,
 
 | Key                  | Type      | Default        | Description                                                                                                                                                                                                                                                           |
 | -------------------- | --------- | -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `lora_rank`          | int       | `32`           | LoRA rank; higher means a larger adapter with more capacity and cost. Flash enforces the per-model max rank. Omit with `init_from_adapter`; the source rank is authoritative. See [context window and LoRA rank](/reference/models#context-window-and-lora-rank). |
-| `lora_alpha`         | int       | `64`           | LoRA alpha. Omit with `init_from_adapter`; the source alpha is authoritative.                                                                                                                                                                                         |
+| `lora_rank`          | int       | `32`           | LoRA rank; higher means a larger adapter with more capacity and cost. Flash enforces the per-model max rank. Omit with `init_from_adapter`; the source rank is authoritative. `lora_alpha` is managed (always `2 * lora_rank`) and is not a config key. See [context window and LoRA rank](/reference/models#context-window-and-lora-rank). |
 | `learning_rate`      | float     | recipe default | Optimizer learning rate.                                                                                                                                                                                                                                              |
 | `batch_size`         | int       | recipe default | Training batch size.                                                                                                                                                                                                                                                  |
 | `max_context_tokens` | int       | recipe default | Total training context cap. SFT applies it to the rendered sequence; GRPO and OPD apply it to prompt plus completion. It cannot exceed the model's training context cap. See [context window](/reference/models#context-window-and-lora-rank).                          |
@@ -106,6 +105,7 @@ warn and estimate with defaults.
 | `max_completion_tokens`        | int          | Maximum generated tokens per completion or assistant turn.                                                                     |
 | `kl_penalty_coef`              | float        | Strength of the penalty that limits drift from the base model.                                                                 |
 | `advantage_clip`               | float        | Recorded for recipe parity but currently a no-op; the runtime clips the importance ratio instead.                              |
+| `entropy_quantile`             | float        | Restrict the GRPO policy update to the highest-entropy fraction of completion tokens (TRL `top_entropy_quantile`). Between `0` and `1`; the default (unset) trains on all tokens, while a smaller value (for example `0.2`) trains on only the top-entropy tokens. |
 | `thinking_length_penalty_coef` | float        | Penalty on reasoning length.                                                                                                   |
 | `stop_sequences`               | list[string] | Stop sequences for generation.                                                                                                 |
 | `structured_outputs`           | string/table | Constrain each rollout to a JSON schema, regex, choice set, or any JSON. See [Structured outputs](/guides/structured-outputs). |
@@ -150,13 +150,12 @@ free-form and the grammar begins after `</think>`. See
 | Key                | Type   | Default | Description                                                                                                                      |
 | ------------------ | ------ | ------- | -------------------------------------------------------------------------------------------------------------------------------- |
 | `provider`         | string | `""`    | Omit or leave empty for automatic selection; `runpod`, `lambda`, or `vast` pins the provider.                                    |
-| `exact_type`       | string | `""`    | Pin an active validated GPU exactly as shown by `flash gpus`. Preflight rejects unavailable, unsupported, or undersized choices. |
+| `type`             | string | `""`    | Omit or leave empty for managed cheapest-fit allocation; set an active validated class from `flash gpus` to pin it exactly. Preflight rejects unavailable, unsupported, or undersized choices. |
 | `count`            | int    | `1`     | GPUs of the chosen class for one training worker (`1`-`8`). Multi-GPU training is not yet available: every algorithm currently rejects `count > 1`, so leave it at `1`. |
-| `max_retries`      | int    | `5`     | Nonnegative retry count. `0` means exactly one provider submission.                                                              |
-| `max_wall_seconds` | int    | `86400` | Maximum run wall time in seconds; minimum `60`.                                                                                  |
 
-Provider and exact-GPU constraints persist across retries and cost estimates.
-Use `exact_type` when hardware identity matters.
+Provider and GPU-class constraints persist across retries and cost estimates.
+Use `type` when hardware identity matters; disk sizing, retry count, and
+wall-clock limits are platform-managed.
 
 ## `[worker_env]` (advanced)
 
