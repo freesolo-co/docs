@@ -47,6 +47,11 @@ algorithm = "grpo"
 algorithm = "opd"
 ```
 
+```toml OPSD (self-distillation)
+algorithm = "opsd"
+thinking = true
+```
+
 </CodeGroup>
 
 - **`sft`**: supervised fine-tuning, when you already have the answers. The
@@ -63,7 +68,16 @@ algorithm = "opd"
   environments, but not tool-calling ones. Teacher access is managed and teacher
   tokens are not billed to you.
 
-All three are driven by the same [environment](/guides/environments/overview), and
+- **`opsd`**: on-policy self-distillation (**phase-1, experimental**), when a
+  reference solution exists but you want the model to *derive* its own reasoning
+  rather than copy it. The model's own **frozen base** (adapter disabled), shown
+  the reference answer, teaches its on-policy rollouts under a forward KL, so
+  there is no external teacher and no reward. It needs `thinking = true` on a
+  thinking-capable model, a single-turn text-only environment, and a dataset with
+  gold completions (like SFT). `group_size` must be `1` and `teacher_model` does
+  not apply. See [OPSD-specific](/reference/configuration#opsd-specific).
+
+All four are driven by the same [environment](/guides/environments/overview), and
 `algorithm` defaults to `sft` when omitted. See
 [how Flash works](/how-flash-works) for the difference.
 
