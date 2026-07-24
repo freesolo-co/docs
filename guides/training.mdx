@@ -47,6 +47,11 @@ algorithm = "grpo"
 algorithm = "opd"
 ```
 
+```toml OPSD (self-distillation)
+algorithm = "opsd"
+thinking = true
+```
+
 </CodeGroup>
 
 - **`sft`**: supervised fine-tuning, when you already have the answers. The
@@ -63,7 +68,16 @@ algorithm = "opd"
   environments, but not tool-calling ones. Teacher access is managed and teacher
   tokens are not billed to you.
 
-All three are driven by the same [environment](/guides/environments/overview), and
+- **`opsd`**: on-policy self-distillation (**phase-1, experimental**), when a
+  reference solution exists but you want the model to *derive* its own reasoning
+  rather than copy it. The model's own **frozen base** (adapter disabled), shown
+  the reference answer, teaches its on-policy rollouts under a forward KL, so
+  there is no external teacher and no reward. It needs `thinking = true` on a
+  thinking-capable model, a single-turn text-only environment, and a dataset with
+  gold completions (like SFT). `group_size` must be `1` and `teacher_model` does
+  not apply. See [OPSD-specific](/reference/configuration#opsd-specific).
+
+All four are driven by the same [environment](/guides/environments/overview), and
 `algorithm` defaults to `sft` when omitted. See
 [how Flash works](/how-flash-works) for the difference.
 
@@ -127,13 +141,12 @@ max_examples = 1000                   # sft keeps the first n rows before seeded
 max_steps = 100                       # exact update horizon when positive
 save_at_steps = [25, 50, 100]         # mandatory saves; requires positive max_steps
 lora_rank = 32
-lora_alpha = 64
 # learning_rate = 1e-4
 # batch_size = 8
 # group_size = 8                      # grpo: completions sampled per prompt
 # max_completion_tokens = 512         # grpo/opd: generated tokens per rollout turn
 # max_context_tokens = 4096           # total context cap, including sft
-# init_from_adapter = "<sft-run-id>"  # grpo/opd: omit lora rank and alpha
+# init_from_adapter = "<sft-run-id>"  # grpo/opd: omit lora_rank (rank/alpha inherited)
 # teacher_model = "glm-5.2"           # opd: managed teacher
 # structured_outputs = '{"type":"object","properties":{"answer":{"type":"string"}},"required":["answer"]}'
 
@@ -173,9 +186,10 @@ seeded shuffle. SFT also honors `max_context_tokens` for the rendered sequence.
 
 `init_from_adapter` continues a source adapter in a new GRPO or OPD run. The
 source can be a finished SFT run or a saved checkpoint. Its LoRA rank and alpha
-are authoritative, so omit both `lora_rank` and
-`lora_alpha`. The server resolves them during `--dry-run` and real submit; local
-`--cost` may warn and estimate with defaults.
+are authoritative, so omit `lora_rank`. `lora_alpha` is managed (always
+`2 * lora_rank`) and is never a config key. The server resolves the source rank
+during `--dry-run` and real submit; local `--cost` may warn and estimate with
+defaults.
 
 If you set `model_revision`, the source and target revisions must match exactly.
 Use server-side `--dry-run` to resolve and validate the source.

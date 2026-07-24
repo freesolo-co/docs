@@ -27,13 +27,13 @@ lora_rank = 32
 
 ## Top level
 
-| Key              | Type   | Default    | Description                                                                                                          |
-| ---------------- | ------ | ---------- | -------------------------------------------------------------------------------------------------------------------- |
-| `model`          | string | (required) | Base model to train a LoRA adapter on, e.g. `Qwen/Qwen3.5-4B`. See [`flash models`](/reference/models).              |
-| `model_revision` | string | `""`       | Optional Hugging Face branch, tag, or commit. Empty uses the default revision; a value pins all student-model loads. |
-| `algorithm`      | string | `sft`      | `sft` imitates completions, `grpo` learns from your reward, and `opd` distils from a managed teacher.                |
-| `seed`           | int    | `42`       | Deterministic run seed for training order and sampling. Must be between `0` and `9223372036854775807`.               |
-| `thinking`       | bool   | `false`    | Enable reasoning mode on a thinking-capable model. Reasoning and the answer share `max_completion_tokens`.           |
+| Key              | Type   | Default    | Description                                                                                                                                                    |
+| ---------------- | ------ | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `model`          | string | (required) | Base model to train a LoRA adapter on, e.g. `Qwen/Qwen3.5-4B`. See [`flash models`](/reference/models).                                                        |
+| `model_revision` | string | `""`       | Optional Hugging Face branch, tag, or commit. Empty uses the default revision; a value pins all student-model loads.                                           |
+| `algorithm`      | string | `sft`      | `sft` imitates completions, `grpo` learns from your reward, `opd` distils from a managed teacher, and `opsd` self-distils reasoning from a reference solution. |
+| `seed`           | int    | `42`       | Deterministic run seed for training order and sampling. Must be between `0` and `9223372036854775807`.                                                         |
+| `thinking`       | bool   | `false`    | Enable reasoning mode on a thinking-capable model. Reasoning and the answer share `max_completion_tokens`.                                                     |
 
 ## `[environment]`
 
@@ -73,17 +73,16 @@ Reserved platform secret names such as `FREESOLO_API_KEY`, `HF_TOKEN`,
 
 ## `[train]`
 
-| Key                  | Type      | Default        | Description                                                                                                                                                                                                                                                           |
-| -------------------- | --------- | -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `lora_rank`          | int       | `32`           | LoRA rank; higher means a larger adapter with more capacity and cost. Flash enforces the per-model max rank. Omit with `init_from_adapter`; the source rank is authoritative. See [context window and LoRA rank](/reference/models#context-window-and-lora-rank). |
-| `lora_alpha`         | int       | `64`           | LoRA alpha. Omit with `init_from_adapter`; the source alpha is authoritative.                                                                                                                                                                                         |
-| `learning_rate`      | float     | recipe default | Optimizer learning rate.                                                                                                                                                                                                                                              |
-| `batch_size`         | int       | recipe default | Training batch size.                                                                                                                                                                                                                                                  |
-| `max_context_tokens` | int       | recipe default | Total training context cap. SFT applies it to the rendered sequence; GRPO and OPD apply it to prompt plus completion. It cannot exceed the model's training context cap. See [context window](/reference/models#context-window-and-lora-rank).                          |
-| `max_steps`          | int       | derived        | A positive value is the exact update horizon for SFT, GRPO, and OPD. Absent or non-positive uses the derived count.                                                                                                                                                   |
-| `save_at_steps`      | list[int] | `[]`           | Strictly increasing positive required saves. Requires positive `max_steps`, cannot exceed it, and suppresses `save_every`. Each step must durably publish the deployable adapter and full resume checkpoint.                                                          |
-| `save_every`         | int       | recipe default | Periodic cadence when `save_at_steps` is empty. Upload attempts are synchronous but remain best-effort after bounded retries.                                                                                                                                         |
-| `init_from_adapter`  | string    | -              | Continue a GRPO or OPD adapter from `RUN_ID` or the exact `RUN_ID/step-N` shown by `flash checkpoints`. Longer storage refs are rejected. Omit rank and alpha. If set, `model_revision` must match the source exactly.                                                |
+| Key                  | Type      | Default        | Description                                                                                                                                                                                                                                                                                                                                 |
+| -------------------- | --------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `lora_rank`          | int       | `32`           | LoRA rank; higher means a larger adapter with more capacity and cost. Flash enforces the per-model max rank. Omit with `init_from_adapter`; the source rank is authoritative. `lora_alpha` is managed (always `2 * lora_rank`) and is not a config key. See [context window and LoRA rank](/reference/models#context-window-and-lora-rank). |
+| `learning_rate`      | float     | recipe default | Optimizer learning rate.                                                                                                                                                                                                                                                                                                                    |
+| `batch_size`         | int       | recipe default | Training batch size.                                                                                                                                                                                                                                                                                                                        |
+| `max_context_tokens` | int       | recipe default | Total training context cap. SFT applies it to the rendered sequence; GRPO and OPD apply it to prompt plus completion. It cannot exceed the model's training context cap. See [context window](/reference/models#context-window-and-lora-rank).                                                                                              |
+| `max_steps`          | int       | derived        | A positive value is the exact update horizon for SFT, GRPO, and OPD. Absent or non-positive uses the derived count.                                                                                                                                                                                                                         |
+| `save_at_steps`      | list[int] | `[]`           | Strictly increasing positive required saves. Requires positive `max_steps`, cannot exceed it, and suppresses `save_every`. Each step must durably publish the deployable adapter and full resume checkpoint.                                                                                                                                |
+| `save_every`         | int       | recipe default | Periodic cadence when `save_at_steps` is empty. Upload attempts are synchronous but remain best-effort after bounded retries.                                                                                                                                                                                                               |
+| `init_from_adapter`  | string    | -              | Continue a GRPO or OPD adapter from `RUN_ID` or the exact `RUN_ID/step-N` shown by `flash checkpoints`. Longer storage refs are rejected. Omit rank and alpha. If set, `model_revision` must match the source exactly.                                                                                                                      |
 
 Server-side `--dry-run` resolves warm-start rank and alpha. Local `--cost` may
 warn and estimate with defaults.
@@ -97,18 +96,19 @@ warn and estimate with defaults.
 
 ### GRPO-specific
 
-| Key                            | Type         | Description                                                                                                                    |
-| ------------------------------ | ------------ | ------------------------------------------------------------------------------------------------------------------------------ |
-| `epochs`                       | int          | Passes over the retained prompt pool when `max_steps` is not positive.                                                         |
-| `max_examples`                 | int          | Truncate the prompt pool to N examples (`0` = no cap).                                                                         |
-| `group_size`                   | int          | Completions sampled per prompt. Must be at least `2`.                                                                          |
-| `temperature`                  | float        | Sampling temperature for rollouts.                                                                                             |
-| `max_completion_tokens`        | int          | Maximum generated tokens per completion or assistant turn.                                                                     |
-| `kl_penalty_coef`              | float        | Strength of the penalty that limits drift from the base model.                                                                 |
-| `advantage_clip`               | float        | Recorded for recipe parity but currently a no-op; the runtime clips the importance ratio instead.                              |
-| `thinking_length_penalty_coef` | float        | Penalty on reasoning length.                                                                                                   |
-| `stop_sequences`               | list[string] | Stop sequences for generation.                                                                                                 |
-| `structured_outputs`           | string/table | Constrain each rollout to a JSON schema, regex, choice set, or any JSON. See [Structured outputs](/guides/structured-outputs). |
+| Key                            | Type         | Description                                                                                                                                                                                                                                                                                                                                              |
+| ------------------------------ | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `epochs`                       | int          | Passes over the retained prompt pool when `max_steps` is not positive.                                                                                                                                                                                                                                                                                   |
+| `max_examples`                 | int          | Truncate the prompt pool to N examples (`0` = no cap).                                                                                                                                                                                                                                                                                                   |
+| `group_size`                   | int          | Completions sampled per prompt. Must be at least `2`.                                                                                                                                                                                                                                                                                                    |
+| `temperature`                  | float        | Sampling temperature for rollouts.                                                                                                                                                                                                                                                                                                                       |
+| `max_completion_tokens`        | int          | Maximum generated tokens per completion or assistant turn.                                                                                                                                                                                                                                                                                               |
+| `kl_penalty_coef`              | float        | Strength of the penalty that limits drift from the base model.                                                                                                                                                                                                                                                                                           |
+| `advantage_clip`               | float        | Recorded for recipe parity but currently a no-op; the runtime clips the importance ratio instead.                                                                                                                                                                                                                                                        |
+| `entropy_quantile`             | float        | Restrict the GRPO policy update to the highest-entropy fraction of completion tokens (TRL `top_entropy_quantile`). Between `0` and `1`; the default (unset) trains on all tokens, while a smaller value (for example `0.2`) trains on only the top-entropy tokens.                                                                                       |
+| `thinking_length_penalty_coef` | float        | Penalty on reasoning length.                                                                                                                                                                                                                                                                                                                             |
+| `stop_sequences`               | list[string] | Stop sequences for generation.                                                                                                                                                                                                                                                                                                                           |
+| `structured_outputs`           | string/table | Constrain each rollout to a JSON schema, regex, choice set, or any JSON. See [Structured outputs](/guides/structured-outputs).                                                                                                                                                                                                                           |
 | `credit_assignment`            | string       | `per_episode` (default) scores one reward for the whole rollout; `per_turn` gives each assistant turn its own group-relative advantage in pure multi-turn GRPO. Tool-calling multi-turn environments require `per_episode`, and single-turn runs are equivalent either way. See [per-turn credit](/guides/environments/multi-turn#per-turn-credit-grpo). |
 
 ### OPD-specific
@@ -136,6 +136,32 @@ The local `--cost` estimate may itemize teacher usage for diagnosis, but only GP
 time is charged. `advantage_clip` and `thinking_length_penalty_coef` do not apply
 to OPD.
 
+### OPSD-specific
+
+OPSD (on-policy self-distillation) is a phase-1, experimental objective. The
+student samples one on-policy rollout, then the **frozen base model itself** (the
+same model with the LoRA adapter disabled, conditioned on the environment's
+reference solution) scores that rollout position-by-position, and the student is
+trained to match the base model's next-token distributions under a clipped
+full-vocabulary forward KL. There is no external teacher and no reward: it
+reconstructs the reasoning that reaches a known answer, so it needs a
+thinking-capable model and a dataset whose rows carry gold completions (the same
+`sft_completion` data SFT uses).
+
+These constraints are enforced at submit:
+
+- `thinking = true` on a thinking-capable model. Non-thinking runs are rejected.
+- Single-turn, text-only environments only. Multi-turn, tool-calling, and image rows are rejected.
+- `group_size` must be `1` (exactly one rollout per prompt). Omit it or set `1`.
+- `teacher_model` is not accepted. The teacher is the local frozen base model, so no teacher tokens are billed.
+
+OPSD honors the standard on-policy `[train]` knobs (`epochs`, `max_examples`,
+`batch_size`, `learning_rate`, `temperature`, `max_completion_tokens`,
+`max_context_tokens`, `max_steps`, `stop_sequences`, and `init_from_adapter`).
+The forward-KL recipe (softmax temperature, clip threshold, `top_p`, and gradient
+clipping) is managed. OPSD is priced on GPU time like GRPO and OPD and serves
+like any other LoRA.
+
 ### Structured outputs
 
 `structured_outputs` constrains GRPO and OPD rollouts; SFT rejects it. Set
@@ -147,16 +173,15 @@ free-form and the grammar begins after `</think>`. See
 
 ## `[gpu]`
 
-| Key                | Type   | Default | Description                                                                                                                      |
-| ------------------ | ------ | ------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `provider`         | string | `""`    | Omit or leave empty for automatic selection; `runpod`, `lambda`, or `vast` pins the provider.                                    |
-| `exact_type`       | string | `""`    | Pin an active validated GPU exactly as shown by `flash gpus`. Preflight rejects unavailable, unsupported, or undersized choices. |
-| `count`            | int    | `1`     | GPUs of the chosen class for one training worker (`1`-`8`). Multi-GPU training is not yet available: every algorithm currently rejects `count > 1`, so leave it at `1`. |
-| `max_retries`      | int    | `5`     | Nonnegative retry count. `0` means exactly one provider submission.                                                              |
-| `max_wall_seconds` | int    | `86400` | Maximum run wall time in seconds; minimum `60`.                                                                                  |
+| Key        | Type   | Default | Description                                                                                                                                                                                    |
+| ---------- | ------ | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `provider` | string | `""`    | Omit or leave empty for automatic selection; `runpod`, `lambda`, or `vast` pins the provider.                                                                                                  |
+| `type`     | string | `""`    | Omit or leave empty for managed cheapest-fit allocation; set an active validated class from `flash gpus` to pin it exactly. Preflight rejects unavailable, unsupported, or undersized choices. |
+| `count`    | int    | `1`     | GPUs of the chosen class for one training worker (`1`-`8`). Multi-GPU training is not yet available: every algorithm currently rejects `count > 1`, so leave it at `1`.                        |
 
-Provider and exact-GPU constraints persist across retries and cost estimates.
-Use `exact_type` when hardware identity matters.
+Provider and GPU-class constraints persist across retries and cost estimates.
+Use `type` when hardware identity matters; disk sizing, retry count, and
+wall-clock limits are platform-managed.
 
 ## `[worker_env]` (advanced)
 
