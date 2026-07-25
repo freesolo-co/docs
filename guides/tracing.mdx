@@ -13,12 +13,17 @@ recording endpoint, let it record while your app runs, then pull the traces down
 with [`flash traces export`](/reference/cli#traces).
 
 <Note>
-  **A project is required.** Traces are stored strictly per-project, so every
-  piece of tracing is scoped to one: recording needs a project id, and both
-  exports read one project. Create the project in the
+  **A project is required for tracing.** Traces are stored strictly
+  per-project, so every piece of tracing is scoped to one: recording needs a
+  project id, and both exports read one project. Create the project in the
   [dashboard](/platform) first and copy its id, then use that id everywhere
   below. A request that records without one is rejected rather than stored
   nowhere.
+
+  This is stricter than the rest of Flash. Environments and training runs also
+  belong to a project, but you never have to name one: omit it and Flash files
+  the run or environment under your org's **Default** project. Tracing is the
+  one place a project id is something you have to supply.
 </Note>
 
 <Note>
