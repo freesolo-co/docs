@@ -45,6 +45,16 @@ mid-training. This is the same set you get from
 time, last use, and run count. From it you can inspect, pull, or delete
 environment source.
 
+## Traces
+
+Each project has a **Traces** tab for the LLM calls your app
+[records](/guides/tracing) through Freesolo's recording endpoint. It lists
+traces with a per-trace detail view, and charts aggregates over the project:
+score, pass rate, p50 latency, average output tokens and LLM calls per trace,
+and error rate. Select traces and export them as JSONL to get a
+[dataset](/guides/datasets#task-records) you can train on, or pull the newest
+1000 from the CLI with [`flash traces export`](/reference/cli#traces).
+
 ## Models
 
 **Models** lists the org's deployed LoRA adapters from

@@ -45,6 +45,15 @@ Each row must be `input` plus an optional `output`; alternate prompt or target
 key names are not accepted. Records are canonicalized to exactly
 `input`/`output`/`metadata`.
 
+<Tip>
+  You do not have to author these rows by hand. If your app already calls an LLM,
+  [record its traffic as traces](/guides/tracing) and run `flash traces export`:
+  every recorded call becomes one `input`/`output` row, written to
+  `dataset/train.jsonl` by default. `flash env setup` can also pull a project's
+  traces in while it scaffolds, so a new environment starts with your own data
+  instead of the starter rows.
+</Tip>
+
 <Warning>
   When Flash builds your training records it keeps only
   `input`/`output`/`metadata` and **silently drops** every other top-level key
@@ -176,7 +185,7 @@ split = "eval"
   `[environment.params]` values are passed to your `load_environment(**kwargs)`.
   `split` is also honored by Flash itself: for an environment packaged with
   dataset files, `split = "eval"` selects `dataset/eval.jsonl` (or `.json`) as
-  the dataset Flash trains on — SFT targets and GRPO problem selection alike.
+  the dataset Flash trains on: SFT targets and GRPO problem selection alike.
   If the environment packages a default train split but the requested split
   file does not exist, the run fails at load time instead of silently falling
   back to `train.jsonl`. An explicit `dataset_path` param takes precedence over

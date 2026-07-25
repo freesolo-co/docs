@@ -50,6 +50,7 @@
 						]
 					},
 					"guides/datasets",
+					"guides/tracing",
 					"guides/training",
 					"guides/deploy-and-chat"
 				]

@@ -1,0 +1,330 @@
+---
+title: "Tracing"
+description: "Record your app's LLM calls to a Freesolo project, then export them as a training dataset."
+---
+
+Tracing records the chat completions your app already makes and stores them on a
+Freesolo **project**. Those traces export as
+[task records](/guides/datasets#task-records), `{"input", "output"}`, so real
+production traffic becomes the `dataset/train.jsonl` you train on.
+
+The loop is: point your existing OpenAI-compatible client at Freesolo's
+recording endpoint, let it record while your app runs, then pull the traces down
+with [`flash traces export`](/reference/cli#traces).
+
+<Warning>
+  **Tracing ships on the `dev` channel and is not on production yet.** The
+  recording and trace-export routes are deployed wherever the `dev` backend runs,
+  not on `https://api.freesolo.co`. The examples below use the production host
+  because that is the address the endpoint takes once it ships, so calling them
+  today returns a 404. To try tracing now, point the same calls at your `dev`
+  backend host; the paths, headers, and payloads are identical. See
+  [Availability](#availability).
+</Warning>
+
+<Note>
+  **A project is required for tracing.** Traces are stored strictly
+  per-project, so every piece of tracing is scoped to one: recording needs a
+  project id, and both exports read one project. Create the project in the
+  [dashboard](/platform) first and copy its id, then use that id everywhere
+  below. A request that records without one is rejected rather than stored
+  nowhere.
+
+  This is stricter than the rest of Flash. Environments and training runs also
+  belong to a project, but naming one is optional there: `flash env push` takes
+  a `--project`, and omitting it files the environment under your org's
+  **Default**. Tracing is the one place a project id is something you always
+  have to supply.
+</Note>
+
+<Note>
+  Tracing records **chat completions only** (`POST /chat/completions`). The
+  responses, embeddings, images, and audio APIs are not recorded, and neither
+  are non-OpenAI-compatible native clients such as the Anthropic SDK `messages`
+  API.
+</Note>
+
+## How recording works
+
+Freesolo exposes one managed OpenAI-compatible recording endpoint at
+`https://api.freesolo.co/v1`. It is a **pass-through proxy**: it forwards your
+request to the upstream provider you pick, using a provider key you supply,
+returns the response unchanged, and stores a trace on the way through.
+
+Two things follow from being a pass-through:
+
+- **Freesolo stores no provider credentials and does not bill the inference.**
+  You send your own provider key per request and are billed by that provider
+  directly. The key does transit the proxy, which uses it as the upstream
+  `Authorization` header, but it is never persisted and never written to a trace
+  or a log. This is separate from [Flash training and serving
+  billing](/reference/cost-model).
+- **Your request is relayed as sent, except for redaction.** `model`, `messages`,
+  tools, and `usage` pass through untouched, and the upstream response is
+  returned to your app byte for byte. The one exception is on the way up: if a
+  request carries a secret-suffixed field or either credential value, that value
+  is replaced before the request is forwarded (see [Secrets are
+  redacted](#secrets-are-redacted)), so a redacted request reaches the provider
+  with placeholders rather than the original values. Streaming works too: frames
+  relay unbuffered and the trace is written after the stream completes.
+
+Supported upstream providers are `openai`, `anthropic`, `openrouter`, and
+`google` (Anthropic and Google through their OpenAI-compatibility layers).
+
+### Request headers
+
+| Header                                     | Required            | Purpose                                                                       |
+| ------------------------------------------ | ------------------- | ----------------------------------------------------------------------------- |
+| `Authorization: Bearer <FREESOLO_API_KEY>` | yes                 | Your Freesolo API key, authenticating the caller's org                        |
+| `X-Freesolo-Provider`                      | yes                 | Upstream to forward to: `openai`, `anthropic`, `openrouter`, or `google`      |
+| `X-Freesolo-Provider-Key`                  | yes                 | Your own key for that provider, forwarded upstream as `Authorization: Bearer` |
+| `X-Freesolo-Project-Id`                    | yes, when recording | Project the trace is stored under                                             |
+| `X-Freesolo-Record`                        | no                  | Set to `false` to proxy without recording (defaults to recording)             |
+
+Traces are strictly per-project, so a recording request without
+`X-Freesolo-Project-Id` is **rejected with a 400** rather than silently stored
+nowhere. Either send the project id, or set `X-Freesolo-Record: false` when you
+only want the proxy.
+
+The header takes the project's **id**, not its name, and the project has to
+exist already: the id is matched exactly against the projects in your org, and
+recording never creates one for you. An id that does not belong to your org
+returns `404`.
+
+### Secrets are redacted
+
+Before anything is forwarded upstream or written to a trace, the proxy redacts:
+
+- **Secret-named fields** anywhere in the request or response body. Key names
+  are compared with case, underscores, and dashes ignored, so `API-Key` and
+  `api_key` are treated alike. A key matches if it is exactly `authorization`
+  or `proxy-authorization`, or if it ends in `api_key`, `secret`, `token`,
+  `password`, `passwd`, `credential`, `credentials`, or `private_key`. The
+  `token` suffix is matched in the singular, so ordinary parameters like
+  `max_tokens` and `completion_tokens` are left alone. JSON Schema definitions
+  are preserved too, so a tool schema with a property literally named `token`
+  still describes itself correctly.
+- **Your credentials by value**. The Freesolo API key and the provider key are
+  replaced with `[redacted]` wherever they appear, including inside message
+  content.
+
+## Record from your app
+
+Use whichever integration is the smaller change. Both record identically
+through the same endpoint, so apply exactly one.
+
+### Method A: the drop-in SDK
+
+For Python or TypeScript apps, the `freesolo` SDK ships a drop-in that
+subclasses the official OpenAI client and points itself at the recording
+endpoint. Do not set the base URL yourself.
+
+<CodeGroup>
+
+```python Python
+# pip install 'freesolo>=0.2.60'
+import os
+
+from freesolo import OpenAI  # AsyncOpenAI for async apps
+
+client = OpenAI(
+    project_id="<your-project-id>",
+    default_headers={
+        "X-Freesolo-Provider": "openai",
+        "X-Freesolo-Provider-Key": os.environ["OPENAI_API_KEY"],
+    },
+)
+
+# unchanged from here on
+response = client.chat.completions.create(
+    model="gpt-4.1-mini",
+    messages=[{"role": "user", "content": "Refund my last order."}],
+)
+```
+
+```typescript TypeScript
+// bun add '@freesolo/sdk@^0.2.60'
+import OpenAI from "@freesolo/sdk/openai";
+
+const client = new OpenAI({
+  freesolo: { projectId: "<your-project-id>" },
+  defaultHeaders: {
+    "X-Freesolo-Provider": "openai",
+    "X-Freesolo-Provider-Key": process.env.OPENAI_API_KEY!,
+  },
+});
+
+const response = await client.chat.completions.create({
+  model: "gpt-4.1-mini",
+  messages: [{ role: "user", content: "Refund my last order." }],
+});
+```
+
+</CodeGroup>
+
+The drop-in reads your Freesolo key from `FREESOLO_API_KEY` and accepts the
+project id as `project_id` / `freesolo.projectId` (or `FREESOLO_PROJECT_ID`).
+Carry over the original client's behavioral options (`timeout`, retries,
+default headers) but **not** `base_url` or `api_key`: the drop-in owns routing
+and authentication, so carrying either bypasses recording or breaks auth.
+
+<Warning>
+  The provider headers are **not** set by the SDK itself. Pass them as default
+  headers as shown above, or the proxy rejects the call with a 400. See
+  [Provider headers and the SDK](#provider-headers-and-the-sdk).
+</Warning>
+
+### Method B: the base-URL proxy
+
+Any OpenAI-compatible client works (the stock OpenAI SDK, OpenRouter, LiteLLM,
+the Vercel AI SDK) with no new dependency. Change only the base URL and
+headers:
+
+```python
+import os
+
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://api.freesolo.co/v1",
+    api_key=os.environ["FREESOLO_API_KEY"],
+    default_headers={
+        "X-Freesolo-Project-Id": "<your-project-id>",
+        "X-Freesolo-Provider": "openai",
+        "X-Freesolo-Provider-Key": os.environ["OPENAI_API_KEY"],
+    },
+)
+```
+
+Keep every request argument, including `model` and `messages`, unchanged.
+
+<Tip>
+  Guard the rewrite so your app still works when Freesolo is not configured:
+  route through the recording endpoint only when `FREESOLO_API_KEY` is present,
+  and fall back to the original client otherwise. If a shared module-level
+  client also serves unrelated calls, build a separate client at the call site
+  you want recorded instead of rerouting the shared one.
+</Tip>
+
+## Export traces as a dataset
+
+Once traces are recorded, turn them into a training dataset:
+
+```bash
+flash traces export
+```
+
+With no flags it finds the projects your key can reach and writes
+`dataset/train.jsonl`: a single project is used directly, several prompt you to
+pick. Pass `--project <id>` to choose one outright (required when not on a
+terminal), `-o` to change the output path, and `-f` to overwrite an existing
+file.
+
+```bash
+flash traces export --project <project-id> -o dataset/train.jsonl -f
+```
+
+The output is exactly the shape [`flash env setup`](/guides/environments/overview#scaffold-one)
+scaffolds, so it drops into an environment unchanged:
+
+```jsonl dataset/train.jsonl
+{"input":"Refund my last order.","output":"Your last order has been refunded."}
+```
+
+### Let `flash env setup` pull the data in for you
+
+You do not have to export by hand and wire the file up yourself.
+[`flash env setup`](/reference/cli#environments) can seed a new environment
+straight from a project's traces, so scaffolding and getting real training data
+are one step:
+
+```bash
+flash env setup
+```
+
+When it runs on an interactive terminal, your stored key turns up projects, and
+no `dataset/train.jsonl` exists yet, it asks which project to start from. Pick
+one and it exports that project's traces, writes them as the environment's
+`dataset/train.jsonl`, and sizes `max_examples` to the number of rows it got, so
+the scaffolded environment is ready to train on your own traffic. Choosing
+"start from scratch" scaffolds the tiny starter dataset instead.
+
+Traces are a head start here, never a requirement. Not being logged in, being
+offline, having no projects, or having no exportable traces all fall back to the
+starter dataset with a warning, so scaffolding still works with no network. An
+existing `dataset/train.jsonl` is never overwritten, so run this on a fresh
+environment (or move the file aside) if you want the prompt.
+
+### How a trace becomes a record
+
+| Record key | Comes from                                                                                                                                  |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `input`    | The request messages, always as a string. A lone user turn exports its bare text; anything longer flattens to role-prefixed lines, so a system prompt or earlier turn is kept rather than dropped. |
+| `output`   | The assistant reply. A tool call is preserved whole as `{"messages": [...]}`; a multimodal reply flattens to its text blocks.               |
+
+Traces with no extractable request/response pair are **skipped**, and the CLI
+reports the count. An export reads the **newest 1000 traces** in the project.
+
+Because the export is an ordinary dataset, everything in
+[Datasets](/guides/datasets) applies, including that a scalar `output` becomes
+one assistant message and `{"messages": [...]}` a full gold trajectory for SFT.
+
+<Warning>
+  **Rows whose `output` is a tool call need a scorer before you run GRPO.** The
+  scaffolded `score_response` is a string containment check: it compares
+  `example.output` against the model's reply text. That works for the text rows,
+  but a tool-call row's `output` is a message object, so the check stringifies it
+  and looks for that Python representation inside the reply. A correct tool call
+  never contains it, and the row scores `0.0` no matter how well the model does.
+
+  Two ways out. Train these rows with **SFT**, which learns the gold trajectory
+  directly and needs no reward function. Or keep GRPO and replace the reward with
+  one that reads the parsed tool call off the response, comparing tool name and
+  arguments rather than text. Mixed exports are worth splitting: the text rows
+  are ready for GRPO as scaffolded.
+</Warning>
+
+## View traces in the dashboard
+
+Each project has a **Traces** tab in the [dashboard](/platform), with a
+per-trace detail view and aggregates over the project: score, pass rate, p50
+latency, average output tokens and LLM calls per trace, and error rate. Traces
+scored by a scorer bundle chart their scores alongside those.
+
+The tab can also export: select the traces you want and download them as JSONL.
+That runs the same conversion as the CLI, so the two files are
+interchangeable. The difference is which traces you get: the dashboard exports
+exactly what you select, while `flash traces export` takes the newest 1000 in
+the project.
+
+## Provider headers and the SDK
+
+`X-Freesolo-Provider` and `X-Freesolo-Provider-Key` became **required** when the
+recording proxy switched to caller-supplied provider keys. The `freesolo` SDK at
+`0.2.60` sends only `X-Freesolo-Project-Id`, so a drop-in client constructed
+without the provider headers is rejected with a `400` naming the missing header.
+
+Until the SDK sends them itself, pass both as default headers (Method A above)
+or use the base-URL proxy (Method B). Both are equivalent to the proxy.
+
+## Availability
+
+Tracing as described here (the pass-through recording proxy, the org-scoped
+trace export API, and `flash traces export`) is on the `dev` channel. The CLI
+side ships in **Flash 1.0.19**. The backend routes are live wherever the `dev`
+backend is deployed and are **not on production yet**, so the
+`https://api.freesolo.co` host used throughout this page is the address they
+take once they ship, not one that answers today. Until then, send the same
+requests to your `dev` backend host: paths, headers, and payloads do not
+change.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Datasets" icon="table" href="/guides/datasets">
+    Everything the exported records can express.
+  </Card>
+  <Card title="Training" icon="dumbbell" href="/guides/training">
+    Train SFT, GRPO, or OPD on the exported dataset.
+  </Card>
+</CardGroup>

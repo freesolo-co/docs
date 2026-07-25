@@ -60,6 +60,14 @@ scaffolds to match. The flags below skip the questions; a non-interactive run (n
 or `-y`) takes the defaults (single-turn, no reasoning). A flag that disagrees
 with an already-scaffolded project is ignored with a warning.
 
+If your API key turns up projects with [recorded traces](/guides/tracing), and
+no `dataset/train.jsonl` exists yet, the survey also offers to seed it from one
+of those projects instead of the 2 starter rows, and sizes `max_examples` to
+what it exported. Traces are a head start, never a requirement: choose "start
+from scratch", or hit any export failure, and setup falls back to the starter
+dataset. An existing dataset is never overwritten, so the prompt is skipped
+when one is already there.
+
 | Flag             | Default | Effect                                                                                                                                                       |
 | ---------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `--single-turn`  | default | Scaffold an `EnvironmentSingleTurn` env (prompt → one response)                                                                                              |
@@ -85,7 +93,7 @@ with an already-scaffolded project is ignored with a warning.
   reward is a warning, not a failure.
 </ResponseField>
 
-<ResponseField name="flash env push --name NAME [PATH]">
+<ResponseField name="flash env push --name NAME [--project ID] [PATH]">
   Publish a local Freesolo environment to Freesolo's [managed Environments
   Hub](/guides/environments/package#publish-it) (private) and print its id
   (`your-org/name`). `--name` is required and is normalized to a lowercase
@@ -100,6 +108,14 @@ with an already-scaffolded project is ignored with a warning.
   `README.md`/`TRAINING.md`, and any `dataset/` tree. Secrets (`.env` files,
   `*.key`, `*.pem`, `credentials*`, SSH keys) and virtualenvs are never
   uploaded.
+
+  `--project` groups the environment under a project id. It is optional and
+  never prompts: omit it and a republish leaves the environment in whatever
+  project it is already in, while a first publish files it under your org's
+  **Default**. That means you can assign the project once from the environment's
+  dashboard page and keep pushing without repeating the flag. An id that does
+  not belong to your org is ignored rather than failing the push, so a typo
+  costs you the grouping, not the publish. Requires Flash 1.0.20.
 </ResponseField>
 
 <ResponseField name="flash env pull ENV_ID [PATH] [-o OUTPUT] [-f]">
@@ -118,6 +134,30 @@ with an already-scaffolded project is ignored with a warning.
   Delete a managed Freesolo Hub environment. `ENV_ID` must be a lowercase
   `namespace/name` Hub id; GitHub refs and local paths cannot be deleted from
   the Hub. Pass `-y`/`--yes` to skip the confirmation prompt.
+</ResponseField>
+
+## Traces
+
+<ResponseField name="flash traces export [flags]">
+  Export a project's [recorded traces](/guides/tracing) as freesolo environment
+  records, ready to train on. Each trace becomes an `{"input", "output"}` row,
+  the same shape `flash env setup` scaffolds, so the output drops straight into
+  an environment's `dataset/train.jsonl`. The conversion runs on the Freesolo
+  backend, so a file exported here matches the dashboard's trace export.
+
+Traces are stored per-project, so an export always reads exactly one project.
+Without `--project`, the CLI looks up the projects your key can reach: one
+project is used directly, several prompt you to pick, and on a non-interactive
+terminal it errors with the available ids so you can pass `--project`. An export
+reads the newest 1000 traces; traces with no usable request/response pair are
+skipped and counted in the summary. Writing an existing file needs `--force`.
+
+| Flag             | Default               | Effect                            |
+| ---------------- | --------------------- | --------------------------------- |
+| `--project ID`   | prompt                | Project id to export from         |
+| `-o`, `--output` | `dataset/train.jsonl` | Output JSONL path                 |
+| `-f`, `--force`  | -                     | Overwrite an existing output file |
+
 </ResponseField>
 
 ## Training

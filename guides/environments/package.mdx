@@ -99,6 +99,19 @@ flash env push --name math math
 It prints the published id
 (`your-org/math`). Put that in your config's `[environment] id`.
 
+Every environment belongs to a **project**, the same grouping the
+[dashboard](/platform) organizes runs and traces by. You do not have to pick
+one: a first publish files the environment under your org's **Default**. To put
+it somewhere specific, pass the project id:
+
+```bash
+flash env push --name math --project <project-id> math
+```
+
+Republishing without `--project` leaves the grouping alone, so assigning the
+project once (here or from the environment's dashboard page) survives every
+later push. See [`flash env push`](/reference/cli#environments).
+
 ## Use an existing environment
 
 If you already have a published env id (yours or one shared with you), reference
