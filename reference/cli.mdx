@@ -60,11 +60,13 @@ scaffolds to match. The flags below skip the questions; a non-interactive run (n
 or `-y`) takes the defaults (single-turn, no reasoning). A flag that disagrees
 with an already-scaffolded project is ignored with a warning.
 
-If your API key turns up projects with [recorded traces](/guides/tracing), the
-survey also offers to seed `dataset/train.jsonl` from one of them instead of the
-2 starter rows, and sizes `max_examples` to what it exported. Traces are a head
-start, never a requirement: choose "start from scratch", or hit any export
-failure, and setup falls back to the starter dataset.
+If your API key turns up projects with [recorded traces](/guides/tracing), and
+no `dataset/train.jsonl` exists yet, the survey also offers to seed it from one
+of those projects instead of the 2 starter rows, and sizes `max_examples` to
+what it exported. Traces are a head start, never a requirement: choose "start
+from scratch", or hit any export failure, and setup falls back to the starter
+dataset. An existing dataset is never overwritten, so the prompt is skipped
+when one is already there.
 
 | Flag             | Default | Effect                                                                                                                                                       |
 | ---------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -135,6 +137,7 @@ failure, and setup falls back to the starter dataset.
   an environment's `dataset/train.jsonl`. The conversion runs on the Freesolo
   backend, so a file exported here matches the dashboard's trace export.
 
+Traces are stored per-project, so an export always reads exactly one project.
 Without `--project`, the CLI looks up the projects your key can reach: one
 project is used directly, several prompt you to pick, and on a non-interactive
 terminal it errors with the available ids so you can pass `--project`. An export

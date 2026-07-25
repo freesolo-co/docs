@@ -13,6 +13,15 @@ recording endpoint, let it record while your app runs, then pull the traces down
 with [`flash traces export`](/reference/cli#traces).
 
 <Note>
+  **A project is required.** Traces are stored strictly per-project, so every
+  piece of tracing is scoped to one: recording needs a project id, and both
+  exports read one project. Create the project in the
+  [dashboard](/platform) first and copy its id, then use that id everywhere
+  below. A request that records without one is rejected rather than stored
+  nowhere.
+</Note>
+
+<Note>
   Tracing records **chat completions only** (`POST /chat/completions`). The
   responses, embeddings, images, and audio APIs are not recorded, and neither
   are non-OpenAI-compatible native clients such as the Anthropic SDK `messages`
@@ -53,8 +62,12 @@ Supported upstream providers are `openai`, `anthropic`, `openrouter`, and
 Traces are strictly per-project, so a recording request without
 `X-Freesolo-Project-Id` is **rejected with a 400** rather than silently stored
 nowhere. Either send the project id, or set `X-Freesolo-Record: false` when you
-only want the proxy. A project id that does not belong to your org returns
-`404`.
+only want the proxy.
+
+The header takes the project's **id**, not its name, and the project has to
+exist already: the id is matched exactly against the projects in your org, and
+recording never creates one for you. An id that does not belong to your org
+returns `404`.
 
 ### Secrets are redacted
 
@@ -196,13 +209,29 @@ scaffolds, so it drops into an environment unchanged:
 {"input":"Refund my last order.","output":"Your last order has been refunded."}
 ```
 
-`flash env setup` also offers this as a starting point: on an interactive
-terminal, when your stored key turns up projects and no `dataset/train.jsonl`
-exists yet, it asks whether to start from a project's traces and sets
-`max_examples` to the number of rows exported. Choosing "start from scratch"
-scaffolds the tiny starter dataset instead. Not being logged in, being offline,
-or having no traces all fall back to the starter dataset, so scaffolding never
-depends on the network.
+### Let `flash env setup` pull the data in for you
+
+You do not have to export by hand and wire the file up yourself.
+[`flash env setup`](/reference/cli#environments) can seed a new environment
+straight from a project's traces, so scaffolding and getting real training data
+are one step:
+
+```bash
+flash env setup
+```
+
+When it runs on an interactive terminal, your stored key turns up projects, and
+no `dataset/train.jsonl` exists yet, it asks which project to start from. Pick
+one and it exports that project's traces, writes them as the environment's
+`dataset/train.jsonl`, and sizes `max_examples` to the number of rows it got, so
+the scaffolded environment is ready to train on your own traffic. Choosing
+"start from scratch" scaffolds the tiny starter dataset instead.
+
+Traces are a head start here, never a requirement. Not being logged in, being
+offline, having no projects, or having no exportable traces all fall back to the
+starter dataset with a warning, so scaffolding still works with no network. An
+existing `dataset/train.jsonl` is never overwritten, so run this on a fresh
+environment (or move the file aside) if you want the prompt.
 
 ### How a trace becomes a record
 
@@ -226,9 +255,10 @@ latency, average output tokens and LLM calls per trace, and error rate. Traces
 scored by a scorer bundle chart their scores alongside those.
 
 The tab can also export: select the traces you want and download them as JSONL.
-That runs the same conversion as the CLI, so the two files are interchangeable
-The difference is which traces you get: the dashboard exports exactly what you
-select; `flash traces export` takes the newest 1000 in the project.
+That runs the same conversion as the CLI, so the two files are
+interchangeable. The difference is which traces you get: the dashboard exports
+exactly what you select, while `flash traces export` takes the newest 1000 in
+the project.
 
 ## Provider headers and the SDK
 
