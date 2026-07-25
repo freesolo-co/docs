@@ -5,7 +5,7 @@ description: "Record your app's LLM calls to a Freesolo project, then export the
 
 Tracing records the chat completions your app already makes and stores them on a
 Freesolo **project**. Those traces export as
-[task records](/guides/datasets#task-records) — `{"input", "output"}` — so real
+[task records](/guides/datasets#task-records), `{"input", "output"}`, so real
 production traffic becomes the `dataset/train.jsonl` you train on.
 
 The loop is: point your existing OpenAI-compatible client at Freesolo's
@@ -60,13 +60,16 @@ only want the proxy. A project id that does not belong to your org returns
 
 Before anything is forwarded upstream or written to a trace, the proxy redacts:
 
-- **Secret-named fields** anywhere in the request or response body — keys named
-  `authorization` or `proxy-authorization`, and keys ending in `api_key`,
-  `secret`, `token`, `password`, `credential`, or `private_key`. Matching is on
-  the singular suffix, so ordinary parameters like `max_tokens` are left alone.
-  JSON Schema definitions are preserved too, so a tool schema with a property
-  literally named `token` still describes itself correctly.
-- **Your credentials by value** — the Freesolo API key and the provider key are
+- **Secret-named fields** anywhere in the request or response body. Key names
+  are compared with case, underscores, and dashes ignored, so `API-Key` and
+  `api_key` are treated alike. A key matches if it is exactly `authorization`
+  or `proxy-authorization`, or if it ends in `api_key`, `secret`, `token`,
+  `password`, `passwd`, `credential`, `credentials`, or `private_key`. The
+  `token` suffix is matched in the singular, so ordinary parameters like
+  `max_tokens` and `completion_tokens` are left alone. JSON Schema definitions
+  are preserved too, so a tool schema with a property literally named `token`
+  still describes itself correctly.
+- **Your credentials by value**. The Freesolo API key and the provider key are
   replaced with `[redacted]` wherever they appear, including inside message
   content.
 
@@ -126,8 +129,8 @@ const response = await client.chat.completions.create({
 
 The drop-in reads your Freesolo key from `FREESOLO_API_KEY` and accepts the
 project id as `project_id` / `freesolo.projectId` (or `FREESOLO_PROJECT_ID`).
-Carry over the original client's behavioral options — `timeout`, retries,
-default headers — but **not** `base_url` or `api_key`: the drop-in owns routing
+Carry over the original client's behavioral options (`timeout`, retries,
+default headers) but **not** `base_url` or `api_key`: the drop-in owns routing
 and authentication, so carrying either bypasses recording or breaks auth.
 
 <Warning>
@@ -138,8 +141,8 @@ and authentication, so carrying either bypasses recording or breaks auth.
 
 ### Method B: the base-URL proxy
 
-Any OpenAI-compatible client works — the stock OpenAI SDK, OpenRouter, LiteLLM,
-the Vercel AI SDK — with no new dependency. Change only the base URL and
+Any OpenAI-compatible client works (the stock OpenAI SDK, OpenRouter, LiteLLM,
+the Vercel AI SDK) with no new dependency. Change only the base URL and
 headers:
 
 ```python
@@ -212,7 +215,7 @@ Traces with no extractable request/response pair are **skipped**, and the CLI
 reports the count. An export reads the **newest 1000 traces** in the project.
 
 Because the export is an ordinary dataset, everything in
-[Datasets](/guides/datasets) applies — including that a scalar `output` becomes
+[Datasets](/guides/datasets) applies, including that a scalar `output` becomes
 one assistant message and `{"messages": [...]}` a full gold trajectory for SFT.
 
 ## View traces in the dashboard
@@ -224,7 +227,7 @@ scored by a scorer bundle chart their scores alongside those.
 
 The tab can also export: select the traces you want and download them as JSONL.
 That runs the same conversion as the CLI, so the two files are interchangeable
-— the difference is which traces you get. The dashboard exports exactly what you
+The difference is which traces you get: the dashboard exports exactly what you
 select; `flash traces export` takes the newest 1000 in the project.
 
 ## Provider headers and the SDK
@@ -239,8 +242,8 @@ or use the base-URL proxy (Method B). Both are equivalent to the proxy.
 
 ## Availability
 
-Tracing as described here — the pass-through recording proxy, the org-scoped
-trace export API, and `flash traces export` — is on the `dev` channel. The
+Tracing as described here (the pass-through recording proxy, the org-scoped
+trace export API, and `flash traces export`) is on the `dev` channel. The
 CLI side ships in **Flash 1.0.19**; the backend routes are live wherever the
 `dev` backend is deployed.
 

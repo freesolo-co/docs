@@ -183,7 +183,7 @@ split = "eval"
   `[environment.params]` values are passed to your `load_environment(**kwargs)`.
   `split` is also honored by Flash itself: for an environment packaged with
   dataset files, `split = "eval"` selects `dataset/eval.jsonl` (or `.json`) as
-  the dataset Flash trains on — SFT targets and GRPO problem selection alike.
+  the dataset Flash trains on: SFT targets and GRPO problem selection alike.
   If the environment packages a default train split but the requested split
   file does not exist, the run fails at load time instead of silently falling
   back to `train.jsonl`. An explicit `dataset_path` param takes precedence over
