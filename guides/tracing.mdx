@@ -12,6 +12,16 @@ The loop is: point your existing OpenAI-compatible client at Freesolo's
 recording endpoint, let it record while your app runs, then pull the traces down
 with [`flash traces export`](/reference/cli#traces).
 
+<Warning>
+  **Tracing ships on the `dev` channel and is not on production yet.** The
+  recording and trace-export routes are deployed wherever the `dev` backend runs,
+  not on `https://api.freesolo.co`. The examples below use the production host
+  because that is the address the endpoint takes once it ships, so calling them
+  today returns a 404. To try tracing now, point the same calls at your `dev`
+  backend host; the paths, headers, and payloads are identical. See
+  [Availability](#availability).
+</Warning>
+
 <Note>
   **A project is required for tracing.** Traces are stored strictly
   per-project, so every piece of tracing is scoped to one: recording needs a
@@ -21,9 +31,10 @@ with [`flash traces export`](/reference/cli#traces).
   nowhere.
 
   This is stricter than the rest of Flash. Environments and training runs also
-  belong to a project, but you never have to name one: omit it and Flash files
-  the run or environment under your org's **Default** project. Tracing is the
-  one place a project id is something you have to supply.
+  belong to a project, but naming one is optional there: `flash env push` takes
+  a `--project`, and omitting it files the environment under your org's
+  **Default**. Tracing is the one place a project id is something you always
+  have to supply.
 </Note>
 
 <Note>
@@ -42,14 +53,20 @@ returns the response unchanged, and stores a trace on the way through.
 
 Two things follow from being a pass-through:
 
-- **Freesolo holds no provider credentials and does not bill the inference.**
+- **Freesolo stores no provider credentials and does not bill the inference.**
   You send your own provider key per request and are billed by that provider
-  directly. This is separate from [Flash training and serving
+  directly. The key does transit the proxy, which uses it as the upstream
+  `Authorization` header, but it is never persisted and never written to a trace
+  or a log. This is separate from [Flash training and serving
   billing](/reference/cost-model).
-- **Your request is relayed as sent.** `model`, `messages`, tools, and `usage`
-  pass through untouched, so recording does not change what your app gets back.
-  Streaming works too: frames relay unbuffered and the trace is written after
-  the stream completes.
+- **Your request is relayed as sent, except for redaction.** `model`, `messages`,
+  tools, and `usage` pass through untouched, and the upstream response is
+  returned to your app byte for byte. The one exception is on the way up: if a
+  request carries a secret-suffixed field or either credential value, that value
+  is replaced before the request is forwarded (see [Secrets are
+  redacted](#secrets-are-redacted)), so a redacted request reaches the provider
+  with placeholders rather than the original values. Streaming works too: frames
+  relay unbuffered and the trace is written after the stream completes.
 
 Supported upstream providers are `openai`, `anthropic`, `openrouter`, and
 `google` (Anthropic and Google through their OpenAI-compatibility layers).
@@ -252,6 +269,21 @@ Because the export is an ordinary dataset, everything in
 [Datasets](/guides/datasets) applies, including that a scalar `output` becomes
 one assistant message and `{"messages": [...]}` a full gold trajectory for SFT.
 
+<Warning>
+  **Rows whose `output` is a tool call need a scorer before you run GRPO.** The
+  scaffolded `score_response` is a string containment check: it compares
+  `example.output` against the model's reply text. That works for the text rows,
+  but a tool-call row's `output` is a message object, so the check stringifies it
+  and looks for that Python representation inside the reply. A correct tool call
+  never contains it, and the row scores `0.0` no matter how well the model does.
+
+  Two ways out. Train these rows with **SFT**, which learns the gold trajectory
+  directly and needs no reward function. Or keep GRPO and replace the reward with
+  one that reads the parsed tool call off the response, comparing tool name and
+  arguments rather than text. Mixed exports are worth splitting: the text rows
+  are ready for GRPO as scaffolded.
+</Warning>
+
 ## View traces in the dashboard
 
 Each project has a **Traces** tab in the [dashboard](/platform), with a
@@ -278,9 +310,13 @@ or use the base-URL proxy (Method B). Both are equivalent to the proxy.
 ## Availability
 
 Tracing as described here (the pass-through recording proxy, the org-scoped
-trace export API, and `flash traces export`) is on the `dev` channel. The
-CLI side ships in **Flash 1.0.19**; the backend routes are live wherever the
-`dev` backend is deployed.
+trace export API, and `flash traces export`) is on the `dev` channel. The CLI
+side ships in **Flash 1.0.19**. The backend routes are live wherever the `dev`
+backend is deployed and are **not on production yet**, so the
+`https://api.freesolo.co` host used throughout this page is the address they
+take once they ship, not one that answers today. Until then, send the same
+requests to your `dev` backend host: paths, headers, and payloads do not
+change.
 
 ## Next steps
 

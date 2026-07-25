@@ -93,7 +93,7 @@ when one is already there.
   reward is a warning, not a failure.
 </ResponseField>
 
-<ResponseField name="flash env push --name NAME [PATH]">
+<ResponseField name="flash env push --name NAME [--project ID] [PATH]">
   Publish a local Freesolo environment to Freesolo's [managed Environments
   Hub](/guides/environments/package#publish-it) (private) and print its id
   (`your-org/name`). `--name` is required and is normalized to a lowercase
@@ -108,6 +108,14 @@ when one is already there.
   `README.md`/`TRAINING.md`, and any `dataset/` tree. Secrets (`.env` files,
   `*.key`, `*.pem`, `credentials*`, SSH keys) and virtualenvs are never
   uploaded.
+
+  `--project` groups the environment under a project id. It is optional and
+  never prompts: omit it and a republish leaves the environment in whatever
+  project it is already in, while a first publish files it under your org's
+  **Default**. That means you can assign the project once from the environment's
+  dashboard page and keep pushing without repeating the flag. An id that does
+  not belong to your org is ignored rather than failing the push, so a typo
+  costs you the grouping, not the publish. Requires Flash 1.0.20.
 </ResponseField>
 
 <ResponseField name="flash env pull ENV_ID [PATH] [-o OUTPUT] [-f]">
