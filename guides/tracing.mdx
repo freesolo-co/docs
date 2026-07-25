@@ -259,7 +259,7 @@ environment (or move the file aside) if you want the prompt.
 
 | Record key | Comes from                                                                                                                                  |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `input`    | The request messages. A lone user turn exports its text; anything longer keeps its roles so a system prompt or earlier turn is not dropped. |
+| `input`    | The request messages, always as a string. A lone user turn exports its bare text; anything longer flattens to role-prefixed lines, so a system prompt or earlier turn is kept rather than dropped. |
 | `output`   | The assistant reply. A tool call is preserved whole as `{"messages": [...]}`; a multimodal reply flattens to its text blocks.               |
 
 Traces with no extractable request/response pair are **skipped**, and the CLI
