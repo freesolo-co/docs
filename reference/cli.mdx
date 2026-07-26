@@ -41,8 +41,8 @@ inline help.
 
 <ResponseField name="flash gpus">
   List active validated GPU classes with VRAM, provider availability, and
-  estimated $/hr. Selection is automatic by default; `[gpu] type` pins an
-  exact class.
+  estimated $/hr. Selection is automatic by default; `[gpu] type` pins an exact
+  class.
 </ResponseField>
 
 ## Environments
@@ -109,13 +109,14 @@ when one is already there.
   `*.key`, `*.pem`, `credentials*`, SSH keys) and virtualenvs are never
   uploaded.
 
-  `--project` groups the environment under a project id. It is optional and
-  never prompts: omit it and a republish leaves the environment in whatever
-  project it is already in, while a first publish files it under your org's
-  **Default**. That means you can assign the project once from the environment's
-  dashboard page and keep pushing without repeating the flag. An id that does
-  not belong to your org is ignored rather than failing the push, so a typo
-  costs you the grouping, not the publish. Requires Flash 1.0.20.
+`--project` groups the environment under a project id. It is optional and
+never prompts: omit it and a republish leaves the environment in whatever
+project it is already in, while a first publish files it under your org's
+**Default**. That means you can assign the project once from the environment's
+dashboard page and keep pushing without repeating the flag. An id that does
+not belong to your org is ignored rather than failing the push, so a typo
+costs you the grouping, not the publish. Requires Flash 1.0.20.
+
 </ResponseField>
 
 <ResponseField name="flash env pull ENV_ID [PATH] [-o OUTPUT] [-f]">
@@ -140,23 +141,40 @@ when one is already there.
 
 <ResponseField name="flash traces export [flags]">
   Export a project's [recorded traces](/guides/tracing) as freesolo environment
-  records, ready to train on. Each trace becomes an `{"input", "output"}` row,
-  the same shape `flash env setup` scaffolds, so the output drops straight into
-  an environment's `dataset/train.jsonl`. The conversion runs on the Freesolo
-  backend, so a file exported here matches the dashboard's trace export.
+  records, ready to train on. By default each trace becomes an
+  `{"input", "output"}` row, the same shape `flash env setup` scaffolds, so the
+  output drops straight into an environment's `dataset/train.jsonl`. The
+  conversion runs on the Freesolo backend, so a file exported here matches the
+  dashboard's trace export.
+
+`--format` picks the export shape (requires Flash 1.0.22; the dashboard export
+offers the same three):
+
+- `records` (default): `{"input", "output"}` environment records. Traces with
+  no usable request/response pair are skipped.
+- `prompts`: `{"input"}` only. GRPO samples its own completions and scores them
+  with the environment, so no gold reply is needed, and a call whose reply
+  never arrived still exports.
+- `raw`: the stored trace rows with their spans, unconverted. Raw rows are not
+  a dataset, so they default to `traces.raw.jsonl` instead of
+  `dataset/train.jsonl`, where a later `env push` + `train` could pick them up.
+
+There is no per-algorithm format: SFT and GRPO read the same environment
+records. The CLI errors if the backend does not honour the requested format.
 
 Traces are stored per-project, so an export always reads exactly one project.
 Without `--project`, the CLI looks up the projects your key can reach: one
 project is used directly, several prompt you to pick, and on a non-interactive
 terminal it errors with the available ids so you can pass `--project`. An export
-reads the newest 1000 traces; traces with no usable request/response pair are
-skipped and counted in the summary. Writing an existing file needs `--force`.
+reads the newest 1000 traces; skipped traces are counted in the summary.
+Writing an existing file needs `--force`.
 
-| Flag             | Default               | Effect                            |
-| ---------------- | --------------------- | --------------------------------- |
-| `--project ID`   | prompt                | Project id to export from         |
-| `-o`, `--output` | `dataset/train.jsonl` | Output JSONL path                 |
-| `-f`, `--force`  | -                     | Overwrite an existing output file |
+| Flag             | Default                                        | Effect                            |
+| ---------------- | ---------------------------------------------- | --------------------------------- |
+| `--project ID`   | prompt                                         | Project id to export from         |
+| `--format NAME`  | `records`                                      | `records`, `prompts`, or `raw`    |
+| `-o`, `--output` | `dataset/train.jsonl` (`traces.raw.jsonl` raw) | Output JSONL path                 |
+| `-f`, `--force`  | -                                              | Overwrite an existing output file |
 
 </ResponseField>
 
