@@ -1,10 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="-10 0 80 80">
-  <style>
-    path { fill: #05081d; }
-    @media (prefers-color-scheme: dark) {
-      path { fill: #ffffff; }
-    }
-  </style>
-  <path d="M8.70531e-05 16.8992V36.1307L13.8652 45.2443L18.0014 44.0782V30.5022L3.05614 34.7152V32.2076L60 16.1645V0L8.70531e-05 16.8992Z" />
-  <path d="M0 51.6549V70.8864L13.8651 80L18.0013 78.8338V65.2579L3.05606 69.4709V66.9633L59.9999 50.9202V34.7557L0 51.6549Z" />
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="14" fill="#000000" />
+  <!-- the mark is fixed white on its own black tile, so it stays legible in
+       light and dark browser chrome without a prefers-color-scheme swap.
+       source art spans x 9.5-54.5 / y 2-62; scale(2/3) plus translate 10.667
+       lands its box at x 17-47 / y 12-52 and keeps the rounded corners clear. -->
+  <g fill="#ffffff" transform="translate(10.667 10.667) scale(0.666667)">
+    <path d="M9.50007 14.6744V29.0981L19.8989 35.9332L23.0011 35.0586V24.8766L11.7921 28.0364V26.1557L54.5 14.1233V2L9.50007 14.6744Z" />
+    <path d="M9.5 40.7412V55.1648L19.8988 62L23.001 61.1254V50.9434L11.792 54.1031V52.2225L54.4999 40.1901V28.0668L9.5 40.7412Z" />
+  </g>
 </svg>
