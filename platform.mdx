@@ -17,8 +17,8 @@ is scoped to the project you have open. Assign one from the dashboard, with
 [training config](/reference/configuration#top-level). What happens without an
 assignment differs by surface: a first `flash env push` files the environment
 under your org's **Default** project, a training run with no `project` field
-stays ungrouped, and [tracing](/guides/tracing) always requires an explicit
-project id.
+stays ungrouped, and [trace recording](/guides/tracing) always requires an
+explicit project id (exports can discover or prompt for one).
 
 ## API keys
 
@@ -68,7 +68,8 @@ and error rate. Select traces and export them as JSONL to get a
 [dataset](/guides/datasets#task-records) you can train on, or pull the newest
 1000 from the CLI with [`flash traces export`](/reference/cli#traces). The
 dashboard export offers the same `records`, `prompts`, and `raw` shapes as the
-CLI's `--format` flag.
+CLI's `--format` flag; `records` and `prompts` are trainable datasets, while
+`raw` is the unconverted trace rows for inspection.
 
 ## Models
 

@@ -152,14 +152,15 @@ offers the same three):
 
 - `records` (default): `{"input", "output"}` environment records. Traces with
   no usable request/response pair are skipped.
-- `prompts`: `{"input"}` only. GRPO samples its own completions and scores them
-  with the environment, so no gold reply is needed, and a call whose reply
-  never arrived still exports.
+- `prompts`: `{"input"}` only. GRPO and OPD both train from prompts alone
+  (GRPO samples its own completions and scores them with the environment; OPD
+  distils from a managed teacher), so no gold reply is needed, and a call whose
+  reply never arrived still exports.
 - `raw`: the stored trace rows with their spans, unconverted. Raw rows are not
   a dataset, so they default to `traces.raw.jsonl` instead of
   `dataset/train.jsonl`, where a later `env push` + `train` could pick them up.
 
-There is no per-algorithm format: SFT and GRPO read the same environment
+There is no per-algorithm format: every algorithm reads the same environment
 records. The CLI errors if the backend does not honour the requested format.
 
 Traces are stored per-project, so an export always reads exactly one project.

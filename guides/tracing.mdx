@@ -7,7 +7,7 @@ Tracing records the chat completions your app already makes and stores them on a
 Freesolo **project**. By default those traces export as
 [task records](/guides/datasets#task-records), `{"input", "output"}`, so real
 production traffic becomes the `dataset/train.jsonl` you train on; `--format`
-can export prompt-only rows for GRPO or the raw trace rows instead.
+can export prompt-only rows for GRPO and OPD or the raw trace rows instead.
 
 The loop is: point your existing OpenAI-compatible client at Freesolo's
 recording endpoint, let it record while your app runs, then pull the traces down
@@ -231,16 +231,17 @@ flash traces export --project <project-id> -o dataset/train.jsonl -f
 shapes cover the cases records cannot:
 
 ```bash
-flash traces export --format prompts   # {"input"} rows for GRPO
+flash traces export --format prompts   # {"input"} rows for GRPO and OPD
 flash traces export --format raw       # stored trace rows, unconverted
 ```
 
-`prompts` exports `{"input"}` only: GRPO samples its own completions and scores
-them with the environment, so no gold reply is needed, and a call whose reply
-never arrived still exports. `raw` writes the stored trace rows with their
-spans, unconverted; because raw rows are not a dataset, they default to
+`prompts` exports `{"input"}` only: GRPO and OPD both train from prompts alone
+(GRPO samples its own completions and scores them with the environment; OPD
+distils from a managed teacher), so no gold reply is needed, and a call whose
+reply never arrived still exports. `raw` writes the stored trace rows with
+their spans, unconverted; because raw rows are not a dataset, they default to
 `traces.raw.jsonl` rather than `dataset/train.jsonl`. There is no
-per-algorithm format: SFT and GRPO read the same records.
+per-algorithm format: every algorithm reads the same records.
 
 The default output is exactly the shape [`flash env setup`](/guides/environments/overview#scaffold-one)
 scaffolds, so it drops into an environment unchanged:
