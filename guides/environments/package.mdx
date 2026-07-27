@@ -154,9 +154,13 @@ Delete only targets managed Hub ids of the form `namespace/name`; GitHub refs
 and local paths are not Hub records and cannot be deleted this way.
 
 ```bash
-flash env delete your-org/your-env
-flash env delete your-org/your-env -y   # skip the confirmation prompt
+flash env delete your-org/your-env --project <project-uuid>
+flash env delete your-org/your-env --project <project-uuid> -y   # skip the confirmation prompt
 ```
+
+`--project` is required and must be the UUID of the project the environment was
+published to. `flash projects list` shows the projects you can reach, and the
+environment's dashboard page shows the one it belongs to.
 
 ## Use API keys
 

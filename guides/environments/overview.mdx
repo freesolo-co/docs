@@ -18,8 +18,12 @@ id = "your-org/your-env"
 ## Scaffold one
 
 ```bash
-flash env setup
+flash env setup --project <project-uuid>
 ```
+
+Setup needs a project: run `flash login` first, then pass `--project` (from
+`flash projects list`) or let an interactive run prompt you to choose one. The
+UUID is written into every generated config.
 
 This scaffolds a starter project in the current directory: `environment.py`, a
 tiny `dataset/train.jsonl`, three configs (`configs/sft.toml` for SFT,
