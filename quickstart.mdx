@@ -45,13 +45,24 @@ this once. You can also set `FREESOLO_API_KEY` instead of passing `--api-key`.
 flash whoami    # confirm who your stored key resolves to
 ```
 
-## Step 3: Scaffold a project
+## Step 3: Create a project
 
-Already have a published environment id, yours or one shared with you? Set it as
-`[environment] id` in your config and skip ahead to step 5.
+Every run and environment belongs to a [project](/platform#projects). Create one
+and keep its UUID; the next steps need it.
 
 ```bash
-flash env setup
+flash projects create my-project
+```
+
+This prints the project UUID. `flash projects list` shows them all later.
+
+## Step 4: Scaffold an environment
+
+Already have a published environment id, yours or one shared with you? Set it as
+`[environment] id` in your config and skip ahead to step 6.
+
+```bash
+flash env setup --project <project-uuid>
 ```
 
 This writes a ready-to-edit starter into the current directory:
@@ -89,25 +100,27 @@ model and [train] settings.
 
 </Accordion>
 
-## Step 4: Publish your environment
+## Step 5: Publish your environment
 
 An [environment](/guides/environments/overview) is the task and reward your model trains
 on. [Publish](/guides/environments/package#publish-it) the scaffolded one to the managed
 Environments Hub to get an id:
 
 ```bash
-flash env push --name starter .
+flash env push --project <project-uuid> --name starter .
 ```
 
 This prints an environment id of the form `your-org/starter`.
 
-## Step 5: Configure and validate your run
+## Step 6: Configure and validate your run
 
-Open `configs/sft.toml` and set the one thing that's yours, the environment id
-from the previous step:
+`flash env setup` already wrote `project` into each generated config. Open
+`configs/sft.toml` and set the one thing that's yours, the environment id from
+the previous step:
 
 ```toml configs/sft.toml
 model = "Qwen/Qwen3.5-4B"
+project = "<project-uuid>"
 algorithm = "sft"
 
 [environment]
@@ -135,7 +148,7 @@ without submitting:
 flash train configs/sft.toml --cost
 ```
 
-## Step 6: Train
+## Step 7: Train
 
 ```bash
 flash train configs/sft.toml
@@ -153,9 +166,9 @@ on the server, and you can
 [follow it again any time](/guides/training#monitor-a-run):
 
 ```bash
-flash runs                # list your runs and their state/cost
-flash status <run-id>     # status JSON, including the cost record
-flash log <run-id> -f     # stream logs until the run finishes
+flash runs list                # list your runs and their state/cost
+flash runs status <run-id>     # status JSON, including the cost record
+flash runs log <run-id> -f     # stream logs until the run finishes
 ```
 
 The run reaches `done` when training finishes.
@@ -163,30 +176,31 @@ The run reaches `done` when training finishes.
 Start small: finish one short run end to end before you scale up. When you do,
 raise `train.epochs` or `train.max_examples` and change little else.
 
-## Step 7: Deploy
+## Step 8: Deploy
 
 Serve the trained adapter on Freesolo's
 [managed serving service](/guides/deploy-and-chat). Serving is
 [billed per token](/guides/deploy-and-chat#billing) for requests you send:
 
 ```bash
-flash deploy <run-id>
+flash models deploy <run-id>
 ```
 
 Every real deploy resolves an immutable adapter revision and runs a bounded
-serving smoke before the stable run-id alias is activated.
+serving smoke before the stable run-id alias is activated. You can also deploy
+and tear down from the [dashboard](/platform#models).
 
-## Step 8: Chat
+## Step 9: Chat
 
 ```bash
-flash chat <run-id> -m "Hello! What can you do?"
+flash models chat <run-id> -m "Hello! What can you do?"
 ```
 
 That completes the loop. When you're done,
 [tear the endpoint down](/guides/deploy-and-chat#manage-deployments):
 
 ```bash
-flash undeploy <run-id>
+flash models undeploy <run-id>
 ```
 
 ## Essential commands
@@ -195,20 +209,22 @@ The commands you used above, plus the ones you'll reach for next. Run
 `flash <command> --help` for the full set of flags, or see the
 [CLI reference](/reference/cli).
 
-| Command                 | What it does                                 | Example                                  |
-| ----------------------- | -------------------------------------------- | ---------------------------------------- |
-| `flash login`           | Store your Freesolo API key locally          | `flash login --api-key <key>`            |
-| `flash env setup`       | Scaffold a starter environment and configs   | `flash env setup`                        |
-| `flash env push`        | Publish an environment and print its id      | `flash env push --name starter .`        |
-| `flash train`           | Submit a run and follow its logs             | `flash train configs/sft.toml`           |
-| `flash train --dry-run` | Run server preflights, no GPU or charge      | `flash train configs/sft.toml --dry-run` |
-| `flash train --cost`    | Preview the local pre-flight cost, no submit | `flash train configs/sft.toml --cost`    |
-| `flash runs`            | List your runs with state, cost, and model   | `flash runs`                             |
-| `flash status`          | Show run status and cost                     | `flash status <run-id>`                  |
-| `flash log`             | Print or follow worker logs                  | `flash log <run-id> -f`                  |
-| `flash deploy`          | Serve a trained adapter                      | `flash deploy <run-id>`                  |
-| `flash chat`            | Send a message to a deployment               | `flash chat <run-id> -m "hi"`            |
-| `flash undeploy`        | Tear a deployment down                       | `flash undeploy <run-id>`                |
+| Command                 | What it does                                 | Example                                            |
+| ----------------------- | -------------------------------------------- | -------------------------------------------------- |
+| `flash login`           | Store your Freesolo API key locally          | `flash login --api-key <key>`                      |
+| `flash projects create` | Create a project and print its UUID          | `flash projects create my-project`                 |
+| `flash projects list`   | List your projects and their UUIDs           | `flash projects list`                              |
+| `flash env setup`       | Scaffold a starter environment and configs   | `flash env setup --project <uuid>`                 |
+| `flash env push`        | Publish an environment and print its id      | `flash env push --project <uuid> --name starter .` |
+| `flash train`           | Submit a run and follow its logs             | `flash train configs/sft.toml`                     |
+| `flash train --dry-run` | Run server preflights, no GPU or charge      | `flash train configs/sft.toml --dry-run`           |
+| `flash train --cost`    | Preview the local pre-flight cost, no submit | `flash train configs/sft.toml --cost`              |
+| `flash runs list`       | List your runs with state, cost, and model   | `flash runs list`                                  |
+| `flash runs status`     | Show run status and cost                     | `flash runs status <run-id>`                       |
+| `flash runs log`        | Print or follow worker logs                  | `flash runs log <run-id> -f`                       |
+| `flash models deploy`   | Serve a trained adapter                      | `flash models deploy <run-id>`                     |
+| `flash models chat`     | Send a message to a deployment               | `flash models chat <run-id> -m "hi"`               |
+| `flash models undeploy` | Tear a deployment down                       | `flash models undeploy <run-id>`                   |
 
 ## Next steps
 

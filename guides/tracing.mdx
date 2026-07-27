@@ -27,15 +27,13 @@ with [`flash traces export`](/reference/cli#traces).
   **A project is required for tracing.** Traces are stored strictly
   per-project, so every piece of tracing is scoped to one: recording needs a
   project id, and both exports read one project. Create the project in the
-  [dashboard](/platform) first and copy its id, then use that id everywhere
-  below. A request that records without one is rejected rather than stored
-  nowhere.
+  [dashboard](/platform) or with
+  [`flash projects create`](/reference/cli#projects), copy its id, then use that
+  id everywhere below. A request that records without one is rejected rather
+  than stored nowhere.
 
-This is stricter than the rest of Flash. Environments and training runs also
-belong to a project, but naming one is optional there: `flash env push` takes
-a `--project`, and omitting it files the environment under your org's
-**Default**. Tracing is the one place a project id is something you always
-have to supply.
+This matches the rest of Flash: environments and training runs name their
+project explicitly too, and no surface falls back to a default project.
 
 </Note>
 

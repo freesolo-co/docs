@@ -66,11 +66,12 @@ this file. Dry-run sends the spec to the authenticated server for submit-time
 preflights; `--cost` stays local.
 
 ```toml configs/sft.toml
+project = ""   # project uuid from `flash projects list`
 model = "Qwen/Qwen3.5-4B"
 algorithm = "sft"
 
 [environment]
-id = ""   # paste the id returned by `flash env push --name my-env .`
+id = ""   # paste the id returned by `flash env push --project <uuid> --name my-env .`
 
 [train]
 epochs = 3

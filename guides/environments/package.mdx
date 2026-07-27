@@ -27,7 +27,7 @@ math/
 Publish the folder:
 
 ```bash
-flash env push --name math math
+flash env push --project <project-uuid> --name math math
 ```
 
 A single `.py` upload still works for tiny smoke tests, but push real environments
@@ -93,24 +93,24 @@ Training runs on managed infrastructure, so the environment must be reachable by
 Publish your local environment folder to the managed Environments Hub:
 
 ```bash
-flash env push --name math math
+flash env push --project <project-uuid> --name math math
 ```
 
 It prints the published id
 (`your-org/math`). Put that in your config's `[environment] id`.
 
 Every environment belongs to a **project**, the same grouping the
-[dashboard](/platform) organizes runs and traces by. You do not have to pick
-one: a first publish files the environment under your org's **Default**. To put
-it somewhere specific, pass the project id:
+[dashboard](/platform) organizes runs and traces by, and you name it on every
+push. Get a project UUID from `flash projects list`, or create one:
 
 ```bash
-flash env push --name math --project <project-id> math
+PROJECT=$(flash projects create my-project)
+flash env push --project "$PROJECT" --name math math
 ```
 
-Republishing without `--project` leaves the grouping alone, so assigning the
-project once (here or from the environment's dashboard page) survives every
-later push. See [`flash env push`](/reference/cli#environments).
+A malformed UUID is rejected before anything uploads, and a project outside your
+organization fails the push. Republishing the same environment to a different
+project moves it. See [`flash env push`](/reference/cli#environments).
 
 ## Use an existing environment
 
@@ -199,7 +199,11 @@ run starts.
 ## Next steps
 
 <CardGroup cols={2}>
-  <Card title="Single-turn environments" icon="flask" href="/guides/environments/single-turn">
+  <Card
+    title="Single-turn environments"
+    icon="flask"
+    href="/guides/environments/single-turn"
+  >
     Fill in the environment class you just published.
   </Card>
   <Card title="Training" icon="dumbbell" href="/guides/training">

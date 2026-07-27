@@ -4,6 +4,53 @@ description: "New models, faster training and serving, and platform updates from
 rss: true
 ---
 
+<Update label="July 27, 2026">
+  **Changed · Flash CLI**
+
+## Every run and environment now belongs to a project
+
+Training configs take a required top-level `project` UUID, and `flash env push` and
+`flash env delete` take a required `--project`. Flash validates the project against your
+organization before allocating a GPU, so a wrong or missing project fails the submit
+instead of starting paid work. Create and find projects with `flash projects create` and
+`flash projects list`. Available in Flash 1.0.25.
+
+**Changed · Flash CLI**
+
+## Run and serving commands are grouped under `flash runs` and `flash models`
+
+`flash status`, `log`, `cancel`, and `checkpoints` are now `flash runs status`, `runs log`,
+`runs cancel`, and `runs checkpoint`. `flash deploy`, `chat`, `undeploy`, `deployments`, and
+`export` are now `flash models deploy`, `models chat`, `models undeploy`,
+`models deployments`, and `models export`. Listing base models is `flash models list`.
+
+**New · Platform**
+
+## Deploy and undeploy models from the dashboard
+
+Open a model to see its deployment detail and start or tear down serving from the web app,
+without switching to the CLI.
+
+**New · Platform**
+
+## Switch projects from the top bar
+
+A project selector in the top bar moves between projects from anywhere in the dashboard.
+
+</Update>
+
+<Update label="July 26, 2026">
+  **New · Platform**
+
+## Record production traces and turn them into training datasets
+
+Record OpenAI-compatible calls with your own provider keys, then export ready-to-train
+datasets from the dashboard or with `flash traces export`. Exports come in three shapes:
+`records` and `prompts` are trainable datasets, and `raw` returns the stored trace rows for
+inspection.
+
+</Update>
+
 <Update label="July 24, 2026">
   **New · Platform**
 

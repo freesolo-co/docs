@@ -4,13 +4,14 @@ description: "Every field in a Flash training config (TOML)."
 ---
 
 Describe a run in a TOML config, then pass it to `flash train`. Every run
-requires `model` and `environment.id`; SFT also requires a positive
+requires `project`, `model`, and `environment.id`; SFT also requires a positive
 `train.max_examples`. `algorithm` defaults to `sft`. Run authenticated
 submit-time preflights with
 `flash train config.toml --dry-run`; it creates `state=dry_run`, allocates no GPU,
 and charges nothing.
 
 ```toml
+project = "00000000-0000-0000-0000-000000000000"
 model = "Qwen/Qwen3.5-4B"
 # model_revision = "main"
 algorithm = "sft"
@@ -27,14 +28,14 @@ lora_rank = 32
 
 ## Top level
 
-| Key              | Type   | Default    | Description                                                                                                                                                    |
-| ---------------- | ------ | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `model`          | string | (required) | Base model to train a LoRA adapter on, e.g. `Qwen/Qwen3.5-4B`. See [`flash models`](/reference/models).                                                        |
-| `model_revision` | string | `""`       | Optional Hugging Face branch, tag, or commit. Empty uses the default revision; a value pins all student-model loads.                                           |
-| `algorithm`      | string | `sft`      | `sft` imitates completions, `grpo` learns from your reward, `opd` distils from a managed teacher, and `opsd` self-distils reasoning from a reference solution. |
-| `seed`           | int    | `42`       | Deterministic run seed for training order and sampling. Must be between `0` and `9223372036854775807`.                                                         |
-| `thinking`       | bool   | `false`    | Enable reasoning mode on a thinking-capable model. Reasoning and the answer share `max_completion_tokens`.                                                     |
-| `project`        | string | `""`       | Optional Freesolo project id that groups the run in the [dashboard](/platform). Empty leaves the run ungrouped. Requires Flash 1.0.20.                         |
+| Key              | Type   | Default    | Description                                                                                                                                                                                         |
+| ---------------- | ------ | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `project`        | string | (required) | Freesolo project UUID that the run belongs to. Validated against your organization at submit time, before any GPU is allocated. Create one with [`flash projects create`](/reference/cli#projects). |
+| `model`          | string | (required) | Base model to train a LoRA adapter on, e.g. `Qwen/Qwen3.5-4B`. See [`flash models list`](/reference/models).                                                                                        |
+| `model_revision` | string | `""`       | Optional Hugging Face branch, tag, or commit. Empty uses the default revision; a value pins all student-model loads.                                                                                |
+| `algorithm`      | string | `sft`      | `sft` imitates completions, `grpo` learns from your reward, `opd` distils from a managed teacher, and `opsd` self-distils reasoning from a reference solution.                                      |
+| `seed`           | int    | `42`       | Deterministic run seed for training order and sampling. Must be between `0` and `9223372036854775807`.                                                                                              |
+| `thinking`       | bool   | `false`    | Enable reasoning mode on a thinking-capable model. Reasoning and the answer share `max_completion_tokens`.                                                                                          |
 
 ## `[environment]`
 
@@ -83,7 +84,7 @@ Reserved platform secret names such as `FREESOLO_API_KEY`, `HF_TOKEN`,
 | `max_steps`          | int       | derived        | A positive value is the exact update horizon for SFT, GRPO, and OPD. Absent or non-positive uses the derived count.                                                                                                                                                                                                                         |
 | `save_at_steps`      | list[int] | `[]`           | Strictly increasing positive required saves. Requires positive `max_steps`, cannot exceed it, and suppresses `save_every`. Each step must durably publish the deployable adapter and full resume checkpoint.                                                                                                                                |
 | `save_every`         | int       | recipe default | Periodic cadence when `save_at_steps` is empty. Upload attempts are synchronous but remain best-effort after bounded retries.                                                                                                                                                                                                               |
-| `init_from_adapter`  | string    | -              | Continue a GRPO or OPD adapter from `RUN_ID` or the exact `RUN_ID/step-N` shown by `flash checkpoints`. Longer storage refs are rejected. Omit rank and alpha. If set, `model_revision` must match the source exactly.                                                                                                                      |
+| `init_from_adapter`  | string    | -              | Continue a GRPO or OPD adapter from `RUN_ID` or the exact `RUN_ID/step-N` shown by `flash runs checkpoint`. Longer storage refs are rejected. Omit rank and alpha. If set, `model_revision` must match the source exactly.                                                                                                                  |
 
 Server-side `--dry-run` resolves warm-start rank and alpha. Local `--cost` may
 warn and estimate with defaults.
