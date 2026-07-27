@@ -29,7 +29,7 @@
 		"groups": [
 			{
 				"group": "Get started",
-				"pages": ["index", "quickstart", "platform"]
+				"pages": ["index", "quickstart", "platform", "changelog"]
 			},
 			{
 				"group": "Flash",
