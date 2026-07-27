@@ -11,11 +11,14 @@ updates land on its [changelog](https://platform.freesolo.co/changelog).
 ## Projects
 
 The dashboard groups work into org-level **projects**: training runs, published
-environments, and recorded traces each belong to a project, and the navigation
-is scoped to the project you have open. New work lands in your org's
-**Default** project unless you assign one, from the dashboard, with
+environments, and recorded traces are organized by project, and the navigation
+is scoped to the project you have open. Assign one from the dashboard, with
 `flash env push --project`, or with the top-level `project` field in a
-[training config](/reference/configuration#top-level).
+[training config](/reference/configuration#top-level). What happens without an
+assignment differs by surface: a first `flash env push` files the environment
+under your org's **Default** project, a training run with no `project` field
+stays ungrouped, and [tracing](/guides/tracing) always requires an explicit
+project id.
 
 ## API keys
 

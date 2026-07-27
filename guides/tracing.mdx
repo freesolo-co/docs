@@ -4,9 +4,10 @@ description: "Record your app's LLM calls to a Freesolo project, then export the
 ---
 
 Tracing records the chat completions your app already makes and stores them on a
-Freesolo **project**. Those traces export as
+Freesolo **project**. By default those traces export as
 [task records](/guides/datasets#task-records), `{"input", "output"}`, so real
-production traffic becomes the `dataset/train.jsonl` you train on.
+production traffic becomes the `dataset/train.jsonl` you train on; `--format`
+can export prompt-only rows for GRPO or the raw trace rows instead.
 
 The loop is: point your existing OpenAI-compatible client at Freesolo's
 recording endpoint, let it record while your app runs, then pull the traces down
