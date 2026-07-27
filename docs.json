@@ -90,7 +90,7 @@
 		"primary": {
 			"type": "button",
 			"label": "Create API Key",
-			"href": "https://freesolo.co/platform"
+			"href": "https://platform.freesolo.co"
 		}
 	},
 	"footer": {

@@ -34,6 +34,7 @@ lora_rank = 32
 | `algorithm`      | string | `sft`      | `sft` imitates completions, `grpo` learns from your reward, `opd` distils from a managed teacher, and `opsd` self-distils reasoning from a reference solution. |
 | `seed`           | int    | `42`       | Deterministic run seed for training order and sampling. Must be between `0` and `9223372036854775807`.                                                         |
 | `thinking`       | bool   | `false`    | Enable reasoning mode on a thinking-capable model. Reasoning and the answer share `max_completion_tokens`.                                                     |
+| `project`        | string | `""`       | Optional Freesolo project id that groups the run in the [dashboard](/platform). Empty leaves the run ungrouped. Requires Flash 1.0.20.                         |
 
 ## `[environment]`
 

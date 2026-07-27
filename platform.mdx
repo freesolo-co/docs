@@ -5,7 +5,20 @@ description: "What you can see and manage in the Freesolo web app when you sign 
 ---
 
 Flash runs from the `flash` CLI. The same account has an org-scoped web
-dashboard at [freesolo.co/platform](https://freesolo.co/platform).
+dashboard at [platform.freesolo.co](https://platform.freesolo.co). Product
+updates land on its [changelog](https://platform.freesolo.co/changelog).
+
+## Projects
+
+The dashboard groups work into org-level **projects**: training runs, published
+environments, and recorded traces are organized by project, and the navigation
+is scoped to the project you have open. Assign one from the dashboard, with
+`flash env push --project`, or with the top-level `project` field in a
+[training config](/reference/configuration#top-level). What happens without an
+assignment differs by surface: a first `flash env push` files the environment
+under your org's **Default** project, a training run with no `project` field
+stays ungrouped, and [trace recording](/guides/tracing) always requires an
+explicit project id (exports can discover or prompt for one).
 
 ## API keys
 
@@ -53,7 +66,10 @@ traces with a per-trace detail view, and charts aggregates over the project:
 score, pass rate, p50 latency, average output tokens and LLM calls per trace,
 and error rate. Select traces and export them as JSONL to get a
 [dataset](/guides/datasets#task-records) you can train on, or pull the newest
-1000 from the CLI with [`flash traces export`](/reference/cli#traces).
+1000 from the CLI with [`flash traces export`](/reference/cli#traces). The
+dashboard export offers the same `records`, `prompts`, and `raw` shapes as the
+CLI's `--format` flag; `records` and `prompts` are trainable datasets, while
+`raw` is the unconverted trace rows for inspection.
 
 ## Models
 

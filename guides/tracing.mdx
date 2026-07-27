@@ -4,9 +4,10 @@ description: "Record your app's LLM calls to a Freesolo project, then export the
 ---
 
 Tracing records the chat completions your app already makes and stores them on a
-Freesolo **project**. Those traces export as
+Freesolo **project**. By default those traces export as
 [task records](/guides/datasets#task-records), `{"input", "output"}`, so real
-production traffic becomes the `dataset/train.jsonl` you train on.
+production traffic becomes the `dataset/train.jsonl` you train on; `--format`
+can export prompt-only rows for GRPO and OPD or the raw trace rows instead.
 
 The loop is: point your existing OpenAI-compatible client at Freesolo's
 recording endpoint, let it record while your app runs, then pull the traces down
@@ -14,11 +15,11 @@ with [`flash traces export`](/reference/cli#traces).
 
 <Warning>
   **Tracing ships on the `dev` channel and is not on production yet.** The
-  recording and trace-export routes are deployed wherever the `dev` backend runs,
-  not on `https://api.freesolo.co`. The examples below use the production host
-  because that is the address the endpoint takes once it ships, so calling them
-  today returns a 404. To try tracing now, point the same calls at your `dev`
-  backend host; the paths, headers, and payloads are identical. See
+  recording and trace-export routes are deployed wherever the `dev` backend
+  runs, not on `https://api.freesolo.co`. The examples below use the production
+  host because that is the address the endpoint takes once it ships, so calling
+  them today returns a 404. To try tracing now, point the same calls at your
+  `dev` backend host; the paths, headers, and payloads are identical. See
   [Availability](#availability).
 </Warning>
 
@@ -30,11 +31,12 @@ with [`flash traces export`](/reference/cli#traces).
   below. A request that records without one is rejected rather than stored
   nowhere.
 
-  This is stricter than the rest of Flash. Environments and training runs also
-  belong to a project, but naming one is optional there: `flash env push` takes
-  a `--project`, and omitting it files the environment under your org's
-  **Default**. Tracing is the one place a project id is something you always
-  have to supply.
+This is stricter than the rest of Flash. Environments and training runs also
+belong to a project, but naming one is optional there: `flash env push` takes
+a `--project`, and omitting it files the environment under your org's
+**Default**. Tracing is the one place a project id is something you always
+have to supply.
+
 </Note>
 
 <Note>
@@ -224,7 +226,24 @@ file.
 flash traces export --project <project-id> -o dataset/train.jsonl -f
 ```
 
-The output is exactly the shape [`flash env setup`](/guides/environments/overview#scaffold-one)
+`--format` picks the export shape (Flash 1.0.22 and later). The default,
+`records`, produces the `{"input", "output"}` rows described below. Two other
+shapes cover the cases records cannot:
+
+```bash
+flash traces export --format prompts   # {"input"} rows for GRPO and OPD
+flash traces export --format raw       # stored trace rows, unconverted
+```
+
+`prompts` exports `{"input"}` only: GRPO and OPD both train from prompts alone
+(GRPO samples its own completions and scores them with the environment; OPD
+distils from a managed teacher), so no gold reply is needed, and a call whose
+reply never arrived still exports. `raw` writes the stored trace rows with
+their spans, unconverted; because raw rows are not a dataset, they default to
+`traces.raw.jsonl` rather than `dataset/train.jsonl`. There is no
+per-algorithm format: every algorithm reads the same records.
+
+The default output is exactly the shape [`flash env setup`](/guides/environments/overview#scaffold-one)
 scaffolds, so it drops into an environment unchanged:
 
 ```jsonl dataset/train.jsonl
@@ -257,10 +276,10 @@ environment (or move the file aside) if you want the prompt.
 
 ### How a trace becomes a record
 
-| Record key | Comes from                                                                                                                                  |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Record key | Comes from                                                                                                                                                                                         |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `input`    | The request messages, always as a string. A lone user turn exports its bare text; anything longer flattens to role-prefixed lines, so a system prompt or earlier turn is kept rather than dropped. |
-| `output`   | The assistant reply. A tool call is preserved whole as `{"messages": [...]}`; a multimodal reply flattens to its text blocks.               |
+| `output`   | The assistant reply. A tool call is preserved whole as `{"messages": [...]}`; a multimodal reply flattens to its text blocks.                                                                      |
 
 Traces with no extractable request/response pair are **skipped**, and the CLI
 reports the count. An export reads the **newest 1000 traces** in the project.
@@ -277,11 +296,12 @@ one assistant message and `{"messages": [...]}` a full gold trajectory for SFT.
   and looks for that Python representation inside the reply. A correct tool call
   never contains it, and the row scores `0.0` no matter how well the model does.
 
-  Two ways out. Train these rows with **SFT**, which learns the gold trajectory
-  directly and needs no reward function. Or keep GRPO and replace the reward with
-  one that reads the parsed tool call off the response, comparing tool name and
-  arguments rather than text. Mixed exports are worth splitting: the text rows
-  are ready for GRPO as scaffolded.
+Two ways out. Train these rows with **SFT**, which learns the gold trajectory
+directly and needs no reward function. Or keep GRPO and replace the reward with
+one that reads the parsed tool call off the response, comparing tool name and
+arguments rather than text. Mixed exports are worth splitting: the text rows
+are ready for GRPO as scaffolded.
+
 </Warning>
 
 ## View traces in the dashboard
@@ -291,7 +311,8 @@ per-trace detail view and aggregates over the project: score, pass rate, p50
 latency, average output tokens and LLM calls per trace, and error rate. Traces
 scored by a scorer bundle chart their scores alongside those.
 
-The tab can also export: select the traces you want and download them as JSONL.
+The tab can also export: select the traces you want and download them as JSONL,
+in the same `records`, `prompts`, and `raw` shapes as the CLI's `--format`.
 That runs the same conversion as the CLI, so the two files are
 interchangeable. The difference is which traces you get: the dashboard exports
 exactly what you select, while `flash traces export` takes the newest 1000 in
@@ -311,7 +332,8 @@ or use the base-URL proxy (Method B). Both are equivalent to the proxy.
 
 Tracing as described here (the pass-through recording proxy, the org-scoped
 trace export API, and `flash traces export`) is on the `dev` channel. The CLI
-side ships in **Flash 1.0.19**. The backend routes are live wherever the `dev`
+side ships in **Flash 1.0.19**; the `--format` flag needs **Flash 1.0.22**. The
+backend routes are live wherever the `dev`
 backend is deployed and are **not on production yet**, so the
 `https://api.freesolo.co` host used throughout this page is the address they
 take once they ship, not one that answers today. Until then, send the same
