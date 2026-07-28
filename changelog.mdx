@@ -4,6 +4,21 @@ description: "New models, faster training and serving, and platform updates from
 rss: true
 ---
 
+<Update label="July 28, 2026">
+  **New · Platform**
+
+## Tracing is live on production
+
+The recording proxy and trace export API now answer on `https://api.freesolo.co`,
+so tracing no longer needs a `dev` backend host. Point an OpenAI-compatible client
+at `https://api.freesolo.co/v1`, let it record your app's chat completions against
+a project, then pull them down as a training dataset with `flash traces export`.
+Requests are relayed to the upstream provider you name with a key you supply, and
+secrets are redacted before anything is forwarded or stored. See
+[Tracing](/guides/tracing).
+
+</Update>
+
 <Update label="July 27, 2026">
   **Changed · Flash CLI**
 

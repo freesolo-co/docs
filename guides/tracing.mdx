@@ -13,16 +13,6 @@ The loop is: point your existing OpenAI-compatible client at Freesolo's
 recording endpoint, let it record while your app runs, then pull the traces down
 with [`flash traces export`](/reference/cli#traces).
 
-<Warning>
-  **Tracing ships on the `dev` channel and is not on production yet.** The
-  recording and trace-export routes are deployed wherever the `dev` backend
-  runs, not on `https://api.freesolo.co`. The examples below use the production
-  host because that is the address the endpoint takes once it ships, so calling
-  them today returns a 404. To try tracing now, point the same calls at your
-  `dev` backend host; the paths, headers, and payloads are identical. See
-  [Availability](#availability).
-</Warning>
-
 <Note>
   **A project is required for tracing.** Traces are stored strictly
   per-project, so every piece of tracing is scoped to one: recording needs a
@@ -333,14 +323,13 @@ or use the base-URL proxy (Method B). Both are equivalent to the proxy.
 ## Availability
 
 Tracing as described here (the pass-through recording proxy, the org-scoped
-trace export API, and `flash traces export`) is on the `dev` channel. The CLI
-side ships in **Flash 1.0.19**; the `--format` flag needs **Flash 1.0.22**. The
-backend routes are live wherever the `dev`
-backend is deployed and are **not on production yet**, so the
-`https://api.freesolo.co` host used throughout this page is the address they
-take once they ship, not one that answers today. Until then, send the same
-requests to your `dev` backend host: paths, headers, and payloads do not
-change.
+trace export API, and `flash traces export`) is **live on production**. The
+recording endpoint answers at `https://api.freesolo.co/v1`, and the trace export
+API backs `flash traces export`, so every host and path on this page is the one
+to call today.
+
+On the CLI side, `flash traces export` ships in **Flash 1.0.19** and the
+`--format` flag needs **Flash 1.0.22**.
 
 ## Next steps
 
