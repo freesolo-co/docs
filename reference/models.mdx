@@ -40,10 +40,9 @@ and hybrid reasoning ("thinking").
 `flash train` enforces a per-model **training context cap** and **max LoRA rank**
 at submit: a config whose `max_context_tokens` exceeds the cap, whose GRPO/OPD
 prompt plus `max_completion_tokens` cannot fit, or whose `lora_rank` exceeds the
-max rank, is rejected. Every model is _served_ at a 32768-token context (see
-[Serving capacity](#serving-capacity)); the training cap equals that for every
-model except `Qwen/Qwen3.6-35B-A3B`, which trains at up to 4096 tokens but is
-served at 32768.
+max rank, is rejected. Every model is _served_ at a 32768-token context, and the
+training cap equals that for every model except `Qwen/Qwen3.6-35B-A3B`, which
+trains at up to 4096 tokens but is still served at 32768.
 
 | Model | Training context | Max LoRA rank |
 | --- | ---: | ---: |
@@ -53,22 +52,6 @@ served at 32768.
 | `Qwen/Qwen3.5-9B` | 32768 | 64 |
 | `Qwen/Qwen3.6-27B` | 32768 | 64 |
 | `Qwen/Qwen3.6-35B-A3B` | 4096 | 64 |
-
-## Serving capacity
-
-Managed serving keeps one engine per base-model tier and loads trained adapters
-as LoRA slots on that tier. The smaller catalog models and the 4B serve on L4
-instances, the 9B on an L40S tier, the 27B on an H100 tier, and the 35B on an
-H200 tier. Every model is served at a 32768-token context.
-
-| Model | Serving GPU | Served context | Hot LoRA slots |
-| --- | --- | ---: | ---: |
-| `Qwen/Qwen3.5-0.8B` | L4 | 32768 | 16 |
-| `Qwen/Qwen3.5-2B` | L4 | 32768 | 16 |
-| `Qwen/Qwen3.5-4B` | L4 | 32768 | 16 |
-| `Qwen/Qwen3.5-9B` | L40S | 32768 | 16 |
-| `Qwen/Qwen3.6-27B` | H100 | 32768 | 16 |
-| `Qwen/Qwen3.6-35B-A3B` | H200 | 32768 | 6 |
 
 ## Serving prices
 

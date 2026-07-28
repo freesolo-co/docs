@@ -160,8 +160,8 @@ and authentication, so carrying either bypasses recording or breaks auth.
 
 <Warning>
   The provider headers are **not** set by the SDK itself. Pass them as default
-  headers as shown above, or the proxy rejects the call with a 400. See
-  [Provider headers and the SDK](#provider-headers-and-the-sdk).
+  headers as shown above, or the proxy rejects the call with a `400` naming the
+  missing header.
 </Warning>
 
 ### Method B: the base-URL proxy
@@ -310,26 +310,10 @@ interchangeable. The difference is which traces you get: the dashboard exports
 exactly what you select, while `flash traces export` takes the newest 1000 in
 the project.
 
-## Provider headers and the SDK
-
-`X-Freesolo-Provider` and `X-Freesolo-Provider-Key` became **required** when the
-recording proxy switched to caller-supplied provider keys. The `freesolo` SDK at
-`0.2.60` sends only `X-Freesolo-Project-Id`, so a drop-in client constructed
-without the provider headers is rejected with a `400` naming the missing header.
-
-Until the SDK sends them itself, pass both as default headers (Method A above)
-or use the base-URL proxy (Method B). Both are equivalent to the proxy.
-
 ## Availability
 
-Tracing as described here (the pass-through recording proxy, the org-scoped
-trace export API, and `flash traces export`) is **live on production**. The
-recording endpoint answers at `https://api.freesolo.co/v1`, and the trace export
-API backs `flash traces export`, so every host and path on this page is the one
-to call today.
-
-On the CLI side, `flash traces export` ships in **Flash 1.0.19** and the
-`--format` flag needs **Flash 1.0.22**.
+`flash traces export` ships in **Flash 1.0.19**, and the `--format` flag needs
+**Flash 1.0.22**.
 
 ## Next steps
 

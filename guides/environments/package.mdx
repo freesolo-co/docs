@@ -10,7 +10,7 @@ Hub.
 ## Structure the package
 
 A published environment is a small folder. Flash packages it, imports its
-`environment.py` entrypoint on the worker, and calls
+`environment.py` entrypoint at run time, and calls
 `load_environment(**params)`, which must return a Freesolo SDK environment. The
 folder can be named anything as long as it contains `environment.py` at its
 root.
@@ -41,7 +41,7 @@ Keep all imports either from sibling files in the folder you publish, from the
 ### Declare third-party dependencies
 
 If your `environment.py` imports a package that isn't part of the `freesolo` SDK,
-list it under `[environment].pip` so the worker installs it before importing your
+list it under `[environment].pip` so Flash installs it before importing your
 environment:
 
 ```toml
@@ -50,15 +50,15 @@ id = "your-org/your-env"
 pip = ["rapidfuzz>=3.0", "pydantic"]
 ```
 
-This is the supported worker dependency mechanism. A `pyproject.toml`,
+This is the only supported dependency mechanism. A `pyproject.toml`,
 `requirements.txt`, or lockfile beside `environment.py` can help local
 development, but Flash does not use those files to install packages for a managed
 training run. Put runtime packages in the [training config](/reference/configuration) that references
 the published environment.
 
 Only list packages your environment imports. Flash manages the training stack
-itself, so do not pin packages such as `torch`, `trl`, `vllm`, `peft`, or
-`bitsandbytes` here unless your environment directly imports them.
+itself, so pinning a machine-learning framework or GPU library here can conflict
+with it unless your environment directly imports it.
 
 For example, an environment whose reward calls a judge model should declare the
 client library and the secret it reads. Here the judge is reached through an
@@ -194,9 +194,9 @@ You can also put local development values in `.env` or `.env.local`:
 SERVICE_API_KEY=...
 ```
 
-Flash sends declared secret values to the worker out-of-band. Secret values are
-not stored in the TOML config, run spec, status JSON, logs, or environment
-artifact. Do not put API keys in `[environment.params]`.
+Declared secret values are sent separately from everything else, and are never
+stored in the TOML config, status JSON, logs, or the published environment. Do
+not put API keys in `[environment.params]`.
 If a declared secret is missing when you submit, `flash train` fails before the
 run starts.
 

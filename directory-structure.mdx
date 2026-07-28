@@ -29,7 +29,7 @@ truth for what the model practices on and how it's graded. It defines
 is the file you edit first.
 
 **When Flash reads it:** `flash env push` packages and uploads it, and every
-training worker imports it and calls `load_environment(**params)`. Local
+training run imports it and calls `load_environment(**params)`. Local
 `flash train --cost` parses the config without executing environment code. The
 scaffolded starter loads its rows from `dataset/train.jsonl`.
 
@@ -41,10 +41,9 @@ and `score_response` — in [Environments](/guides/environments/overview#scaffol
 **What it is:** a tiny starter dataset of `input`/`output` rows that the
 scaffolded `environment.py` loads. Replace it with your training rows before a real run. See [Datasets](/guides/datasets).
 
-**When Flash reads it:** your `environment.py` reads it on the worker at run
-time. Local `flash train --cost` parses the configured `max_examples` without
-reading the dataset. Authenticated server-side `--dry-run` runs submit-time
-preflights without a GPU worker, so it does not execute the environment;
+**When Flash reads it:** your `environment.py` reads it at run time. Local
+`flash train --cost` parses the configured `max_examples` without reading the
+dataset, and `--dry-run` checks the config without executing your environment.
 `flash env push` uploads the `dataset/` folder.
 
 ```jsonl dataset/train.jsonl
@@ -98,8 +97,8 @@ flash train configs/rl.toml
 [on-policy distillation](/guides/training#choose-a-training-algorithm) — a managed
 teacher model grades your model's own completions and training pulls the model
 toward it. It uses `epochs` over the retained prompt pool, and Flash derives the
-optimizer-step count internally. Warm-start from a finished SFT run with
-`init_from_adapter` for best results.
+step count for you. Warm-start from a finished SFT run with `init_from_adapter`
+for best results.
 
 **When Flash reads it:** same as `sft.toml`; pass it to `flash train` to run OPD.
 
@@ -138,7 +137,7 @@ math/
 **What it is:** any sibling Python modules your `environment.py` imports. Import only from installed packages or from files in the folder you publish.
 
 **When Flash reads it:** uploaded with the folder by `flash env push` and
-importable on the worker.
+importable at run time.
 
 ### dataset/
 

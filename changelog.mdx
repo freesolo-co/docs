@@ -7,15 +7,13 @@ rss: true
 <Update label="July 28, 2026">
   **New · Platform**
 
-## Tracing is live on production
+## Turn your app's live traffic into a training set
 
-The recording proxy and trace export API now answer on `https://api.freesolo.co`,
-so tracing no longer needs a `dev` backend host. Point an OpenAI-compatible client
-at `https://api.freesolo.co/v1`, let it record your app's chat completions against
-a project, then pull them down as a training dataset with `flash traces export`.
-Requests are relayed to the upstream provider you name with a key you supply, and
-secrets are redacted before anything is forwarded or stored. See
-[Tracing](/guides/tracing).
+Point an OpenAI-compatible client at `https://api.freesolo.co/v1` and Freesolo
+records your app's chat completions against a project, then hands them back as a
+training dataset with `flash traces export`. Requests are relayed to the provider
+you name using a key you supply, and secrets are redacted before anything is
+forwarded or stored. See [Tracing](/guides/tracing).
 
 </Update>
 
@@ -68,7 +66,7 @@ Group related work under an organization-level project and switch between projec
 
 ## Monitor training live with metrics, logs, and sample completions
 
-See live metrics, worker logs, and sample completions in the platform, and follow per-step rewards from the Flash CLI.
+See live metrics, run logs, and sample completions in the platform, and follow per-step rewards from the Flash CLI.
 
 </Update>
 
