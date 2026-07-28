@@ -78,7 +78,7 @@ in [Supported models](/reference/models#serving-prices).
 **Cached prompt tokens are cheaper than uncached prompt tokens.** Prefix caching
 is always on: when a request's prompt shares a leading prefix with a recent one
 — a shared system prompt, or the growing context of a multi-turn chat — the
-serving engine reuses that prefix from cache instead of recomputing it. Only the
+serving reuses that prefix from cache instead of recomputing it. Only the
 input prefix can be cached, so completion tokens always bill at the full
 per-token rate. When a request hits the prefix cache, the response reports how
 many prompt tokens were served from cache in

@@ -74,11 +74,11 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
   </Accordion>
 
   <Accordion title="ModuleNotFoundError: No module named 'freesolo' (local authoring)">
-    Managed training workers have the Freesolo SDK when they import a published
-    environment. Your local Python environment does not get that SDK automatically
-    from the `flash` CLI. Install it locally to run or test `environment.py`
-    directly. Local `flash train --cost` parses the config without importing the
-    environment, and authenticated server-side `--dry-run` starts no GPU worker:
+    Managed training runs already have the Freesolo SDK. Your local Python
+    environment does not get that SDK automatically from the `flash` CLI. Install
+    it locally to run or test `environment.py` directly. Local
+    `flash train --cost` parses the config without importing the environment, and
+    `--dry-run` starts no GPU:
 
     ```bash
     uv pip install freesolo
@@ -89,12 +89,12 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
 
   </Accordion>
 
-  <Accordion title="Worker import fails with ModuleNotFoundError">
-    `flash train --dry-run` runs server-side submit preflights, but it does not
-    execute the GPU worker or prove every environment dependency is installed.
-    If `flash runs log <run-id>` shows
-    your `environment.py` failed while importing a task library, add that
-    package to `[environment].pip`, publish the environment, and submit again:
+  <Accordion title="A run fails with ModuleNotFoundError">
+    `flash train --dry-run` checks your config at submit time, but it does not run
+    your environment, so it cannot prove every dependency is installed. If
+    `flash runs log <run-id>` shows your `environment.py` failed while importing a
+    task library, add that package to `[environment].pip`, publish the
+    environment, and submit again:
 
     ```toml
     [environment]
@@ -102,18 +102,17 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
     pip = ["math-verify>=0.8.0"]
     ```
 
-    Only list packages your environment imports. Flash does not install worker
+    Only list packages your environment imports. Flash does not install
     dependencies from a `pyproject.toml`, `requirements.txt`, or lockfile bundled
     with the environment; keep managed-run dependencies in `[environment].pip`.
 
   </Accordion>
 
 <Accordion title="[environment].pip breaks training startup">
-  `[environment].pip` is for task dependencies imported by your environment. Do
-  not pin Flash's managed training stack there, such as `torch`, `trl`, `vllm`,
-  `peft`, or `bitsandbytes`, unless your environment directly imports that
-  package. Extra pins can conflict with the worker's tested training recipe.
-  Remove the pin and resubmit.
+  `[environment].pip` is for task dependencies imported by your environment.
+  Flash manages the training stack itself, so pinning a machine-learning
+  framework or GPU library here can conflict with it unless your environment
+  directly imports that package. Remove the pin and resubmit.
 </Accordion>
 
   <Accordion title="flash env pull says the archive is too large">
@@ -174,14 +173,14 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
   <Accordion title="Unknown config key or section rejected">
     Flash rejects unknown config sections and `[train]` keys **at parse time**.
     Check the key against the
-    [configuration reference](/reference/configuration) and run authenticated
-    server-side validation:
+    [configuration reference](/reference/configuration) and validate the config:
 
     ```bash
     flash train config.toml --dry-run
     ```
 
-    Dry-run also reports client/server `[train]` schema differences.
+    Dry-run also flags `[train]` keys your CLI version does not recognize, which
+    usually means an outdated CLI.
 
   </Accordion>
 
@@ -206,15 +205,14 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
   The source LoRA rank and alpha are authoritative, so omit `train.lora_rank`
   when using `init_from_adapter`. `train.lora_alpha` is managed (always `2 *
   lora_rank`) and is never a config key. A pinned `model_revision` must match
-  the source exactly. Use server-side `--dry-run` to resolve and validate the
-  source; local `--cost` may use defaults and warn.
+  the source exactly. Use `--dry-run` to resolve and validate the source; local
+  `--cost` may use defaults and warn.
 </Accordion>
 
   <Accordion title="The run used a different GPU than expected">
     GPU selection is automatic unless you set `[gpu] type` to an active
-    validated class from `flash gpus`. Add `provider = "runpod"`, `"lambda"`, or
-    `"vast"` only when the provider must also be fixed. These constraints persist
-    across retries and cost estimates.
+    validated class from `flash gpus`. A pinned class is honored on retries and
+    in cost estimates.
   </Accordion>
 </AccordionGroup>
 
@@ -255,11 +253,11 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
   </Accordion>
 
 <Accordion title="My run is warming up for many minutes">
-  Expected for GRPO and OPD. Before the first billed step the worker boots the
-  container, installs dependencies, loads the model, and initializes vLLM and the
-  training kernels. `flash runs log <run-id> -f` prints a `warming up (stage=...)`
-  line during this phase; it can take several minutes, occasionally 15-20 for a
-  large model, and **setup time is not billed**. Do not cancel: the run has not
+  Expected for GRPO and OPD. Flash sets up your environment and loads the model
+  before the first billed step. `flash runs log <run-id> -f` prints a
+  `warming up (stage=...)` line during this phase; it can take several minutes,
+  occasionally 15-20 for a large model, and **setup time is not billed**. Do not
+  cancel: the run has not
   stalled. Once training starts, `-f` streams a per-step heartbeat (reward,
   `grad_norm`, `kl`, `entropy`, completion length, and more), so a quiet stretch
   is throttled logging, not a dead run.
@@ -329,9 +327,8 @@ Fixes:
   as the actual code, tool, or action text only.
 - Put `<think>...</think>` plus the final answer only in the final assistant
   target.
-- Do not add a second opener for the template's pre-opened `<think>\n`. Flash's
-  completion-only SFT masking uses the longest shared token prefix, so that
-  pre-opened tag is treated as prompt text.
+- Do not add a second opener for the template's pre-opened `<think>\n`. It is
+  already part of the prompt.
 
 </Accordion>
 
@@ -375,20 +372,15 @@ Fixes:
   </Accordion>
 
 <Accordion title="flash runs cancel takes a long time to return">
-  Expected. Cancellation waits for the managed worker to stop and clean up
-  before confirming, which can take several minutes. The CLI waits this teardown
-  out; the run is marked `cancelled` when it completes.
+  Expected. Cancellation waits for the run to stop and release its GPU before
+  confirming, which can take several minutes. The CLI waits that out; the run is
+  marked `cancelled` when it completes.
 </Accordion>
 
   <Accordion title="A capacity or resource-fit issue interrupted training">
-    Flash uses bounded retries. SFT, GRPO, and OPD resume only from a validated
-    full-state checkpoint at a clean optimizer-step boundary.
-
-    OPD may start a replacement fresh only when Flash can prove that no earlier
-    attempt may have mutated optimizer state. If checkpoint or mutation evidence
-    is missing, incomplete, unreadable, incompatible, or ambiguous, replacement
-    fails closed instead of searching for an older checkpoint or restarting from
-    fresh state.
+    Flash retries a limited number of times, resuming from a saved checkpoint
+    where it safely can and failing the run rather than silently restarting from
+    scratch.
 
     Watch logs with `flash runs log <run-id> -f` or poll status with
     `flash runs status <run-id> -f`. If the same shape repeatedly fails before useful
@@ -433,7 +425,7 @@ Fixes:
     - `401`: missing or invalid key.
     - `402`: insufficient org balance.
     - `403`: the key's org does not own the adapter.
-    - `503`: backend temporarily unavailable; retry with backoff.
+    - `503`: temporarily unavailable; retry with backoff.
 
     See [Use it from your own code](/guides/deploy-and-chat#use-it-from-your-own-code).
 

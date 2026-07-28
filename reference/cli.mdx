@@ -150,10 +150,9 @@ Republishing an environment to a different project moves it.
 
 <ResponseField name="flash env pull ENV_ID [PATH] [-o OUTPUT] [-f]">
   Download a published environment, or one file from it, to local disk. `ENV_ID`
-  must be a managed Freesolo hub slug `your-org/your-env`; the package is
-  downloaded through the Flash control plane. Without `PATH`, the whole
-  environment is written to a directory. With `PATH`, only that file is fetched.
-  `-o` sets the output path; `-f` overwrites an existing output.
+  must be a managed Freesolo hub slug `your-org/your-env`. Without `PATH`, the
+  whole environment is written to a directory. With `PATH`, only that file is
+  fetched. `-o` sets the output path; `-f` overwrites an existing output.
 </ResponseField>
 
 <ResponseField name="flash env list">
@@ -173,9 +172,8 @@ Republishing an environment to a different project moves it.
   Export a project's [recorded traces](/guides/tracing) as freesolo environment
   records, ready to train on. By default each trace becomes an
   `{"input", "output"}` row, the same shape `flash env setup` scaffolds, so the
-  output drops straight into an environment's `dataset/train.jsonl`. The
-  conversion runs on the Freesolo backend, so a file exported here matches the
-  dashboard's trace export.
+  output drops straight into an environment's `dataset/train.jsonl`. A file
+  exported here matches the dashboard's trace export.
 
 `--format` picks the export shape (requires Flash 1.0.22; the dashboard export
 offers the same three):
@@ -191,7 +189,7 @@ offers the same three):
   `dataset/train.jsonl`, where a later `env push` + `train` could pick them up.
 
 There is no per-algorithm format: every algorithm reads the same environment
-records. The CLI errors if the backend does not honour the requested format.
+records.
 
 Traces are stored per-project, so an export always reads exactly one project.
 Without `--project`, an interactive terminal prompts you to pick from the
@@ -221,13 +219,13 @@ needs `--force`.
   [Cost & billing](/guides/training#cost-and-billing)). [Cost and billing](/reference/cost-model) explains the pre-flight `--cost`
   estimate.
 
-| Flag              | Effect                                                                               |
-| ----------------- | ------------------------------------------------------------------------------------ |
-| `--dry-run`       | Run authenticated server submit preflights; create `state=dry_run`; no GPU or charge |
-| `--cost`          | Print the local pre-flight USD cost and exit (no submit)                             |
-| `--background`    | Submit and return immediately instead of following logs                              |
-| `--set KEY=VALUE` | Override a config value (dotted key, repeatable)                                     |
-| `--config FILE`   | Deep-merge additional TOML for config composition (repeatable)                       |
+| Flag              | Effect                                                              |
+| ----------------- | ------------------------------------------------------------------- |
+| `--dry-run`       | Run the same submit checks as a real run, without a GPU or a charge |
+| `--cost`          | Print the local pre-flight USD cost and exit (no submit)            |
+| `--background`    | Submit and return immediately instead of following logs             |
+| `--set KEY=VALUE` | Override a config value (dotted key, repeatable)                    |
+| `--config FILE`   | Deep-merge additional TOML for config composition (repeatable)      |
 
 </ResponseField>
 
@@ -240,17 +238,17 @@ needs `--force`.
 <ResponseField name="flash runs status RUN_ID [-f]">
   Print a run's status, including its current or final cost record.
   `-f`/`--follow` polls status until the run reaches a terminal state without
-  replaying worker logs.
+  replaying its logs.
 </ResponseField>
 
 <ResponseField name="flash runs log RUN_ID [-f]">
-  Print a run's full logs, including worker console/error artifacts.
-  `-f`/`--follow` streams new logs until the run reaches a terminal state.
+  Print a run's full console and error logs. `-f`/`--follow` streams new logs
+  until the run reaches a terminal state.
 </ResponseField>
 
 <ResponseField name="flash runs cancel RUN_ID">
-  Cancel a run. The CLI waits for the managed worker to stop before returning,
-  which can take several minutes.
+  Cancel a run. The CLI waits for the run to stop before returning, which can
+  take several minutes.
 </ResponseField>
 
 <ResponseField name="flash runs checkpoint RUN_ID">

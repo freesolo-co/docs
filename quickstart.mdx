@@ -12,7 +12,7 @@ with it from the CLI.
 - **Python 3.11 or 3.12**, with `uv`, `pipx`, or `pip` to install the CLI.
 - **A Freesolo API key**, created in your dashboard at
   [freesolo.co](https://freesolo.co). Commands that contact Freesolo, including
-  server-side `--dry-run`, authenticate with it. Local `--cost` does not submit.
+  `--dry-run`, authenticate with it. Local `--cost` does not submit.
 
 ## Step 1: Install the CLI
 
@@ -132,9 +132,9 @@ max_examples = 2
 lora_rank = 32
 ```
 
-Run an authenticated server-side validation first. `--dry-run` runs server-side
-submit-time preflights, creates a run with `state=dry_run`, reports client/server
-`[train]` schema mismatches, allocates no GPU, and incurs no charge:
+Validate the config first. `--dry-run` runs the same submit-time checks as a real
+run and flags any `[train]` keys your CLI version does not recognize. It
+allocates no GPU and incurs no charge:
 
 ```bash
 flash train configs/sft.toml --dry-run
@@ -221,7 +221,7 @@ The commands you used above, plus the ones you'll reach for next. Run
 | `flash train --cost`    | Preview the local pre-flight cost, no submit | `flash train configs/sft.toml --cost`              |
 | `flash runs list`       | List your runs with state, cost, and model   | `flash runs list`                                  |
 | `flash runs status`     | Show run status and cost                     | `flash runs status <run-id>`                       |
-| `flash runs log`        | Print or follow worker logs                  | `flash runs log <run-id> -f`                       |
+| `flash runs log`        | Print or follow a run's logs                 | `flash runs log <run-id> -f`                       |
 | `flash models deploy`   | Serve a trained adapter                      | `flash models deploy <run-id>`                     |
 | `flash models chat`     | Send a message to a deployment               | `flash models chat <run-id> -m "hi"`               |
 | `flash models undeploy` | Tear a deployment down                       | `flash models undeploy <run-id>`                   |

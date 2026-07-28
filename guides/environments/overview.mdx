@@ -89,7 +89,7 @@ and implement the episode hooks. See [Multi-turn environments](/guides/environme
 ## Use the SDK
 
 Your environment code imports from the `freesolo` package. **The managed flow
-needs no local install.** Training workers already have the SDK when they import
+needs no local install.** Training runs already have the SDK when they import
 your published environment. Install it locally only to run or test
 `environment.py` yourself. Local `flash train --cost` uses the configured SFT
 `max_examples` and does not import the environment:

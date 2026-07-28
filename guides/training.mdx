@@ -27,8 +27,8 @@ model = "Qwen/Qwen3.5-4B"
 seed = 42
 ```
 
-`model_revision` pins all student-model loads to one Hugging Face revision. An
-empty or omitted value uses the model's default revision. `seed` controls the
+`model_revision` pins the base model to one Hugging Face revision. An empty or
+omitted value uses the model's default revision. `seed` controls the
 run's deterministic training order and defaults to `42`.
 
 ## Choose a training algorithm
@@ -187,26 +187,25 @@ seeded shuffle. SFT also honors `max_context_tokens` for the rendered sequence.
 `init_from_adapter` continues a source adapter in a new GRPO or OPD run. The
 source can be a finished SFT run or a saved checkpoint. Its LoRA rank and alpha
 are authoritative, so omit `lora_rank`. `lora_alpha` is managed (always
-`2 * lora_rank`) and is never a config key. The server resolves the source rank
-during `--dry-run` and real submit; local `--cost` may warn and estimate with
-defaults.
+`2 * lora_rank`) and is never a config key. `--dry-run` and a real submit both
+resolve the source rank for you; local `--cost` may warn and estimate with
+defaults instead.
 
 If you set `model_revision`, the source and target revisions must match exactly.
-Use server-side `--dry-run` to resolve and validate the source.
+Use `--dry-run` to resolve and validate the source.
 
 ## Infrastructure is managed
 
 You choose the model, algorithm, environment, and training settings. Flash
 selects suitable infrastructure by default. For controlled runs, `[gpu]` can pin
-a provider and an active validated GPU class from `flash gpus`; those constraints
-also apply to retries and cost estimates. Artifact storage remains managed.
+an active validated GPU class from `flash gpus`, and that pin also applies to
+retries and cost estimates. Storage remains managed.
 
 ## Validate before you submit
 
-`--dry-run` is authenticated and server-side. It runs submit-time preflights,
-including warm-start resolution, creates a run with `state=dry_run`, and reports
-client/server `[train]` schema differences. It allocates no GPU and charges
-nothing:
+`--dry-run` runs the same submit-time checks as a real run, including warm-start
+resolution, and flags any `[train]` keys your CLI version does not recognize. It
+allocates no GPU and charges nothing:
 
 ```bash
 flash train config.toml --dry-run

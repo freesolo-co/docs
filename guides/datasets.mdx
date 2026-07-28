@@ -57,12 +57,12 @@ key names are not accepted. Records are canonicalized to exactly
 <Warning>
   When Flash builds your training records it keeps only
   `input`/`output`/`metadata` and **silently drops** every other top-level key
-  before the row reaches a training worker. Anything your scorer needs beyond
-  the gold `output` string (a puzzle's `initial_board`, the `oracle_ids` a
-  retrieval must return, unit tests to check code against, a grading rubric) has
-  to live under `metadata`, or it is gone with no runtime warning. The one
-  exception is the top-level `image`/`images` fields, which the multimodal
-  loader reads from the original row (see [Image inputs](#image-inputs)).
+  before the row reaches training. Anything your scorer needs beyond the gold
+  `output` string (a puzzle's `initial_board`, the `oracle_ids` a retrieval must
+  return, unit tests to check code against, a grading rubric) has to live under
+  `metadata`, or it is gone with no runtime warning. The one exception is the
+  top-level `image`/`images` fields, which the multimodal loader reads from the
+  original row (see [Image inputs](#image-inputs)).
 </Warning>
 
 ### Message-shaped SFT targets
@@ -139,7 +139,8 @@ reads them from the original row (`example.record`) and appends them to the
 first user message, so they survive even though they are not part of the
 canonical `input`/`output`/`metadata` mapping. Either way, one example may hold
 up to **8 images**. Remote `http(s)` URLs are **disabled by default**; set
-`FLASH_MULTIMODAL_ALLOW_REMOTE_IMAGES=1` in the worker to allow them, and a
+`FLASH_MULTIMODAL_ALLOW_REMOTE_IMAGES = "1"` under
+[`[worker_env]`](/reference/configuration#worker_env-advanced) to allow them. A
 relative path is resolved from the package root and must stay inside `dataset/`
 (e.g. `dataset/photo.jpg`).
 
@@ -151,8 +152,8 @@ under `dataset/` so they upload with the environment (see
 
 ## Load sidecars
 
-Read packaged files relative to `__file__`. That works locally and when the
-environment runs on a worker.
+Read packaged files relative to `__file__`. That works locally and in a managed
+run.
 
 ```python environment.py
 from pathlib import Path

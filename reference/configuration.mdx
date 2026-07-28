@@ -5,10 +5,9 @@ description: "Every field in a Flash training config (TOML)."
 
 Describe a run in a TOML config, then pass it to `flash train`. Every run
 requires `project`, `model`, and `environment.id`; SFT also requires a positive
-`train.max_examples`. `algorithm` defaults to `sft`. Run authenticated
-submit-time preflights with
-`flash train config.toml --dry-run`; it creates `state=dry_run`, allocates no GPU,
-and charges nothing.
+`train.max_examples`. `algorithm` defaults to `sft`. Run the submit-time checks
+without starting a run using `flash train config.toml --dry-run`; it allocates no
+GPU and charges nothing.
 
 ```toml
 project = "00000000-0000-0000-0000-000000000000"
@@ -32,7 +31,7 @@ lora_rank = 32
 | ---------------- | ------ | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `project`        | string | (required) | Freesolo project UUID that the run belongs to. Validated against your organization at submit time, before any GPU is allocated. Create one with [`flash projects create`](/reference/cli#projects). |
 | `model`          | string | (required) | Base model to train a LoRA adapter on, e.g. `Qwen/Qwen3.5-4B`. See [`flash models list`](/reference/models).                                                                                        |
-| `model_revision` | string | `""`       | Optional Hugging Face branch, tag, or commit. Empty uses the default revision; a value pins all student-model loads.                                                                                |
+| `model_revision` | string | `""`       | Optional Hugging Face branch, tag, or commit for the base model. Empty uses the default revision.                                                                                                   |
 | `algorithm`      | string | `sft`      | `sft` imitates completions, `grpo` learns from your reward, `opd` distils from a managed teacher, and `opsd` self-distils reasoning from a reference solution.                                      |
 | `seed`           | int    | `42`       | Deterministic run seed for training order and sampling. Must be between `0` and `9223372036854775807`.                                                                                              |
 | `thinking`       | bool   | `false`    | Enable reasoning mode on a thinking-capable model. Reasoning and the answer share `max_completion_tokens`.                                                                                          |
@@ -43,8 +42,8 @@ lora_rank = 32
 | --------- | ------------ | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `id`      | string       | (required) | [Published Freesolo environment](/guides/environments/package#publish-it) id, `your-org/your-env`.                                                                                                                                                                                    |
 | `params`  | table        | `{}`       | Keyword arguments passed to the env's `load_environment(**kwargs)`. Flash also honors `split` for packaged env datasets. See [Datasets](/guides/datasets#load-sidecars): it selects `dataset/<split>.jsonl`, and a missing split file is an error (no silent `train.jsonl` fallback). |
-| `pip`     | list[string] | `[]`       | Extra third-party pip requirements the worker installs before importing your environment (an escape hatch for deps your `environment.py` imports).                                                                                                                                    |
-| `secrets` | list[string] | `[]`       | Environment variable names to forward to the worker as runtime secrets. Values are read from your shell, `.env`, or `.env.local` at submit time.                                                                                                                                      |
+| `pip`     | list[string] | `[]`       | Extra third-party pip requirements Flash installs before importing your environment (an escape hatch for deps your `environment.py` imports).                                                                                                                                         |
+| `secrets` | list[string] | `[]`       | Environment variable names to make available to your environment at runtime. Values are read from your shell, `.env`, or `.env.local` at submit time.                                                                                                                                 |
 
 ```toml
 [environment]
@@ -61,17 +60,15 @@ import os
 service_api_key = os.environ["SERVICE_API_KEY"]
 ```
 
-`[environment].pip` is the worker install path for reward and environment
-dependencies. Do not rely on `pyproject.toml`, `requirements.txt`, or lockfiles
-inside the published environment artifact for managed training installs. Those
-files may describe your local development environment; runtime packages belong
-in this config list.
+`[environment].pip` is the only way to install reward and environment
+dependencies. A `pyproject.toml`, `requirements.txt`, or lockfile inside your
+published environment is not installed for you. Those files may describe your
+local development setup; runtime packages belong in this config list.
 
-Never put secret values in `[environment.params]`; it becomes part of the run
-spec. Every name you list under `[environment].secrets` must
-resolve to a value in your shell, `.env`, or `.env.local` when you submit.
-Reserved platform secret names such as `FREESOLO_API_KEY`, `HF_TOKEN`,
-`GITHUB_TOKEN`, `RUN_ID`, and `HF_REPO` are owned by Flash.
+Never put secret values in `[environment.params]`; those values are recorded on
+the run. Every name you list under `[environment].secrets` must resolve to a
+value in your shell, `.env`, or `.env.local` when you submit. Names such as
+`FREESOLO_API_KEY`, `RUN_ID`, and `GITHUB_TOKEN` are reserved by Flash.
 
 ## `[train]`
 
@@ -82,12 +79,12 @@ Reserved platform secret names such as `FREESOLO_API_KEY`, `HF_TOKEN`,
 | `batch_size`         | int       | recipe default | Training batch size.                                                                                                                                                                                                                                                                                                                        |
 | `max_context_tokens` | int       | recipe default | Total training context cap. SFT applies it to the rendered sequence; GRPO and OPD apply it to prompt plus completion. It cannot exceed the model's training context cap. See [context window](/reference/models#context-window-and-lora-rank).                                                                                              |
 | `max_steps`          | int       | derived        | A positive value is the exact update horizon for SFT, GRPO, and OPD. Absent or non-positive uses the derived count.                                                                                                                                                                                                                         |
-| `save_at_steps`      | list[int] | `[]`           | Strictly increasing positive required saves. Requires positive `max_steps`, cannot exceed it, and suppresses `save_every`. Each step must durably publish the deployable adapter and full resume checkpoint.                                                                                                                                |
-| `save_every`         | int       | recipe default | Periodic cadence when `save_at_steps` is empty. Upload attempts are synchronous but remain best-effort after bounded retries.                                                                                                                                                                                                               |
-| `init_from_adapter`  | string    | -              | Continue a GRPO or OPD adapter from `RUN_ID` or the exact `RUN_ID/step-N` shown by `flash runs checkpoint`. Longer storage refs are rejected. Omit rank and alpha. If set, `model_revision` must match the source exactly.                                                                                                                  |
+| `save_at_steps`      | list[int] | `[]`           | Strictly increasing positive steps to save a deployable checkpoint at. Requires positive `max_steps`, cannot exceed it, and suppresses `save_every`.                                                                                                                                                                                        |
+| `save_every`         | int       | recipe default | Checkpoint cadence when `save_at_steps` is empty.                                                                                                                                                                                                                                                                                           |
+| `init_from_adapter`  | string    | -              | Continue a GRPO or OPD adapter from `RUN_ID` or the exact `RUN_ID/step-N` shown by `flash runs checkpoint`. Longer refs are rejected. Omit rank and alpha. If set, `model_revision` must match the source exactly.                                                                                                                          |
 
-Server-side `--dry-run` resolves warm-start rank and alpha. Local `--cost` may
-warn and estimate with defaults.
+`--dry-run` resolves warm-start rank and alpha for you. Local `--cost` may warn
+and estimate with defaults instead.
 
 ### SFT-specific
 
@@ -106,8 +103,8 @@ warn and estimate with defaults.
 | `temperature`                  | float        | Sampling temperature for rollouts.                                                                                                                                                                                                                                                                                                                       |
 | `max_completion_tokens`        | int          | Maximum generated tokens per completion or assistant turn.                                                                                                                                                                                                                                                                                               |
 | `kl_penalty_coef`              | float        | Strength of the penalty that limits drift from the base model.                                                                                                                                                                                                                                                                                           |
-| `advantage_clip`               | float        | Recorded for recipe parity but currently a no-op; the runtime clips the importance ratio instead.                                                                                                                                                                                                                                                        |
-| `entropy_quantile`             | float        | Restrict the GRPO policy update to the highest-entropy fraction of completion tokens (TRL `top_entropy_quantile`). Between `0` and `1`; the default (unset) trains on all tokens, while a smaller value (for example `0.2`) trains on only the top-entropy tokens.                                                                                       |
+| `advantage_clip`               | float        | Accepted for compatibility, but currently has no effect on training.                                                                                                                                                                                                                                                                                     |
+| `entropy_quantile`             | float        | Restrict the GRPO policy update to the highest-entropy fraction of completion tokens. Between `0` and `1`; the default (unset) trains on all tokens, while a smaller value (for example `0.2`) trains on only the top-entropy tokens.                                                                                                                    |
 | `thinking_length_penalty_coef` | float        | Penalty on reasoning length.                                                                                                                                                                                                                                                                                                                             |
 | `stop_sequences`               | list[string] | Stop sequences for generation.                                                                                                                                                                                                                                                                                                                           |
 | `structured_outputs`           | string/table | Constrain each rollout to a JSON schema, regex, choice set, or any JSON. See [Structured outputs](/guides/structured-outputs).                                                                                                                                                                                                                           |
@@ -140,29 +137,22 @@ to OPD.
 
 ### OPSD-specific
 
-OPSD (on-policy self-distillation) is a phase-1, experimental objective. The
-student samples one on-policy rollout, then the **frozen base model itself** (the
-same model with the LoRA adapter disabled, conditioned on the environment's
-reference solution) scores that rollout position-by-position, and the student is
-trained to match the base model's next-token distributions under a clipped
-full-vocabulary forward KL. There is no external teacher and no reward: it
-reconstructs the reasoning that reaches a known answer, so it needs a
-thinking-capable model and a dataset whose rows carry gold completions (the same
-`sft_completion` data SFT uses).
+OPSD (on-policy self-distillation) is experimental. It uses no external teacher
+and no reward: the model learns to reconstruct the reasoning that reaches an
+answer you already have, so it needs a thinking-capable model and a dataset whose
+rows carry gold completions (the same `sft_completion` data SFT uses).
 
 These constraints are enforced at submit:
 
 - `thinking = true` on a thinking-capable model. Non-thinking runs are rejected.
 - Single-turn, text-only environments only. Multi-turn, tool-calling, and image rows are rejected.
 - `group_size` must be `1` (exactly one rollout per prompt). Omit it or set `1`.
-- `teacher_model` is not accepted. The teacher is the local frozen base model, so no teacher tokens are billed.
+- `teacher_model` is not accepted, and no teacher tokens are billed.
 
 OPSD honors the standard on-policy `[train]` knobs (`epochs`, `max_examples`,
 `batch_size`, `learning_rate`, `temperature`, `max_completion_tokens`,
 `max_context_tokens`, `max_steps`, `stop_sequences`, and `init_from_adapter`).
-The forward-KL recipe (softmax temperature, clip threshold, `top_p`, and gradient
-clipping) is managed. OPSD is priced on GPU time like GRPO and OPD and serves
-like any other LoRA.
+OPSD is priced on GPU time like GRPO and OPD and serves like any other LoRA.
 
 ### Structured outputs
 
@@ -175,23 +165,21 @@ free-form and the grammar begins after `</think>`. See
 
 ## `[gpu]`
 
-| Key        | Type   | Default | Description                                                                                                                                                                                    |
-| ---------- | ------ | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `provider` | string | `""`    | Omit or leave empty for automatic selection; `runpod`, `lambda`, or `vast` pins the provider.                                                                                                  |
-| `type`     | string | `""`    | Omit or leave empty for managed cheapest-fit allocation; set an active validated class from `flash gpus` to pin it exactly. Preflight rejects unavailable, unsupported, or undersized choices. |
-| `count`    | int    | `1`     | GPUs of the chosen class for one training worker (`1`-`8`). Multi-GPU training is not yet available: every algorithm currently rejects `count > 1`, so leave it at `1`.                        |
+| Key     | Type   | Default | Description                                                                                                                                                                                    |
+| ------- | ------ | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `type`  | string | `""`    | Omit or leave empty for managed cheapest-fit allocation; set an active validated class from `flash gpus` to pin it exactly. Preflight rejects unavailable, unsupported, or undersized choices. |
+| `count` | int    | `1`     | GPUs of the chosen class for one training run (`1`-`8`). Multi-GPU training is not yet available: every algorithm currently rejects `count > 1`, so leave it at `1`.                           |
 
-Provider and GPU-class constraints persist across retries and cost estimates.
-Use `type` when hardware identity matters; disk sizing, retry count, and
-wall-clock limits are platform-managed.
+A pinned GPU class is honored on retries and in cost estimates. Use `type` when
+hardware identity matters; everything else about allocation is managed.
 
 ## `[worker_env]` (advanced)
 
-`[worker_env]` passes non-secret string values into the worker environment and is
-serialized into the run spec and artifacts. Use it only for harmless labels or
+`[worker_env]` passes non-secret string values into your environment code at
+runtime, and they are recorded on the run. Use it only for harmless labels or
 feature flags. Secret-looking keys and values are rejected; runtime secrets
-belong in `[environment].secrets`. `SEED`, `RUN_ID`, `HF_REPO`, and `FLASH_ARM`
-are control-plane-owned and cannot be overridden here.
+belong in `[environment].secrets`. A few names, including `SEED` and `RUN_ID`,
+are reserved by Flash and cannot be overridden here.
 
 ```toml
 [worker_env]
