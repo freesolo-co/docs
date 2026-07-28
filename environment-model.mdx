@@ -42,11 +42,11 @@ stay part of the example. See
 
 You write `environment.py`; Flash owns the rest of the loop.
 
-| You write                                                | Flash runs                                                                       |
-| -------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| You write                                                | Flash runs                                                                                        |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
 | The dataset, interaction, and reward in `environment.py` | The training loop: sampling prompts, generating model attempts (rollouts), applying the algorithm |
-| (nothing)                                                | Managed compute, batching, checkpointing, and auto-retry                         |
-| (nothing)                                                | A versioned Environments Hub and [per-token serving](/guides/deploy-and-chat#billing)                               |
+| (nothing)                                                | Managed compute, batching, checkpointing, and auto-retry                                          |
+| (nothing)                                                | A versioned Environments Hub and [per-token serving](/guides/deploy-and-chat#billing)             |
 
 The quality of the environment's dataset and reward sets the ceiling on what
 training can achieve. See [How Flash works](/how-flash-works) for the full split
@@ -65,9 +65,9 @@ The environment supplies two of the loop's steps:
     interaction model (single response, or several turns).
   </Step>
   <Step title="Your reward scores it">
-    `score_response` returns a `RewardResult`. That score is the signal the
-    GRPO algorithm learns from. OPD uses the same prompt/interaction loop, but
-    its learning signal comes from the managed teacher instead of your reward.
+    `score_response` returns a `RewardResult`. That score is the signal the GRPO
+    algorithm learns from. OPD uses the same prompt/interaction loop, but its
+    learning signal comes from the managed teacher instead of your reward.
   </Step>
 </Steps>
 
@@ -107,7 +107,7 @@ runs on managed infrastructure. The lifecycle has four steps:
     environment.
   </Step>
   <Step title="Publish it">
-    `flash env push --name my-env .` packages the folder and uploads it to the
+    `flash env push --project <project-uuid> --name my-env .` packages the folder and uploads it to the
     managed Environments Hub, which versions it and prints an id
     (`your-org/my-env`).
   </Step>
@@ -124,7 +124,11 @@ runs on managed infrastructure. The lifecycle has four steps:
 ## Next
 
 <CardGroup cols={2}>
-  <Card title="Build an environment" icon="flask" href="/guides/environments/overview">
+  <Card
+    title="Build an environment"
+    icon="flask"
+    href="/guides/environments/overview"
+  >
     The full SDK: author a dataset and reward, then publish it.
   </Card>
   <Card title="Datasets" icon="table" href="/guides/datasets">

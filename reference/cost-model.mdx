@@ -101,7 +101,7 @@ batch size, and the recipe.
 - A run cancelled before training starts is not charged for training.
 - A run cancelled after training starts is repriced to the steps it reached.
 - Setup time is reported separately and is not billed as training time.
-- `flash status <run-id>` shows the current or final cost record.
+- `flash runs status <run-id>` shows the current or final cost record.
 
 ## Serving billing
 
@@ -118,7 +118,7 @@ prefix. See [Billing](/guides/deploy-and-chat#billing) for how it works.
 Tear down deployments you are done using:
 
 ```bash
-flash undeploy <run-id>
+flash models undeploy <run-id>
 ```
 
 ## Lowering cost
@@ -131,7 +131,7 @@ flash undeploy <run-id>
   reward/data or teacher-distillation wiring is proven.
 - For thinking runs, raise `max_completion_tokens` only enough for reasoning plus
   the final answer.
-- Use `flash checkpoints <run-id>` and deploy a good intermediate checkpoint
+- Use `flash runs checkpoint <run-id>` and deploy a good intermediate checkpoint
   instead of assuming the final step is always best.
 
 ## Why a later quote can change

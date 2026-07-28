@@ -27,15 +27,13 @@ with [`flash traces export`](/reference/cli#traces).
   **A project is required for tracing.** Traces are stored strictly
   per-project, so every piece of tracing is scoped to one: recording needs a
   project id, and both exports read one project. Create the project in the
-  [dashboard](/platform) first and copy its id, then use that id everywhere
-  below. A request that records without one is rejected rather than stored
-  nowhere.
+  [dashboard](/platform) or with
+  [`flash projects create`](/reference/cli#projects), copy its id, then use that
+  id everywhere below. A request that records without one is rejected rather
+  than stored nowhere.
 
-This is stricter than the rest of Flash. Environments and training runs also
-belong to a project, but naming one is optional there: `flash env push` takes
-a `--project`, and omitting it files the environment under your org's
-**Default**. Tracing is the one place a project id is something you always
-have to supply.
+This matches the rest of Flash: environments and training runs name their
+project explicitly too, and no surface falls back to a default project.
 
 </Note>
 
@@ -258,21 +256,25 @@ straight from a project's traces, so scaffolding and getting real training data
 are one step:
 
 ```bash
-flash env setup
+flash env setup --project <project-uuid>
 ```
 
-When it runs on an interactive terminal, your stored key turns up projects, and
-no `dataset/train.jsonl` exists yet, it asks which project to start from. Pick
-one and it exports that project's traces, writes them as the environment's
-`dataset/train.jsonl`, and sizes `max_examples` to the number of rows it got, so
-the scaffolded environment is ready to train on your own traffic. Choosing
-"start from scratch" scaffolds the tiny starter dataset instead.
+Setup always needs a project, so run `flash login` first and either pass
+`--project` or let an interactive run prompt you to pick one. Being logged out,
+offline, or having no projects stops setup with an error rather than scaffolding
+a projectless environment, because the project UUID is written into every
+generated config.
 
-Traces are a head start here, never a requirement. Not being logged in, being
-offline, having no projects, or having no exportable traces all fall back to the
-starter dataset with a warning, so scaffolding still works with no network. An
-existing `dataset/train.jsonl` is never overwritten, so run this on a fresh
-environment (or move the file aside) if you want the prompt.
+Once the project is settled, and if no `dataset/train.jsonl` exists yet, an
+interactive run offers to seed the dataset from that project's traces. Accept
+and it exports them, writes them as the environment's `dataset/train.jsonl`, and
+sizes `max_examples` to the number of rows it got, so the scaffolded environment
+is ready to train on your own traffic.
+
+The traces themselves are a head start, never a requirement: choose "start from
+scratch", or hit any export failure, and setup falls back to the tiny starter
+dataset. An existing `dataset/train.jsonl` is never overwritten, so run this on a
+fresh environment (or move the file aside) if you want the prompt.
 
 ### How a trace becomes a record
 

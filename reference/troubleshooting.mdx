@@ -59,12 +59,17 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
     `load_environment()` function that returns a Freesolo environment. Then:
 
     ```bash
-    flash env push --name math math
+    flash env push --project <project-uuid> --name math math
     ```
 
     It prints the published id (`your-org/math`) to put in your config's
     `[environment] id`. If you pass `--name namespace/name`, the namespace must
     match your Freesolo org; otherwise pass a bare name such as `math`.
+
+    `--project` is required and must be a UUID your organization can reach. A
+    malformed UUID is rejected before anything uploads, and a project belonging
+    to another organization fails the push. Get one from `flash projects list`
+    or create it with `flash projects create <name>`.
 
   </Accordion>
 
@@ -87,7 +92,7 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
   <Accordion title="Worker import fails with ModuleNotFoundError">
     `flash train --dry-run` runs server-side submit preflights, but it does not
     execute the GPU worker or prove every environment dependency is installed.
-    If `flash log <run-id>` shows
+    If `flash runs log <run-id>` shows
     your `environment.py` failed while importing a task library, add that
     package to `[environment].pip`, publish the environment, and submit again:
 
@@ -159,7 +164,7 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
     `model` must be one of the ids in the curated catalog. List the valid ids:
 
     ```bash
-    flash models
+    flash models list
     ```
 
     Managed runs train catalog models only. See [Supported models](/reference/models).
@@ -198,12 +203,11 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
 </Accordion>
 
 <Accordion title="Warm-start rank, alpha, or revision mismatch">
-  The source LoRA rank and alpha are authoritative, so omit
-  `train.lora_rank` when using `init_from_adapter`. `train.lora_alpha` is
-  managed (always `2 * lora_rank`) and is never a config key. A
-  pinned `model_revision` must match the source exactly. Use server-side
-  `--dry-run` to resolve and validate the source; local `--cost` may use
-  defaults and warn.
+  The source LoRA rank and alpha are authoritative, so omit `train.lora_rank`
+  when using `init_from_adapter`. `train.lora_alpha` is managed (always `2 *
+  lora_rank`) and is never a config key. A pinned `model_revision` must match
+  the source exactly. Use server-side `--dry-run` to resolve and validate the
+  source; local `--cost` may use defaults and warn.
 </Accordion>
 
   <Accordion title="The run used a different GPU than expected">
@@ -253,7 +257,7 @@ the subcommand (e.g. `flash --debug train config.toml`) for the full traceback.
 <Accordion title="My run is warming up for many minutes">
   Expected for GRPO and OPD. Before the first billed step the worker boots the
   container, installs dependencies, loads the model, and initializes vLLM and the
-  training kernels. `flash log <run-id> -f` prints a `warming up (stage=...)`
+  training kernels. `flash runs log <run-id> -f` prints a `warming up (stage=...)`
   line during this phase; it can take several minutes, occasionally 15-20 for a
   large model, and **setup time is not billed**. Do not cancel: the run has not
   stalled. Once training starts, `-f` streams a per-step heartbeat (reward,
@@ -363,14 +367,14 @@ Fixes:
 
     ```bash
     flash runs              # state and cost of your runs
-    flash log <run-id> -f       # re-follow the logs
-    flash status <run-id>       # status and cost JSON
-    flash cancel <run-id>       # stop it
+    flash runs log <run-id> -f       # re-follow the logs
+    flash runs status <run-id>       # status and cost JSON
+    flash runs cancel <run-id>       # stop it
     ```
 
   </Accordion>
 
-<Accordion title="flash cancel takes a long time to return">
+<Accordion title="flash runs cancel takes a long time to return">
   Expected. Cancellation waits for the managed worker to stop and clean up
   before confirming, which can take several minutes. The CLI waits this teardown
   out; the run is marked `cancelled` when it completes.
@@ -386,8 +390,8 @@ Fixes:
     fails closed instead of searching for an older checkpoint or restarting from
     fresh state.
 
-    Watch logs with `flash log <run-id> -f` or poll status with
-    `flash status <run-id> -f`. If the same shape repeatedly fails before useful
+    Watch logs with `flash runs log <run-id> -f` or poll status with
+    `flash runs status <run-id> -f`. If the same shape repeatedly fails before useful
     metrics, reduce `max_context_tokens`, `max_completion_tokens`, or `group_size`.
 
   </Accordion>
@@ -398,13 +402,13 @@ Fixes:
 <AccordionGroup>
   <Accordion title="Deploy fails: run has no run-level adapter">
     A run cancelled or preempted before finalizing has no final adapter, so a
-    plain `flash deploy <run-id>` cannot serve it. The error lists the run's
+    plain `flash models deploy <run-id>` cannot serve it. The error lists the run's
     saved checkpoint steps and the exact command to use — deploy one of them
     instead:
 
     ```bash
-    flash checkpoints <run-id>
-    flash deploy <run-id>/step-<N>
+    flash runs checkpoint <run-id>
+    flash models deploy <run-id>/step-<N>
     ```
 
   </Accordion>
@@ -419,11 +423,11 @@ Fixes:
   <Accordion title="How is serving billed?">
     Serving is **billed per token** for requests. Prompt, completion, and cached
     prompt token rates are listed in [Supported models](/reference/models#serving-prices).
-    `flash undeploy <run-id>` disables the alias and immutable revisions.
+    `flash models undeploy <run-id>` disables the alias and immutable revisions.
   </Accordion>
 
   <Accordion title="Calling the endpoint from my own code is rejected">
-    Use `openai_base_url` from `flash deployments --json`, set `model` to the run
+    Use `openai_base_url` from `flash models deployments --json`, set `model` to the run
     alias or a full immutable revision, and pass your Freesolo API key.
 
     - `401`: missing or invalid key.

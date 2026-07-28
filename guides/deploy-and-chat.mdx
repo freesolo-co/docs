@@ -6,19 +6,19 @@ description: "Serve a trained adapter and talk to it over an OpenAI-compatible A
 Deploy a trained adapter and chat with it from the CLI or any OpenAI-compatible
 client, once its [training run](/guides/training) reaches `done`.
 
-`flash deploy` registers your adapter with Freesolo's **managed serving
+`flash models deploy` registers your adapter with Freesolo's **managed serving
 service**. Send requests to it and pay per token (see [Billing](#billing)).
 
 ## Deploy
 
 ```bash
-flash deploy <run-id>
+flash models deploy <run-id>
 ```
 
 Preview what a deploy would do without creating it:
 
 ```bash
-flash deploy <run-id> --dry-run
+flash models deploy <run-id> --dry-run
 ```
 
 Every real deploy resolves the adapter to an immutable Hugging Face commit,
@@ -26,19 +26,24 @@ runs a bounded serving smoke against that revision, and only then atomically
 activates the stable run-id alias. Verification is mandatory; a failed smoke
 leaves the existing alias unchanged.
 
+You can also deploy and undeploy from the model's detail page in the
+[dashboard](/platform#models). Both paths run the same verification and produce
+the same alias, so a deployment started in the web app is visible to
+`flash models deployments` and can be torn down with `flash models undeploy`.
+
 ## Deploy a specific checkpoint
 
 Every training step that saved an adapter is independently deployable. List a
 run's deployable checkpoints:
 
 ```bash
-flash checkpoints <run-id>
+flash runs checkpoint <run-id>
 ```
 
 Then serve a specific step instead of the final adapter:
 
 ```bash
-flash deploy <run-id>/step-<N>
+flash models deploy <run-id>/step-<N>
 ```
 
 Deploy a checkpoint while a run is still training, or after a GRPO run
@@ -47,8 +52,8 @@ metadata to the run without altering its training state.
 
 <Note>
   A run that never finalized (cancelled or preempted mid-training) has no final
-  adapter, so a plain `flash deploy <run-id>` fails with an error that lists the
-  saved checkpoint steps and the exact `flash deploy <run-id>/step-N` command
+  adapter, so a plain `flash models deploy <run-id>` fails with an error that lists the
+  saved checkpoint steps and the exact `flash models deploy <run-id>/step-N` command
   to deploy one of them instead.
 </Note>
 
@@ -59,9 +64,9 @@ Final adapters use `RUN_ID@final.<40-char-sha>` and saved checkpoints use
 revision passes its bounded smoke. Older revisions can remain directly callable.
 
 `RUN_ID/step-N` is a deploy and export selector. Once you have deployed that
-checkpoint, `flash chat RUN_ID/step-N` works from the CLI too, resolving to
+checkpoint, `flash models chat RUN_ID/step-N` works from the CLI too, resolving to
 that checkpoint's verified revision. From an OpenAI client, set `model` to the
-run alias or the full immutable revision from `flash deployments`; the
+run alias or the full immutable revision from `flash models deployments`; the
 `RUN_ID/step-N` shorthand is a Flash-CLI selector, not an OpenAI model name.
 
 ## Billing
@@ -86,20 +91,20 @@ requests are still accounted for without rounding each request up to a cent.
 ## Chat from the CLI
 
 ```bash
-flash chat <run-id> -m "Summarize the plot of Hamlet in two sentences."
+flash models chat <run-id> -m "Summarize the plot of Hamlet in two sentences."
 ```
 
-`flash chat` accepts the stable run alias, a full immutable revision, or
+`flash models chat` accepts the stable run alias, a full immutable revision, or
 `RUN_ID/step-N` for a checkpoint you have already deployed. A `RUN_ID/step-N`
 target resolves to that checkpoint's verified revision, so deploy it first with
-`flash deploy RUN_ID/step-N`.
+`flash models deploy RUN_ID/step-N`.
 
 `-m`/`--message` is required; `--system`, `--max-tokens` (default 512), and
 `--temperature` (default 0.0) are optional. See the
 [CLI reference](/reference/cli#serving) for the full flag list.
 
 ```bash
-flash chat <run-id> -m "Write a haiku about mountain weather" --temperature 0.8 --max-tokens 128
+flash models chat <run-id> -m "Write a haiku about mountain weather" --temperature 0.8 --max-tokens 128
 ```
 
 `--system` is transient — it applies to that one request and is not stored with
@@ -107,26 +112,26 @@ the deployment. Use it to probe the adapter with the same system prompt it was
 trained with:
 
 ```bash
-flash chat <run-id> -m "What is 6*7?" --system "Answer with just the number."
+flash models chat <run-id> -m "What is 6*7?" --system "Answer with just the number."
 ```
 
 ## Manage deployments
 
 ```bash
-flash deployments         # human-readable deployment status
-flash deployments --json  # complete machine-readable records
-flash undeploy <run-id>   # disable the alias and immutable revisions
+flash models deployments         # human-readable deployment status
+flash models deployments --json  # complete machine-readable records
+flash models undeploy <run-id>   # disable the alias and immutable revisions
 ```
 
 Human output shows run id, step, revision, state, verification time, OpenAI
 model, and detail. JSON output includes `openai_base_url` for clients.
 
-`flash undeploy <run-id>` disables the stable alias and all of the run's
+`flash models undeploy <run-id>` disables the stable alias and all of the run's
 immutable revisions.
 
 ## Use it from your own code
 
-Deployments are OpenAI-compatible. Use `flash deployments --json` and pass its
+Deployments are OpenAI-compatible. Use `flash models deployments --json` and pass its
 `openai_base_url` as the SDK base URL. Set `model` to the stable run alias or a
 full immutable revision. A valid Freesolo API key is required, and the key's org
 must own the adapter named in `model`:
@@ -135,7 +140,7 @@ must own the adapter named in `model`:
 from openai import OpenAI
 
 client = OpenAI(
-    base_url="https://serve.freesolo.co/v1",  # openai_base_url from flash deployments --json
+    base_url="https://serve.freesolo.co/v1",  # openai_base_url from flash models deployments --json
     api_key="<your-freesolo-api-key>",       # use the same freesolo key as flash login
 )
 
@@ -214,8 +219,8 @@ training rollouts.
 
 You don't need a trained adapter to serve a catalog base model. Point the same
 OpenAI-compatible client at the serving endpoint and set `model` to a base-model
-id — any id from `flash models`, e.g. `Qwen/Qwen3.5-4B` — to generate against the
-base weights with no LoRA and no `flash deploy`:
+id — any id from `flash models list`, e.g. `Qwen/Qwen3.5-4B` — to generate against the
+base weights with no LoRA and no `flash models deploy`:
 
 ```python
 resp = client.chat.completions.create(
@@ -244,7 +249,7 @@ Copy a trained adapter out of Freesolo's managed storage into a HuggingFace
 repo you own:
 
 ```bash
-flash export --adapter-id <run-id> --repository <owner>/<name>
+flash models export --adapter-id <run-id> --repository <owner>/<name>
 ```
 
 `--adapter-id` and `--repository` are required; `--api-key` (defaults to

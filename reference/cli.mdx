@@ -14,6 +14,9 @@ inline help.
 | `--debug`         | Show full tracebacks on error (otherwise errors print one clean line) |
 | `-v`, `-vv`       | Increase log verbosity (`-v` info, `-vv` debug)                       |
 
+Run-management and serving commands are grouped under `flash runs` and
+`flash models`.
+
 ## Auth & identity
 
 <ResponseField
@@ -32,9 +35,28 @@ inline help.
 
 <ResponseField name="flash version">Print the Flash version.</ResponseField>
 
+## Projects
+
+Every training run and every published environment belongs to one Freesolo
+[project](/platform#projects), named by its UUID. Configs carry it as the
+top-level `project` field; `env push` and `env delete` take it as `--project`.
+
+<ResponseField name="flash projects create NAME [--description TEXT]">
+  Create a project in your organization and print its UUID. Names are unique per
+  org, so reusing one is rejected. On a styled terminal the UUID is printed with
+  its name; otherwise the bare UUID is printed, so it captures cleanly in a
+  script (`PROJECT=$(flash projects create my-project)`).
+</ResponseField>
+
+<ResponseField name="flash projects list">
+  List your organization's projects with their UUIDs. Piped or redirected
+  output is one tab-separated `UUID<TAB>NAME` per line. Use this to find the
+  UUID for a config's `project` field or a `--project` flag.
+</ResponseField>
+
 ## Discovery
 
-<ResponseField name="flash models">
+<ResponseField name="flash models list">
   List the supported base model ids. See [Supported models](/reference/models)
   for algorithms, reasoning, and pricing.
 </ResponseField>
@@ -54,27 +76,37 @@ inline help.
   playbook for coding agents with current CLI usage, reward guidance, and common
   run mitigations. Existing files are preserved.
 
-On an interactive terminal it first runs a short survey about the interaction
+Setup needs a project, so run `flash login` first. Pass `--project` to choose
+one, or let an interactive run list your projects and prompt. `--project` is
+required when there is no TTY, when stdin is redirected, or with `-y`. The
+selected UUID is written into every generated config's `project` field and into
+the `flash env push` hint in the scaffold. If configs already exist, setup
+refuses to continue when one has no valid `project` or names a different one,
+rather than rewriting them. Create a project first with
+`flash projects create NAME` if the org has none.
+
+On an interactive terminal it then runs a short survey about the interaction
 shape (single- vs multi-turn) and whether to train with reasoning, then
 scaffolds to match. The flags below skip the questions; a non-interactive run (no TTY, `CI`,
 or `-y`) takes the defaults (single-turn, no reasoning). A flag that disagrees
 with an already-scaffolded project is ignored with a warning.
 
-If your API key turns up projects with [recorded traces](/guides/tracing), and
-no `dataset/train.jsonl` exists yet, the survey also offers to seed it from one
-of those projects instead of the 2 starter rows, and sizes `max_examples` to
-what it exported. Traces are a head start, never a requirement: choose "start
-from scratch", or hit any export failure, and setup falls back to the starter
+If the selected project has [recorded traces](/guides/tracing), and no
+`dataset/train.jsonl` exists yet, the survey also offers to seed it from that
+project instead of the 2 starter rows, and sizes `max_examples` to what it
+exported. Traces are a head start, never a requirement: choose "start from
+scratch", or hit any export failure, and setup falls back to the starter
 dataset. An existing dataset is never overwritten, so the prompt is skipped
 when one is already there.
 
-| Flag             | Default | Effect                                                                                                                                                       |
-| ---------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `--single-turn`  | default | Scaffold an `EnvironmentSingleTurn` env (prompt → one response)                                                                                              |
-| `--multi-turn`   | -       | Scaffold a bounded-episode `EnvironmentMultiTurn` starter (`start_episode` / `step_episode` / `max_episode_turns` / `score_episode`) with a matching dataset |
-| `--reasoning`    | -       | Scaffold configs with reasoning on (`thinking = true`, and a raised GRPO completion budget)                                                                  |
-| `--no-reasoning` | default | Scaffold configs without reasoning                                                                                                                           |
-| `-y`, `--yes`    | -       | Accept the defaults without prompting                                                                                                                        |
+| Flag                     | Default | Effect                                                                                                                                                       |
+| ------------------------ | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `--project PROJECT_UUID` | prompt  | Project for the generated configs and environment publication. Required without a TTY or with `-y`                                                           |
+| `--single-turn`          | default | Scaffold an `EnvironmentSingleTurn` env (prompt → one response)                                                                                              |
+| `--multi-turn`           | -       | Scaffold a bounded-episode `EnvironmentMultiTurn` starter (`start_episode` / `step_episode` / `max_episode_turns` / `score_episode`) with a matching dataset |
+| `--reasoning`            | -       | Scaffold configs with reasoning on (`thinking = true`, and a raised GRPO completion budget)                                                                  |
+| `--no-reasoning`         | default | Scaffold configs without reasoning                                                                                                                           |
+| `-y`, `--yes`            | -       | Accept the defaults without prompting                                                                                                                        |
 
 </ResponseField>
 
@@ -93,7 +125,7 @@ when one is already there.
   reward is a warning, not a failure.
 </ResponseField>
 
-<ResponseField name="flash env push --name NAME [--project ID] [PATH]">
+<ResponseField name="flash env push --project PROJECT_UUID --name NAME [PATH]">
   Publish a local Freesolo environment to Freesolo's [managed Environments
   Hub](/guides/environments/package#publish-it) (private) and print its id
   (`your-org/name`). `--name` is required and is normalized to a lowercase
@@ -109,13 +141,10 @@ when one is already there.
   `*.key`, `*.pem`, `credentials*`, SSH keys) and virtualenvs are never
   uploaded.
 
-`--project` groups the environment under a project id. It is optional and
-never prompts: omit it and a republish leaves the environment in whatever
-project it is already in, while a first publish files it under your org's
-**Default**. That means you can assign the project once from the environment's
-dashboard page and keep pushing without repeating the flag. An id that does
-not belong to your org is ignored rather than failing the push, so a typo
-costs you the grouping, not the publish. Requires Flash 1.0.20.
+`--project` is required and must be a project UUID from your organization
+(`flash projects list`). A malformed UUID is rejected before upload, and one
+that does not belong to your org fails the push. There is no fallback project.
+Republishing an environment to a different project moves it.
 
 </ResponseField>
 
@@ -131,10 +160,11 @@ costs you the grouping, not the publish. Requires Flash 1.0.20.
   List local environment sources you can publish.
 </ResponseField>
 
-<ResponseField name="flash env delete ENV_ID [-y]">
+<ResponseField name="flash env delete ENV_ID --project PROJECT_UUID [-y]">
   Delete a managed Freesolo Hub environment. `ENV_ID` must be a lowercase
   `namespace/name` Hub id; GitHub refs and local paths cannot be deleted from
-  the Hub. Pass `-y`/`--yes` to skip the confirmation prompt.
+  the Hub. `--project` is required and must be the UUID of the project that owns
+  the environment. Pass `-y`/`--yes` to skip the confirmation prompt.
 </ResponseField>
 
 ## Traces
@@ -164,11 +194,11 @@ There is no per-algorithm format: every algorithm reads the same environment
 records. The CLI errors if the backend does not honour the requested format.
 
 Traces are stored per-project, so an export always reads exactly one project.
-Without `--project`, the CLI looks up the projects your key can reach: one
-project is used directly, several prompt you to pick, and on a non-interactive
-terminal it errors with the available ids so you can pass `--project`. An export
-reads the newest 1000 traces; skipped traces are counted in the summary.
-Writing an existing file needs `--force`.
+Without `--project`, an interactive terminal prompts you to pick from the
+projects your key can reach; a non-interactive terminal errors with the
+available ids so you can pass `--project`. An export reads the newest 1000
+traces; skipped traces are counted in the summary. Writing an existing file
+needs `--force`.
 
 | Flag             | Default                                        | Effect                            |
 | ---------------- | ---------------------------------------------- | --------------------------------- |
@@ -183,6 +213,9 @@ Writing an existing file needs `--force`.
 
 <ResponseField name="flash train CONFIG [flags]">
   Submit a managed training run from a [TOML config](/reference/configuration) and follow its logs.
+  The config must set a top-level `project` UUID; Flash validates it against
+  your organization before any GPU is allocated, so a missing, malformed, or
+  foreign project fails the submit rather than starting paid work.
   Before submit, Flash checks your prepaid balance against the pre-flight
   estimate. Successful runs are billed at the quoted Flash cost (see
   [Cost & billing](/guides/training#cost-and-billing)). [Cost and billing](/reference/cost-model) explains the pre-flight `--cost`
@@ -200,51 +233,51 @@ Writing an existing file needs `--force`.
 
 ## Run management
 
-<ResponseField name="flash runs">
+<ResponseField name="flash runs list">
   List your runs with state, algorithm, cost, and model.
 </ResponseField>
 
-<ResponseField name="flash status RUN_ID [-f]">
+<ResponseField name="flash runs status RUN_ID [-f]">
   Print a run's status, including its current or final cost record.
   `-f`/`--follow` polls status until the run reaches a terminal state without
   replaying worker logs.
 </ResponseField>
 
-<ResponseField name="flash log RUN_ID [-f]">
+<ResponseField name="flash runs log RUN_ID [-f]">
   Print a run's full logs, including worker console/error artifacts.
   `-f`/`--follow` streams new logs until the run reaches a terminal state.
 </ResponseField>
 
-<ResponseField name="flash cancel RUN_ID">
+<ResponseField name="flash runs cancel RUN_ID">
   Cancel a run. The CLI waits for the managed worker to stop before returning,
   which can take several minutes.
 </ResponseField>
 
+<ResponseField name="flash runs checkpoint RUN_ID">
+  List a run's saved SFT, GRPO, or OPD checkpoints available to deploy. Serve
+  one with `flash models deploy RUN_ID/step-N`. When output is not a styled
+  terminal, each line is single-space separated (`step N RUN_ID/step-N`), so it
+  splits cleanly in scripts (`awk`, `grep "step N"`).
+</ResponseField>
+
 ## Serving
 
-<ResponseField name="flash deploy RUN_ID[/step-N] [--dry-run]">
+<ResponseField name="flash models deploy RUN_ID[/step-N] [--dry-run]">
   Deploy a final adapter or checkpoint. Every real deploy resolves an immutable
   revision, runs a mandatory bounded smoke, and activates the stable run-id alias
   only after verification. `--dry-run` previews without creating a deployment.
   Serving is [billed per token](/guides/deploy-and-chat#billing).
 
 If no final adapter exists, use the `RUN_ID/step-N` selector listed by
-`flash checkpoints RUN_ID`.
+`flash runs checkpoint RUN_ID`.
 
 </ResponseField>
 
-<ResponseField name="flash checkpoints RUN_ID">
-  List a run's saved SFT, GRPO, or OPD checkpoints available to deploy. Serve
-  one with `flash deploy RUN_ID/step-N`. When output is not a styled terminal,
-  each line is single-space separated (`step N RUN_ID/step-N`), so it splits
-  cleanly in scripts (`awk`, `grep "step N"`).
-</ResponseField>
-
-<ResponseField name="flash chat TARGET -m MESSAGE [flags]">
+<ResponseField name="flash models chat TARGET -m MESSAGE [flags]">
   Send a message to a deployment. `TARGET` is the stable `RUN_ID` alias, a full
   immutable revision, or `RUN_ID/step-N` for a checkpoint you have already
   deployed, resolving to that checkpoint's verified revision, so run
-  `flash deploy RUN_ID/step-N` first.
+  `flash models deploy RUN_ID/step-N` first.
 
 | Flag              | Default    | Effect                                                                                                                |
 | ----------------- | ---------- | --------------------------------------------------------------------------------------------------------------------- |
@@ -255,19 +288,19 @@ If no final adapter exists, use the `RUN_ID/step-N` selector listed by
 
 </ResponseField>
 
-<ResponseField name="flash deployments [--json]">
+<ResponseField name="flash models deployments [--json]">
   List each active run alias and its currently active verified revision. Human
   output shows run id, step, revision, state, verification time, OpenAI model,
   and detail. `--json` includes complete records and `openai_base_url`.
 </ResponseField>
 
-<ResponseField name="flash undeploy RUN_ID">
+<ResponseField name="flash models undeploy RUN_ID">
   Disable the stable alias and all immutable revisions for the run.
 </ResponseField>
 
 ## Export
 
-<ResponseField name="flash export --adapter-id ID --repository OWNER/NAME [flags]">
+<ResponseField name="flash models export --adapter-id ID --repository OWNER/NAME [flags]">
   Export a trained adapter to a HuggingFace repo you own (created if it doesn't
   exist). `--adapter-id` is either `RUN_ID` for the final adapter or
   `RUN_ID/step-N` for a saved checkpoint. `--repository` is required.

@@ -12,13 +12,19 @@ updates are published in the [changelog](/changelog).
 
 The dashboard groups work into org-level **projects**: training runs, published
 environments, and recorded traces are organized by project, and the navigation
-is scoped to the project you have open. Assign one from the dashboard, with
-`flash env push --project`, or with the top-level `project` field in a
-[training config](/reference/configuration#top-level). What happens without an
-assignment differs by surface: a first `flash env push` files the environment
-under your org's **Default** project, a training run with no `project` field
-stays ungrouped, and [trace recording](/guides/tracing) always requires an
-explicit project id (exports can discover or prompt for one).
+is scoped to the project you have open. A **project selector in the top bar**
+switches between projects from anywhere in the dashboard.
+
+Every project-scoped operation names its project explicitly. There is no
+default, no fallback, and no implicit selection: `flash env push` and
+`flash env delete` take a required `--project`, a
+[training config](/reference/configuration#top-level) sets a required top-level
+`project` field, and [trace recording](/guides/tracing) requires an explicit
+project id. A missing, malformed, or inaccessible project fails the command
+rather than picking one for you, so a run can never land in a project you did
+not name. Create projects in the dashboard or with
+[`flash projects create`](/reference/cli#projects), and list the ones you can
+reach with `flash projects list`.
 
 ## API keys
 
@@ -34,7 +40,7 @@ new key is shown once. Use it with `flash login --api-key <key>` or the
 **Training Runs** lists the runs submitted with
 [`flash train`](/guides/training). Filter by status; columns cover state,
 model, environment, and cost. Open a run for the same detail exposed by
-`flash status`: the run spec, checkpoints, artifact/deployment metadata, error
+`flash runs status`: the run spec, checkpoints, artifact/deployment metadata, error
 state, and current or final cost record. For GRPO and OPD runs, the run page
 also shows a **sampled completions** panel: per training step it surfaces
 example prompts and the completions the model generated, each tagged with its
@@ -46,8 +52,8 @@ as it trains.
 A run detail page lists its **deployable checkpoints**: the per-step adapters
 available to serve, including intermediate checkpoints from a run that stopped
 mid-training. This is the same set you get from
-[`flash checkpoints <run-id>`](/reference/cli#serving); deploy one with
-`flash deploy <run-id>/step-<N>`. See
+[`flash runs checkpoint <run-id>`](/reference/cli#run-management); deploy one with
+`flash models deploy <run-id>/step-<N>`. See
 [Deploy a specific checkpoint](/guides/deploy-and-chat#deploy-a-specific-checkpoint).
 
 ## Environments
@@ -81,6 +87,12 @@ adapter came from a Flash run, per-token billing, and serving status. The alias
 routes only to a revision that passed deployment verification, while older
 immutable revisions can remain directly callable. Rows that still have a
 matching Flash run link back to the run detail page.
+
+Open a model for its **deployment detail**, where you can start and tear down
+serving without switching to the CLI. Deploying from the dashboard runs the same
+verification as [`flash models deploy`](/guides/deploy-and-chat): the run alias
+begins routing only once the new revision answers a smoke request, and
+undeploying stops billing for that adapter.
 
 Model access is org-scoped: the serving endpoint authorizes external chat
 requests against the org that owns the adapter.

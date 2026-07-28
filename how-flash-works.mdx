@@ -60,7 +60,7 @@ practical payoffs:
   served by the same managed service.
 
 Pick the base model with one line in your config. Browse the catalog with
-`flash models`, or see [Supported models](/reference/models).
+`flash models list`, or see [Supported models](/reference/models).
 
 ### Environments: your task, as code
 
@@ -132,7 +132,7 @@ already gets the format right; a cold OPD run tends to underperform plain SFT.
 
 ### Serving the result
 
-Deploy the adapter to call it. `flash deploy` registers your adapter with
+Deploy the adapter to call it. `flash models deploy` registers your adapter with
 Freesolo's **managed serving**. You talk to it over an OpenAI-compatible API,
 and serving is billed per token. See [Deploy & chat](/guides/deploy-and-chat).
 
