@@ -32,7 +32,7 @@ lora_rank = 32
 | `project`        | string | (required) | Freesolo project UUID that the run belongs to. Validated against your organization at submit time, before any GPU is allocated. Create one with [`flash projects create`](/reference/cli#projects). |
 | `model`          | string | (required) | Base model to train a LoRA adapter on, e.g. `Qwen/Qwen3.5-4B`. See [`flash models list`](/reference/models).                                                                                        |
 | `model_revision` | string | `""`       | Optional Hugging Face branch, tag, or commit for the base model. Empty uses the default revision.                                                                                                   |
-| `algorithm`      | string | `sft`      | `sft` imitates completions, `grpo` learns from your reward, `opd` distils from a managed teacher, and `opsd` self-distils reasoning from a reference solution.                                      |
+| `algorithm`      | string | `sft`      | `sft` imitates completions, `grpo` learns from your reward, and `opd` distils from a managed teacher.                                                                                               |
 | `seed`           | int    | `42`       | Deterministic run seed for training order and sampling. Must be between `0` and `9223372036854775807`.                                                                                              |
 | `thinking`       | bool   | `false`    | Enable reasoning mode on a thinking-capable model. Reasoning and the answer share `max_completion_tokens`.                                                                                          |
 
@@ -134,25 +134,6 @@ and inspect `truncated_rollouts`.
 The local `--cost` estimate may itemize teacher usage for diagnosis, but only GPU
 time is charged. `advantage_clip` and `thinking_length_penalty_coef` do not apply
 to OPD.
-
-### OPSD-specific
-
-OPSD (on-policy self-distillation) is experimental. It uses no external teacher
-and no reward: the model learns to reconstruct the reasoning that reaches an
-answer you already have, so it needs a thinking-capable model and a dataset whose
-rows carry gold completions (the same `sft_completion` data SFT uses).
-
-These constraints are enforced at submit:
-
-- `thinking = true` on a thinking-capable model. Non-thinking runs are rejected.
-- Single-turn, text-only environments only. Multi-turn, tool-calling, and image rows are rejected.
-- `group_size` must be `1` (exactly one rollout per prompt). Omit it or set `1`.
-- `teacher_model` is not accepted, and no teacher tokens are billed.
-
-OPSD honors the standard on-policy `[train]` knobs (`epochs`, `max_examples`,
-`batch_size`, `learning_rate`, `temperature`, `max_completion_tokens`,
-`max_context_tokens`, `max_steps`, `stop_sequences`, and `init_from_adapter`).
-OPSD is priced on GPU time like GRPO and OPD and serves like any other LoRA.
 
 ### Structured outputs
 

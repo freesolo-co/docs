@@ -213,7 +213,10 @@ identifier or URL through `[environment.params]`.
 
 When you push a single `.py` file (or a folder with just one top-level `.py`),
 only that entrypoint, a sibling `README.md`/`TRAINING.md`, and any `dataset/`
-tree are packaged, and sibling helper modules are not.
+tree are packaged, and sibling helper modules are not. An `evaluations.py` is
+not packaged in single-file mode either; push the folder if you want
+[`flash env eval`](/reference/cli#environments) suites to travel with the
+environment.
 
 ## Next steps
 

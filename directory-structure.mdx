@@ -11,6 +11,7 @@ you can read, diff, and version-control. Rerunning is safe: existing files stay 
 ```
 ./
 ├── environment.py        # the task + reward (a Freesolo environment)
+├── evaluations.py        # held-out eval suites for flash env eval
 ├── dataset/
 │   └── train.jsonl       # a tiny starter dataset (input/output rows)
 ├── configs/
@@ -35,6 +36,17 @@ scaffolded starter loads its rows from `dataset/train.jsonl`.
 
 See the full scaffolded file — `StarterEnv` with `build_prompt_messages`
 and `score_response` — in [Environments](/guides/environments/overview#scaffold-one).
+
+### evaluations.py
+
+**What it is:** held-out evaluation suites for the environment, defined as
+`BaseEvalSuite` subclasses returning `EvalCase` rows. It is optional: delete it
+and everything else still works. Keeping it gives you a fixed set of cases to
+score a trained model against, separate from the reward the model trains on.
+
+**When Flash reads it:** [`flash env eval`](/reference/cli#environments) scores
+the suites against a deployed model, and `flash env test` validates them offline
+without calling one. `flash env push` ships it alongside `environment.py`.
 
 ### dataset/train.jsonl
 

@@ -69,6 +69,7 @@ This writes a ready-to-edit starter into the current directory:
 
 ```
 environment.py            # a Freesolo environment (task + reward)
+evaluations.py            # held-out eval suites for flash env eval
 dataset/
   train.jsonl             # a tiny starter dataset (input/output rows)
 configs/
@@ -216,6 +217,7 @@ The commands you used above, plus the ones you'll reach for next. Run
 | `flash projects list`   | List your projects and their UUIDs           | `flash projects list`                              |
 | `flash env setup`       | Scaffold a starter environment and configs   | `flash env setup --project <uuid>`                 |
 | `flash env push`        | Publish an environment and print its id      | `flash env push --project <uuid> --name starter .` |
+| `flash env eval`        | Score held-out suites against a deployment   | `flash env eval <run-id>`                          |
 | `flash train`           | Submit a run and follow its logs             | `flash train configs/sft.toml`                     |
 | `flash train --dry-run` | Run server preflights, no GPU or charge      | `flash train configs/sft.toml --dry-run`           |
 | `flash train --cost`    | Preview the local pre-flight cost, no submit | `flash train configs/sft.toml --cost`              |

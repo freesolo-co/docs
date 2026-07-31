@@ -4,8 +4,162 @@ description: "New models, faster training and serving, and platform updates from
 rss: true
 ---
 
+<Update label="July 31, 2026">
+  **New · Flash CLI**
+
+## Score held-out suites against a deployed model with `flash env eval`
+
+Put an `evaluations.py` beside your `environment.py` and `flash env eval RUN_ID` scores
+those suites against the deployed adapter. Pick one suite with `--suite`, cap the work
+with `--max-cases`, and raise `--concurrency` to run cases in parallel. A case that never
+reached the model is counted as an error and left out of `pass_rate` and `mean_score`
+rather than averaged in as a zero, so a half-broken deployment reads as broken instead of
+as a weak model. `flash env test` validates the same suites offline, and `flash env setup`
+scaffolds a starter `evaluations.py`. Available in Flash 1.0.34.
+
+**Changed · Training**
+
+## OPSD has been removed
+
+The three supported algorithms are now `sft`, `grpo`, and `opd`. A config with
+`algorithm = "opsd"` is rejected when the config is read, before a GPU is allocated or a
+cost is quoted. Runs that used it should move to `opd`, which distils from a managed
+teacher.
+
+**New · Flash CLI**
+
+## `flash models deploy --wait` blocks until the model is servable
+
+Without it, deploy returns while the revision is still queued. With it, the command waits
+for the revision to become servable, then exits non-zero if it fails or the wait times
+out, so a script can gate on a deploy instead of polling. Defaults to 30 minutes; pass
+`--wait 600` for your own budget. Interrupting the wait stops waiting, not the deployment.
+
+**Improved · Flash CLI**
+
+## `flash env test` validates the split you actually train on
+
+`--split` picks the dataset split to drive, matching `[environment.params]`, and `--param
+KEY=VALUE` passes any other `load_environment()` argument. The gate is also stricter: if
+every replayed gold answer scores zero, `flash env test` now fails instead of warning and
+passing, so a reward function that cannot recognize its own reference answers is caught
+before it reaches a GPU.
+
+**Improved · Flash CLI**
+
+## See real spend and affordability before a run costs you
+
+A live run shows its submit-time quote instead of `$0.0000` until settlement, flagged as
+an estimate. `flash train --dry-run` now checks that your org can afford the run, so an
+insufficient balance fails the dry run rather than surfacing at submit.
+
+**Improved · Flash CLI**
+
+## Warnings for the things that used to fail silently
+
+Flash now tells you when `Ctrl-C` detaches from a run that keeps billing, when
+`FREESOLO_API_KEY` overrides the login you saved with `flash login`, when `[wandb]` is
+configured but no `WANDB_API_KEY` can be found, and when `credit_assignment = "per_turn"`
+falls back to episode credit because the environment returned no per-turn rewards.
+
+**Improved · Training**
+
+## Multi-turn runs grade what the model actually did
+
+The environment now steps on the final assistant turn before scoring, so stateful tasks
+score the model's last action. Thinking is stripped consistently from scored text, so
+single-turn and multi-turn grading no longer disagree over whether reasoning was included.
+An environment reference is pinned for the whole run, so a retry cannot pick up a newer
+push mid-run.
+
+**Improved · Flash CLI**
+
+## The `TRAINING.md` playbook covers multi-turn traps and harness mistakes
+
+The playbook `flash env setup` writes has two new sections. One documents the two ways a
+multi-turn environment silently scores the wrong thing: `credit_assignment = "per_turn"`
+is inert unless your environment emits `per_turn_rewards`, and is rejected outright for
+tool-calling environments, and scoring that accumulates state in `step_episode` misreads
+episodes that hit the turn cap. The other collects the analysis mistakes that produce
+confident wrong conclusions from a healthy run, such as joining eval results to a dataset
+by index when the harness samples rows, and reading a served eval gap narrower than its
+own reproducibility spread.
+
+**Improved · Flash CLI**
+
+## Clearer status, retries, and errors
+
+An SFT run stays visibly alive through its silent configuration phase instead of looking
+stalled between data loading and the first step. A frozen step is labelled as reporting
+lag rather than a stall, capacity retries name the
+GPU class they will reuse and say when a pinned `gpu.type` leaves no alternative, and a
+relaunch after preemption is visible as a new attempt instead of unexplained lost
+progress. `flash models chat` fails loudly when a request returns no text, environment
+import failures report the real error, and `flash env pull` explains the `--output` form
+when the second positional is a directory.
+
+**Improved · Serving**
+
+## Thinking adapters get a real budget on the deploy smoke test
+
+The deployment smoke test now sizes its completion budget from the run instead of a flat
+256 tokens, so a valid thinking adapter is not rejected for spending its budget on
+reasoning. An adapter that only reasons and never answers still fails deployment.
+
+</Update>
+
 <Update label="July 28, 2026">
   **New · Platform**
+
+## Every new organization starts with an Example project
+
+New orgs are seeded with a project called `Example`, a starter environment, and an example
+trace, so the project, tracing, environment, run, and model workflow is visible before you
+train anything. The environment is published to your org's Hub namespace just after the
+org is created, so it is briefly pending on a brand new org. The seeded project is
+ordinary: nothing selects it implicitly, and you can rename or delete it like any other.
+
+**New · Platform**
+
+## A guided tour of the dashboard
+
+The first time you open an organization you created, a short walkthrough covers API keys
+and creating your first one, the docs, the Example project, tracing, environments,
+training runs, models, and claiming your starter credit. It runs only for the person who
+created the org, and only while the org is still new and unused. Click through it or skip
+it.
+
+**Changed · Platform**
+
+## Starter credit comes in two tiers
+
+Claim \$10 with no payment method at all, then a further \$50 once a card is on file, for
+\$60 total. Adding a card does not credit your balance on its own; both tiers are claimed
+from billing settings.
+
+**Changed · Serving**
+
+## Thinking models split reasoning out of `content`
+
+On the OpenAI-compatible API, a thinking generation now returns its reasoning in
+`reasoning_content` and only the answer in `content`, in both JSON and streaming
+responses. The `</think>` separator no longer leaks into `content`. Non-thinking
+completions are unchanged. `flash models chat` folds the two fields back into one
+balanced `<think>...</think>` block, so the CLI still shows the full generation.
+
+**Improved · Platform**
+
+## Honest deployment and serving states
+
+A failed deployment stays visible as **Failed** and can be deployed again, and a
+successful undeploy settles to **Undeployed** instead of appearing stuck. Serving errors
+return a meaningful status: `422` when the request body does not match the schema, `400`
+for a request that parses but is rejected by the engine, `404` for an unknown adapter,
+`504` on engine timeout, and `502` for an engine failure. When a recognized engine failure
+happens after a stream has started, the stream ends with an error event carrying that
+status instead of truncating silently.
+
+**New · Platform**
 
 ## Turn your app's live traffic into a training set
 

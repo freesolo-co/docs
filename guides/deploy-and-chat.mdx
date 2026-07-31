@@ -26,6 +26,20 @@ runs a bounded serving smoke against that revision, and only then atomically
 activates the stable run-id alias. Verification is mandatory; a failed smoke
 leaves the existing alias unchanged.
 
+`flash models deploy` returns while the revision is still queued, so the model is
+not servable the moment the command exits. To gate a script on the deployment,
+add `--wait`:
+
+```bash
+flash models deploy <run-id> --wait
+```
+
+It blocks until the revision is servable and exits `0`, or exits `1` if the
+deployment fails, rolls back, or the wait times out. The default timeout is 1800
+seconds; pass `--wait 600` for your own budget, or `--wait 0` for a single state
+read that does not block. Interrupting with `Ctrl-C` stops the waiting, not the
+deployment.
+
 You can also deploy and undeploy from the model's detail page in the
 [dashboard](/platform#models). Both paths run the same verification and produce
 the same alias, so a deployment started in the web app is visible to
@@ -153,6 +167,32 @@ print(resp.choices[0].message.content)
 
 For deployed adapters, serving preserves the run's trained thinking mode. A
 caller cannot override `enable_thinking` per request for an adapter.
+
+### Reasoning is returned separately
+
+When a generation runs in thinking mode, the reasoning comes back in
+`reasoning_content` and only the answer in `content`. The `</think>` separator is
+not included in either field:
+
+```python
+resp = client.chat.completions.create(
+    model="<run-id>",
+    messages=[{"role": "user", "content": "Hello!"}],
+)
+print(resp.choices[0].message.reasoning_content)  # how it got there
+print(resp.choices[0].message.content)  # the answer
+```
+
+Streaming splits the same way: reasoning tokens arrive as
+`choices[0].delta.reasoning_content` and answer tokens as
+`choices[0].delta.content`, so accumulate both. If a generation stops before the
+reasoning closes, everything generated is returned as `reasoning_content` and
+`content` is empty. Non-thinking completions are unaffected and use `content`
+alone.
+
+`flash models chat` folds the two fields back into a single balanced
+`<think>...</think>` block, so the CLI shows the reasoning and the answer
+together. You only see the split shape when you call the endpoint yourself.
 
 ## Send images
 
