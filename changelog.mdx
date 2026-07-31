@@ -4,8 +4,59 @@ description: "New models, faster training and serving, and platform updates from
 rss: true
 ---
 
+<Update label="July 31, 2026">
+  **New · Flash CLI**
+
+## Score held-out suites against a deployed model with `flash env eval`
+
+Put an `evaluations.py` beside your `environment.py` and `flash env eval RUN_ID` scores
+those suites against the deployed adapter. Pick one suite with `--suite`, cap the work
+with `--max-cases`, and raise `--concurrency` to run cases in parallel. A case that never
+reached the model is counted as an error and left out of `pass_rate` and `mean_score`
+rather than averaged in as a zero, so a half-broken deployment reads as broken instead of
+as a weak model. `flash env test` validates the same suites offline, and `flash env setup`
+scaffolds a starter `evaluations.py`. Available in Flash 1.0.34.
+
+**New · Flash CLI**
+
+## `flash models deploy --wait` blocks until the model is servable
+
+Without it, deploy returns while the revision is still queued. With it, the command waits
+for the revision to become servable, then exits non-zero if it fails or the wait times
+out, so a script can gate on a deploy instead of polling. Defaults to 30 minutes; pass
+`--wait 600` for your own budget. Interrupting the wait stops waiting, not the deployment.
+
+**New · Flash CLI**
+
+## `flash env test` can validate the split you actually train on
+
+`--split` picks the dataset split to drive, matching `[environment.params]`, and `--param
+KEY=VALUE` passes any other `load_environment()` argument, so the local gate exercises the
+data the run will actually use. The gate is also stricter: if every replayed gold answer
+scores zero, `flash env test` now fails instead of passing, so a reward function that
+cannot recognize its own reference answers is caught before it reaches a GPU.
+
+**Changed · Flash CLI**
+
+## `flash train --dry-run` checks that you can afford the run
+
+The dry run now verifies your org balance against the quote, so an insufficient balance
+fails the dry run instead of surfacing when you submit.
+
+</Update>
+
 <Update label="July 28, 2026">
-  **New · Platform**
+  **Changed · Serving**
+
+## Thinking models split reasoning out of `content`
+
+On the OpenAI-compatible API, a thinking generation now returns its reasoning in
+`reasoning_content` and only the answer in `content`, in both JSON and streaming
+responses. The `</think>` separator no longer leaks into `content`. Non-thinking
+completions are unchanged. `flash models chat` folds the two fields back into one
+balanced `<think>...</think>` block, so the CLI still shows the full generation.
+
+**New · Platform**
 
 ## Turn your app's live traffic into a training set
 

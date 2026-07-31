@@ -71,7 +71,8 @@ top-level `project` field; `env push` and `env delete` take it as `--project`.
 
 <ResponseField name="flash env setup [flags]">
   Scaffold a [starter project](/directory-structure) into the current directory:
-  `environment.py`, a tiny `dataset/train.jsonl`, `configs/sft.toml` (SFT),
+  `environment.py`, a starter `evaluations.py`, a tiny `dataset/train.jsonl`,
+  `configs/sft.toml` (SFT),
   `configs/rl.toml` (GRPO), and `configs/opd.toml` (OPD), plus a `TRAINING.md`
   playbook for coding agents with current CLI usage, reward guidance, and common
   run mitigations. Existing files are preserved.
@@ -110,7 +111,7 @@ when one is already there.
 
 </ResponseField>
 
-<ResponseField name="flash env test [PATH]">
+<ResponseField name="flash env test [PATH] [--split SPLIT] [--param KEY=VALUE]">
   Validate a local environment offline before publishing. Loads the same
   entrypoint `flash env push` would package (`PATH` defaults to `.`) and drives
   its first few dataset episodes with no GPU and no model: it checks that
@@ -120,9 +121,59 @@ when one is already there.
   policy answer when one is present, otherwise a canned response. Prints
   `overall: PASS` and exits `0` when every driven episode passes the contract
   checks, or `overall: FAIL` and exits `1` on a load error, an empty dataset,
-  malformed messages, a hook exception, or a non-finite reward. PASS means the
-  environment contract is valid, not that the reward is high; a low replayed
-  reward is a warning, not a failure.
+  malformed messages, a hook exception, or a non-finite reward.
+
+PASS means the environment contract is valid, not that the reward is high. A
+partially low replayed reward is a warning, not a failure. But if **every**
+replayed gold answer scores zero the gate fails: a reward function that cannot
+recognize its own reference answers would only ever see flat-zero reward on a
+GPU. Episodes with no gold answer to replay are exempt.
+
+`--split` selects the dataset split to drive, matching `[environment.params]`
+and defaulting to `train`. Use the split the run actually trains on, for example
+`--split train_sft`. `--param KEY=VALUE` is repeatable and passes any other
+`load_environment()` keyword argument; values parse as TOML scalars, so `1`,
+`true`, and `"x"` keep their types. `--split` wins over `--param split=...`.
+
+</ResponseField>
+
+<ResponseField name="flash env eval TARGET [PATH] [--suite NAME] [--max-cases N] [--temperature T] [--max-tokens N] [--concurrency N]">
+  Score held-out evaluation suites against a deployed model. `TARGET` is a bare
+  `RUN_ID`, a `RUN_ID/step-N` checkpoint, or a full immutable adapter revision;
+  `PATH` is the local environment directory or `environment.py` and defaults to
+  `.`.
+
+Define the suites in an `evaluations.py` beside your `environment.py`:
+
+```python
+from flash.envs.evaluations import BaseEvalSuite, EvalCase
+
+
+class HeldOut(BaseEvalSuite):
+    name = "held-out"
+
+    def cases(self):
+        return [EvalCase(id="sum", input="2+2", expected="4")]
+
+
+def load_evaluations(environment=None):
+    return [HeldOut()]
+```
+
+`score()` may return an `EvalResult`, a float, or a bool. A module-level
+`EVALUATIONS` list works instead of the factory, and the factory receives the
+loaded environment when it accepts one, so suites can reuse environment graders.
+
+`--suite` runs only the named suite, `--max-cases` caps the cases taken from each
+selected suite, and `--concurrency` (default `1`, maximum `32`) issues that many
+model requests in parallel while results stay in case order. Generation defaults
+to `--temperature 0.0` and `--max-tokens 512`.
+
+A case that never reached the model is recorded as an error and excluded from
+`pass_rate` and `mean_score` rather than scored as a zero, so a broken deployment
+does not read as a low-quality model. Errors are printed, counted in the summary,
+and still fail the command. Requires Flash 1.0.34.
+
 </ResponseField>
 
 <ResponseField name="flash env push --project PROJECT_UUID --name NAME [PATH]">
@@ -260,7 +311,7 @@ needs `--force`.
 
 ## Serving
 
-<ResponseField name="flash models deploy RUN_ID[/step-N] [--dry-run]">
+<ResponseField name="flash models deploy RUN_ID[/step-N] [--dry-run] [--wait [SECONDS]]">
   Deploy a final adapter or checkpoint. Every real deploy resolves an immutable
   revision, runs a mandatory bounded smoke, and activates the stable run-id alias
   only after verification. `--dry-run` previews without creating a deployment.
@@ -268,6 +319,14 @@ needs `--force`.
 
 If no final adapter exists, use the `RUN_ID/step-N` selector listed by
 `flash runs checkpoint RUN_ID`.
+
+Without `--wait`, deploy returns while the revision is still queued. With it, the
+command blocks until the revision is servable and exits `0`, or exits `1` if the
+deployment failed, the wait timed out, or the alias rolled back to the previously
+deployed revision. That makes it usable as a gate in a script instead of polling
+`flash models deployments`. The timeout defaults to 1800 seconds; pass a value
+(`--wait 600`) to set your own, or `--wait 0` for a single state read. Interrupting
+the wait with `Ctrl-C` stops waiting, not the deployment.
 
 </ResponseField>
 
