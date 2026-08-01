@@ -7,7 +7,7 @@ rss: true
 <Update
   label="July 31, 2026"
   description="2026-07-31"
-  tags={["Flash CLI", "Environments"]}
+  tags={["Flash CLI", "Environments", "Serving"]}
   rss={{
     title: "July 31, 2026",
     description: "Evaluate a deployed model against held-out suites, and gate scripts on a deploy.",
@@ -20,24 +20,27 @@ rss: true
 Put an `evaluations.py` beside your `environment.py` and `flash env eval RUN_ID`
 scores those suites against the deployed adapter. Cases that never reached the
 model are counted as errors instead of averaged in as zeros, so a half-broken
-deployment reads as broken rather than as a weak model.
+deployment reads as broken rather than as a weak model. Available in Flash 1.0.34.
 
 ### Gate a script on a deploy instead of polling
 
 `flash models deploy --wait` blocks until the revision is actually servable and
-exits non-zero if it fails, so a deploy can be chained in automation. Available
-in Flash 1.0.34.
+exits non-zero if it fails, so a deploy can be chained in automation.
 
-  <Accordion title="Improvements" description="4 items">
-    - **Environments:** `flash env test` can drive the split you actually train on
-      with `--split` and `--param`, and now fails when every replayed gold answer
-      scores zero.
-    - **Environments:** Scope an eval with `--suite`, cap it with `--max-cases`, and
-      raise `--concurrency` to run cases in parallel.
-    - **Flash CLI:** `flash train --dry-run` checks your org balance against the
-      quote, so an insufficient balance fails before you submit.
-    - **Flash CLI:** `flash env setup` scaffolds a starter `evaluations.py`.
-  </Accordion>
+  <AccordionGroup>
+    <Accordion title="Improvements" description="5 items">
+      - **Environments:** `flash env test` can drive the split you actually train on
+        with `--split` and `--param`, and now fails when every replayed gold answer
+        scores zero.
+      - **Environments:** Scope an eval with `--suite`, cap it with `--max-cases`, and
+        raise `--concurrency` to run cases in parallel.
+      - **Serving:** Interrupting `flash models deploy --wait` stops waiting, not the
+        deployment.
+      - **Flash CLI:** `flash train --dry-run` checks your org balance against the
+        quote, so an insufficient balance fails before you submit.
+      - **Flash CLI:** `flash env setup` scaffolds a starter `evaluations.py`.
+    </Accordion>
+  </AccordionGroup>
 </Update>
 
 <Update
@@ -46,7 +49,7 @@ in Flash 1.0.34.
   tags={["Platform", "Tracing", "Serving"]}
   rss={{
     title: "July 28, 2026",
-    description: "Turn your app's live traffic into a training set, and cleaner output from thinking models.",
+    description: "Turn your app's live traffic into a training set and get cleaner output from thinking models.",
   }}
 >
   ## Featured
@@ -62,18 +65,20 @@ is forwarded or stored. See [Tracing](/guides/tracing).
 
 Reasoning now comes back in `reasoning_content` and only the answer in `content`,
 in both JSON and streaming responses, so the `</think>` separator no longer leaks
-into your output.
+into `content`.
 
-  <Accordion title="Improvements" description="1 item">
-    - **Serving:** `flash models chat` folds the two fields back into one
-      `<think>...</think>` block, so the CLI still shows the full generation.
-  </Accordion>
+  <AccordionGroup>
+    <Accordion title="Improvements" description="1 item">
+      - **Serving:** `flash models chat` folds the two fields back into one
+        `<think>...</think>` block, so the CLI still shows the full generation.
+    </Accordion>
+  </AccordionGroup>
 </Update>
 
 <Update
   label="July 27, 2026"
   description="2026-07-27"
-  tags={["Flash CLI", "Platform", "Projects"]}
+  tags={["Flash CLI", "Platform", "Projects", "Serving"]}
   rss={{
     title: "July 27, 2026",
     description: "Every run and environment belongs to a project, and run and serving commands are grouped.",
@@ -90,18 +95,22 @@ fails the submit instead of starting paid work. Available in Flash 1.0.25.
 
 ### Run and serving commands are grouped
 
-`flash status`, `log`, `cancel`, and `checkpoints` moved under `flash runs`.
-`flash deploy`, `chat`, `undeploy`, `deployments`, and `export` moved under
-`flash models`. Listing base models is `flash models list`.
+`flash status`, `log`, `cancel`, and `checkpoints` are now `flash runs status`,
+`runs log`, `runs cancel`, and `runs checkpoint`. `flash deploy`, `chat`,
+`undeploy`, `deployments`, and `export` are now `flash models deploy`,
+`models chat`, `models undeploy`, `models deployments`, and `models export`.
+Listing base models is `flash models list`.
 
-  <Accordion title="Improvements" description="3 items">
-    - **Platform:** Deploy and tear down serving from the dashboard, without
-      switching to the CLI.
-    - **Platform:** A project selector in the top bar moves between projects from
-      anywhere in the dashboard.
-    - **Flash CLI:** Create and find projects with `flash projects create` and
-      `flash projects list`.
-  </Accordion>
+  <AccordionGroup>
+    <Accordion title="Improvements" description="3 items">
+      - **Platform:** Deploy and tear down serving from the dashboard, without
+        switching to the CLI.
+      - **Platform:** A project selector in the top bar moves between projects from
+        anywhere in the dashboard.
+      - **Flash CLI:** Create and find projects with `flash projects create` and
+        `flash projects list`.
+    </Accordion>
+  </AccordionGroup>
 </Update>
 
 <Update
@@ -157,10 +166,12 @@ rewards from the Flash CLI.
 
 Lower memory use and faster data processing also unlock longer training contexts.
 
-  <Accordion title="Improvements" description="1 item">
-    - **Training:** Multi-turn GRPO tasks with independently gradable turns can
-      choose per-turn or per-episode credit.
-  </Accordion>
+  <AccordionGroup>
+    <Accordion title="Improvements" description="1 item">
+      - **Training:** Pure multi-turn GRPO tasks with independently gradable turns
+        can choose per-turn or per-episode credit.
+    </Accordion>
+  </AccordionGroup>
 </Update>
 
 <Update
