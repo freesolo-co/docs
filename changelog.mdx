@@ -4,164 +4,223 @@ description: "New models, faster training and serving, and platform updates from
 rss: true
 ---
 
-<Update label="July 31, 2026">
-  **New · Flash CLI**
+<Update
+  label="July 31, 2026"
+  description="2026-07-31"
+  tags={["Flash CLI", "Environments", "Serving"]}
+  rss={{
+    title: "July 31, 2026",
+    description: "Evaluate a deployed model against held-out suites, and gate scripts on a deploy.",
+  }}
+>
+  ## Featured
 
-## Score held-out suites against a deployed model with `flash env eval`
+### Evaluate a deployed model against held-out suites
 
-Put an `evaluations.py` beside your `environment.py` and `flash env eval RUN_ID` scores
-those suites against the deployed adapter. Pick one suite with `--suite`, cap the work
-with `--max-cases`, and raise `--concurrency` to run cases in parallel. A case that never
-reached the model is counted as an error and left out of `pass_rate` and `mean_score`
-rather than averaged in as a zero, so a half-broken deployment reads as broken instead of
-as a weak model. `flash env test` validates the same suites offline, and `flash env setup`
-scaffolds a starter `evaluations.py`. Available in Flash 1.0.34.
+Put an `evaluations.py` beside your `environment.py` and `flash env eval RUN_ID`
+scores those suites against the deployed adapter. Cases that never reached the
+model are counted as errors instead of averaged in as zeros, so a half-broken
+deployment reads as broken rather than as a weak model. Available in Flash 1.0.34.
 
-**New · Flash CLI**
+### Gate a script on a deploy instead of polling
 
-## `flash models deploy --wait` blocks until the model is servable
+`flash models deploy --wait` blocks until the revision is actually servable and
+exits non-zero if it fails, so a deploy can be chained in automation.
 
-Without it, deploy returns while the revision is still queued. With it, the command waits
-for the revision to become servable, then exits non-zero if it fails or the wait times
-out, so a script can gate on a deploy instead of polling. Defaults to 30 minutes; pass
-`--wait 600` for your own budget. Interrupting the wait stops waiting, not the deployment.
-
-**New · Flash CLI**
-
-## `flash env test` can validate the split you actually train on
-
-`--split` picks the dataset split to drive, matching `[environment.params]`, and `--param
-KEY=VALUE` passes any other `load_environment()` argument, so the local gate exercises the
-data the run will actually use. The gate is also stricter: if every replayed gold answer
-scores zero, `flash env test` now fails instead of passing, so a reward function that
-cannot recognize its own reference answers is caught before it reaches a GPU.
-
-**Changed · Flash CLI**
-
-## `flash train --dry-run` checks that you can afford the run
-
-The dry run now verifies your org balance against the quote, so an insufficient balance
-fails the dry run instead of surfacing when you submit.
-
+  <AccordionGroup>
+    <Accordion title="Improvements" description="5 items">
+      - **Environments:** `flash env test` can drive the split you actually train on
+        with `--split` and `--param`, and now fails when every replayed gold answer
+        scores zero.
+      - **Environments:** Scope an eval with `--suite`, cap it with `--max-cases`, and
+        raise `--concurrency` to run cases in parallel.
+      - **Serving:** Interrupting `flash models deploy --wait` stops waiting, not the
+        deployment.
+      - **Flash CLI:** `flash train --dry-run` checks your org balance against the
+        quote, so an insufficient balance fails before you submit.
+      - **Flash CLI:** `flash env setup` scaffolds a starter `evaluations.py`.
+    </Accordion>
+  </AccordionGroup>
 </Update>
 
-<Update label="July 28, 2026">
-  **Changed · Serving**
+<Update
+  label="July 28, 2026"
+  description="2026-07-28"
+  tags={["Platform", "Tracing", "Serving"]}
+  rss={{
+    title: "July 28, 2026",
+    description: "Turn your app's live traffic into a training set and get cleaner output from thinking models.",
+  }}
+>
+  ## Featured
 
-## Thinking models split reasoning out of `content`
-
-On the OpenAI-compatible API, a thinking generation now returns its reasoning in
-`reasoning_content` and only the answer in `content`, in both JSON and streaming
-responses. The `</think>` separator no longer leaks into `content`. Non-thinking
-completions are unchanged. `flash models chat` folds the two fields back into one
-balanced `<think>...</think>` block, so the CLI still shows the full generation.
-
-**New · Platform**
-
-## Turn your app's live traffic into a training set
+### Turn your app's live traffic into a training set
 
 Point an OpenAI-compatible client at `https://api.freesolo.co/v1` and Freesolo
 records your app's chat completions against a project, then hands them back as a
-training dataset with `flash traces export`. Requests are relayed to the provider
-you name using a key you supply, and secrets are redacted before anything is
-forwarded or stored. See [Tracing](/guides/tracing).
+training dataset with `flash traces export`. Secrets are redacted before anything
+is forwarded or stored. See [Tracing](/guides/tracing).
+
+### Thinking models split reasoning out of `content`
+
+Reasoning now comes back in `reasoning_content` and only the answer in `content`,
+in both JSON and streaming responses, so the `</think>` separator no longer leaks
+into `content`.
+
+  <AccordionGroup>
+    <Accordion title="Improvements" description="1 item">
+      - **Serving:** `flash models chat` folds the two fields back into one
+        `<think>...</think>` block, so the CLI still shows the full generation.
+    </Accordion>
+  </AccordionGroup>
+</Update>
+
+<Update
+  label="July 27, 2026"
+  description="2026-07-27"
+  tags={["Flash CLI", "Platform", "Projects", "Serving"]}
+  rss={{
+    title: "July 27, 2026",
+    description: "Every run and environment belongs to a project, and run and serving commands are grouped.",
+  }}
+>
+  ## Featured
+
+### Every run and environment belongs to a project
+
+Training configs take a required top-level `project` UUID, and `flash env push`
+and `flash env delete` take a required `--project`. Flash validates the project
+against your organization before allocating a GPU, so a wrong or missing project
+fails the submit instead of starting paid work. Available in Flash 1.0.25.
+
+### Run and serving commands are grouped
+
+`flash status`, `log`, `cancel`, and `checkpoints` are now `flash runs status`,
+`runs log`, `runs cancel`, and `runs checkpoint`. `flash deploy`, `chat`,
+`undeploy`, `deployments`, and `export` are now `flash models deploy`,
+`models chat`, `models undeploy`, `models deployments`, and `models export`.
+Listing base models is `flash models list`.
+
+  <AccordionGroup>
+    <Accordion title="Improvements" description="3 items">
+      - **Platform:** Deploy and tear down serving from the dashboard, without
+        switching to the CLI.
+      - **Platform:** A project selector in the top bar moves between projects from
+        anywhere in the dashboard.
+      - **Flash CLI:** Create and find projects with `flash projects create` and
+        `flash projects list`.
+    </Accordion>
+  </AccordionGroup>
+</Update>
+
+<Update
+  label="July 24, 2026"
+  description="2026-07-24"
+  tags={["Platform", "Projects"]}
+  rss={{
+    title: "July 24, 2026",
+    description: "Organize runs, environments, and traces into projects.",
+  }}
+>
+  ## Featured
+
+### Organize runs, environments, and traces into projects
+
+Group related work under an organization-level project and switch between
+projects from the platform.
 
 </Update>
 
-<Update label="July 27, 2026">
-  **Changed · Flash CLI**
+<Update
+  label="July 22, 2026"
+  description="2026-07-22"
+  tags={["Platform", "Training"]}
+  rss={{
+    title: "July 22, 2026",
+    description: "Watch training as it happens with live metrics, logs, and sample completions.",
+  }}
+>
+  ## Featured
 
-## Every run and environment now belongs to a project
+### Watch training as it happens
 
-Training configs take a required top-level `project` UUID, and `flash env push` and
-`flash env delete` take a required `--project`. Flash validates the project against your
-organization before allocating a GPU, so a wrong or missing project fails the submit
-instead of starting paid work. Create and find projects with `flash projects create` and
-`flash projects list`. Available in Flash 1.0.25.
-
-**Changed · Flash CLI**
-
-## Run and serving commands are grouped under `flash runs` and `flash models`
-
-`flash status`, `log`, `cancel`, and `checkpoints` are now `flash runs status`, `runs log`,
-`runs cancel`, and `runs checkpoint`. `flash deploy`, `chat`, `undeploy`, `deployments`, and
-`export` are now `flash models deploy`, `models chat`, `models undeploy`,
-`models deployments`, and `models export`. Listing base models is `flash models list`.
-
-**New · Platform**
-
-## Deploy and undeploy models from the dashboard
-
-Open a model to see its deployment detail and start or tear down serving from the web app,
-without switching to the CLI.
-
-**New · Platform**
-
-## Switch projects from the top bar
-
-A project selector in the top bar moves between projects from anywhere in the dashboard.
+Live metrics, run logs, and sample completions in the platform, plus per-step
+rewards from the Flash CLI.
 
 </Update>
 
-<Update label="July 24, 2026">
-  **New · Platform**
+<Update
+  label="July 21, 2026"
+  description="2026-07-21"
+  tags={["Serving", "Training"]}
+  rss={{
+    title: "July 21, 2026",
+    description: "7-10x faster generation on 9B and 27B models, and SFT training up to 48% faster.",
+  }}
+>
+  ## Featured
 
-## Organize runs, environments, and traces into projects
+### 7-10x faster generation on 9B and 27B models
 
-Group related work under an organization-level project and switch between projects from the platform.
-
-</Update>
-
-<Update label="July 22, 2026">
-  **New · Platform**
-
-## Monitor training live with metrics, logs, and sample completions
-
-See live metrics, run logs, and sample completions in the platform, and follow per-step rewards from the Flash CLI.
-
-</Update>
-
-<Update label="July 21, 2026">
-  **Improved · Serving**
-
-## 7-10x faster generation on 9B and 27B models
-
-**New · Training**
-
-## Per-turn or per-episode credit for multi-turn GRPO
-
-For pure multi-turn GRPO tasks with independently gradable turns, choose per-turn or per-episode credit.
-
-**Improved · Training**
-
-## SFT training up to 48% faster
+### SFT training up to 48% faster
 
 Lower memory use and faster data processing also unlock longer training contexts.
 
+  <AccordionGroup>
+    <Accordion title="Improvements" description="1 item">
+      - **Training:** Pure multi-turn GRPO tasks with independently gradable turns
+        can choose per-turn or per-episode credit.
+    </Accordion>
+  </AccordionGroup>
 </Update>
 
-<Update label="July 20, 2026">
-  **New · Models**
+<Update
+  label="July 20, 2026"
+  description="2026-07-20"
+  tags={["Models"]}
+  rss={{
+    title: "July 20, 2026",
+    description: "Train and serve multimodal models with image inputs.",
+  }}
+>
+  ## Featured
 
-## Train and serve multimodal models
+### Train and serve multimodal models
 
-Use image inputs with multimodal SFT, GRPO, on-policy distillation, and chat serving.
+Use image inputs with multimodal SFT, GRPO, on-policy distillation, and chat
+serving.
 
 </Update>
 
-<Update label="July 19, 2026">
-  **New · Models**
+<Update
+  label="July 19, 2026"
+  description="2026-07-19"
+  tags={["Models"]}
+  rss={{
+    title: "July 19, 2026",
+    description: "Qwen3.6-27B is now available to train and serve.",
+  }}
+>
+  ## Featured
 
-## Qwen3.6-27B is now available
+### Qwen3.6-27B is now available
 
 Train and serve Qwen3.6-27B on Freesolo.
 
 </Update>
 
-<Update label="July 17, 2026">
-  **Improved · Serving**
+<Update
+  label="July 17, 2026"
+  description="2026-07-17"
+  tags={["Serving", "Training"]}
+  rss={{
+    title: "July 17, 2026",
+    description: "32k context windows for training and serving.",
+  }}
+>
+  ## Featured
 
-## 32k context for training and serving
+### 32k context for training and serving
 
 Train and serve supported models with context windows up to 32k tokens.
 
